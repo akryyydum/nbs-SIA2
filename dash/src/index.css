@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+/* Add Lora to Tailwind */
+.font-lora {
+  font-family: 'Lora', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
