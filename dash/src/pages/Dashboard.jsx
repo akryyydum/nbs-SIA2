@@ -31,7 +31,6 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-100 via-white to-red-200 font-lora -z-10">
       <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-6xl gap-12 px-4">
-        {/* Carousel on the left */}
         <div className="relative w-full max-w-2xl h-[28rem] flex items-center justify-center">
           <img
             src={images[current]}

@@ -12,6 +12,7 @@ const Sidebar = () => {
     { to: '/admin/books', label: 'Books' },
     { to: '/admin/orders', label: 'Orders' },
     { to: '/admin/users', label: 'Users' },
+    { to: '/admin/suppliers', label: 'Suppliers' },
     // Add more links as needed
   ];
 

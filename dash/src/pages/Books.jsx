@@ -42,9 +42,14 @@ const Books = () => {
   }, []);
 
   // Helper to upload image to a free service (imgbb, cloudinary, etc.)
-  // Here is a placeholder for imgbb (you must replace YOUR_IMGBB_API_KEY)
+  // Improved: Show error if API key is not set
   const uploadImage = async (file) => {
-    const apiKey = 'YOUR_IMGBB_API_KEY'; // <-- replace with your key
+    const apiKey = 'b78349dac08c6f87391cc8cd173ae1b0'; // <-- replace with your real imgbb API key
+    if (!apiKey || apiKey === 'YOUR_IMGBB_API_KEY') {
+      // This error is shown because you have not set your imgbb API key.
+      // To fix: Get a free API key from https://api.imgbb.com/ and set it here.
+      throw new Error('Image upload is not configured. Please set your imgbb API key in the code.');
+    }
     const formData = new FormData();
     formData.append('image', file);
     const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
@@ -53,7 +58,7 @@ const Books = () => {
     });
     const data = await res.json();
     if (data.success) return data.data.url;
-    throw new Error('Image upload failed');
+    throw new Error(data.error?.message || 'Image upload failed');
   };
 
   const handleSubmit = async (e) => {
