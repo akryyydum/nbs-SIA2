@@ -1,6 +1,7 @@
 const Book = require('../models/books.model');
+const mongoose = require('mongoose');
 
-// @desc    Create a new book (Admin only)
+// @desc    Create a new book (Admin & Inventory department)
 // @route   POST /api/books
 exports.createBook = async (req, res) => {
   const { title, author, price, description, stock, image } = req.body;
@@ -37,7 +38,7 @@ exports.getBookById = async (req, res) => {
   }
 };
 
-// @desc    Update a book (Admin only)
+// @desc    Update a book (Admin & Inventory department)
 // @route   PUT /api/books/:id
 exports.updateBook = async (req, res) => {
   const { title, author, price, description, stock, image } = req.body;
@@ -60,14 +61,18 @@ exports.updateBook = async (req, res) => {
   }
 };
 
-// @desc    Delete a book (Admin only)
+// @desc    Delete a book (Admin & Inventory department)
 // @route   DELETE /api/books/:id
 exports.deleteBook = async (req, res) => {
   try {
-    const book = await Book.findById(req.params.id);
-    if (!book) return res.status(404).json({ message: 'Book not found' });
-
-    await book.remove();
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid book ID.' });
+    }
+    const deleted = await Book.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      console.error(`Book with ID ${req.params.id} not found`);
+      return res.status(404).json({ message: 'Book not found' });
+    }
     res.json({ message: 'Book removed' });
   } catch (err) {
     res.status(500).json({ message: err.message });

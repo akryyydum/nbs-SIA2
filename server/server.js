@@ -10,7 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
-const userRoutes = require('./routes/userRoutes');
+const userRoutes = require('./routes/userRoutes'); // <-- add this line
 
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -25,7 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes); // <-- add this line
 
 // Error Handling Middleware
 app.use(notFound);
@@ -37,9 +37,8 @@ const PORT = process.env.PORT || 5000;
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    // Listen on all interfaces for LAN access
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT} and LAN accessible at http://<your-lan-ip>:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on http://0.0.0.0:${PORT} (LAN accessible)`);
     });
   })
   .catch(err => {

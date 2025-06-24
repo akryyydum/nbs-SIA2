@@ -47,7 +47,7 @@ const Sidebar = () => {
         <button
           onClick={() => {
             logout();
-            navigate('/login');
+            navigate('/');
           }}
           className="block w-full px-4 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
         >

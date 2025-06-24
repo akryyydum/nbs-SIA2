@@ -23,3 +23,11 @@ exports.admin = (req, res, next) => {
     res.status(403).json({ message: 'Forbidden: Admins only' });
   }
 };
+
+exports.inventory = (req, res, next) => {
+  if (req.user && req.user.role === 'inventory department') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden: Inventory department only' });
+  }
+};

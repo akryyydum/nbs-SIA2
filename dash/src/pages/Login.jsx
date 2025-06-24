@@ -17,7 +17,6 @@ const LoginPage = () => {
         login(res.data); // localStorage (default)
       } else {
         sessionStorage.setItem('user', JSON.stringify(res.data));
-        // update context as well
         login(res.data);
         localStorage.removeItem('user');
       }
@@ -28,6 +27,16 @@ const LoginPage = () => {
         window.location.href = '/dashboard';
       }
       alert('Login successful!');
+      // Redirect based on role
+      if (res.data.role === 'inventory department') {
+        window.location.href = '/inventory';
+      } else if (res.data.role === 'sales department') {
+        window.location.href = '/sales-dashboard';
+      } else if (res.data.role === 'admin' || res.data.role === 'customer') {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = '/';
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }

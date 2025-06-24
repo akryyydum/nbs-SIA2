@@ -8,10 +8,11 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar'; // <-- import Sidebar
 import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
-import Books from './pages/Books';
-import Orders from './pages/Orders';
+import Books from './pages/Books'; // <-- import Books
+import Orders from './pages/Orders'; // <-- import Orders
+import Inventory from './pages/Inventory';
 import Products from './pages/Products';
-import SupplierDashboard from './pages/SupplierDashboard';
+import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboard
 
 function AdminLayout({ children }) {
   return (
@@ -45,6 +46,14 @@ function App() {
             <Navbar />
             <Products />
           </>
+        } />
+        <Route path="/sales-dashboard" element={
+          <ProtectedRoute allowedRoles={['sales department']}>
+            <>
+              <Navbar />
+              <SalesDashboard />
+            </>
+          </ProtectedRoute>
         } />
         {/* Admin routes: show Sidebar, hide Navbar */}
         <Route path="/admin/*" element={

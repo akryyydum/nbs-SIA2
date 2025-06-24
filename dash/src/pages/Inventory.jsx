@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getBooks, createBook, updateBook, deleteBook as deleteBookApi } from '../api/auth';
 import axios from 'axios';
 
 const emptyForm = {
@@ -12,7 +11,7 @@ const emptyForm = {
   image: ''
 };
 
-const Books = () => {
+const Inventory = () => {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -29,7 +28,7 @@ const Books = () => {
   const fetchBooks = async () => {
     setLoading(true);
     try {
-      const res = await getBooks(user.token);
+      const res = await API.get('/books');
       setBooks(res.data);
     } catch (err) {
       alert('Failed to fetch books');
@@ -42,25 +41,6 @@ const Books = () => {
     // eslint-disable-next-line
   }, []);
 
-  // Helper to upload image to a free service (imgbb, cloudinary, etc.)
-  const uploadImage = async (file) => {
-    const apiKey = 'b78349dac08c6f87391cc8cd173ae1b0'; // <-- replace with your real imgbb API key
-    if (!apiKey || apiKey === 'YOUR_IMGBB_API_KEY') {
-      // This error is shown because you have not set your imgbb API key.
-      // To fix: Get a free API key from https://api.imgbb.com/ and set it here.
-      throw new Error('Image upload is not configured. Please set your imgbb API key in the code.');
-    }
-    const formData = new FormData();
-    formData.append('image', file);
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json();
-    if (data.success) return data.data.url;
-    throw new Error(data.error?.message || 'Image upload failed');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -70,9 +50,9 @@ const Books = () => {
       }
       const payload = { ...form, image: imageUrl };
       if (editing) {
-        await updateBook(editing, payload, user.token);
+        await API.put(`/books/${editing}`, payload);
       } else {
-        await createBook(payload, user.token);
+        await API.post('/books', payload);
       }
       setForm(emptyForm);
       setEditing(null);
@@ -98,21 +78,13 @@ const Books = () => {
     setModalOpen(true);
   };
 
-  const handleDelete = (book) => {
-    setEditing(null);
-    setForm({
-      title: book.title,
-      author: book.author,
-      price: book.price,
-      description: book.description || '',
-      stock: book.stock,
-      image: book.image || ''
-    });
-    setImageFile(null);
-    if (window.confirm('Delete this book?')) {
-      deleteBookApi(book._id, user.token)
-        .then(fetchBooks)
-        .catch(() => alert('Delete failed'));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this book?')) return;
+    try {
+      await API.delete(`/books/${id}`);
+      fetchBooks();
+    } catch (err) {
+      alert('Delete failed');
     }
   };
 
@@ -125,7 +97,7 @@ const Books = () => {
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
-      <h2 className="text-2xl font-bold mb-4 text-red-700">Books Management</h2>
+      <h2 className="text-2xl font-bold mb-4 text-red-700">Inventory Management</h2>
       <button
         className="mb-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
         onClick={handleAdd}
@@ -304,7 +276,7 @@ const Books = () => {
                   </button>
                   <button
                     className="text-red-600 hover:bg-red-50 transition rounded px-3 py-1"
-                    onClick={() => handleDelete(b)}
+                    onClick={() => handleDelete(b._id)}
                   >
                     Delete
                   </button>
@@ -318,4 +290,4 @@ const Books = () => {
   );
 };
 
-export default Books;
+export default Inventory;
