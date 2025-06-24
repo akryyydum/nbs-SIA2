@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Use Vite env variable if set, otherwise fallback to localhost
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: 'http://192.168.9.16:5000/api', // Replace with your API base URL
 });
 
 export const loginUser = (data) => API.post('/auth/login', data);

@@ -10,6 +10,7 @@ import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
 import Books from './pages/Books';
 import Orders from './pages/Orders';
+import Inventory from './pages/Inventory'; // <-- import Inventory
 
 function AdminLayout({ children }) {
   return (
@@ -50,6 +51,12 @@ function App() {
                 {/* Add more admin routes here */}
               </Routes>
             </AdminLayout>
+          </ProtectedRoute>
+        } />
+        {/* Inventory route */}
+        <Route path="/inventory" element={
+          <ProtectedRoute allowedRoles={['inventory department']}>
+            <Inventory />
           </ProtectedRoute>
         } />
       </Routes>

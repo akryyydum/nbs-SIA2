@@ -22,7 +22,11 @@ const LoginPage = () => {
         localStorage.removeItem('user');
       }
       alert('Login successful!');
-      window.location.href = '/dashboard';
+      if (res.data.role === 'inventory department') {
+        window.location.href = '/inventory';
+      } else {
+        window.location.href = '/dashboard';
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }
