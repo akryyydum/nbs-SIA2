@@ -11,6 +11,7 @@ import Users from './pages/Users';
 import Books from './pages/Books';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
+import SupplierDashboard from './pages/SupplierDashboard';
 
 function AdminLayout({ children }) {
   return (
@@ -57,6 +58,14 @@ function App() {
                 {/* Add more admin routes here */}
               </Routes>
             </AdminLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/supplier-dashboard" element={
+          <ProtectedRoute allowedRoles={['supplier', 'supplier_department']}>
+            <>
+              <Navbar />
+              <SupplierDashboard />
+            </>
           </ProtectedRoute>
         } />
       </Routes>

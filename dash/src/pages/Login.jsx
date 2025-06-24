@@ -21,8 +21,13 @@ const LoginPage = () => {
         login(res.data);
         localStorage.removeItem('user');
       }
+      // Redirect based on user role
+      if (res.data.role === 'supplier' || res.data.role === 'supplier_department') {
+        window.location.href = '/supplier-dashboard';
+      } else {
+        window.location.href = '/dashboard';
+      }
       alert('Login successful!');
-      window.location.href = '/dashboard';
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }
