@@ -10,6 +10,7 @@ import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
 import Books from './pages/Books';
 import Orders from './pages/Orders';
+import Products from './pages/Products';
 
 function AdminLayout({ children }) {
   return (
@@ -37,6 +38,12 @@ function App() {
               <DashboardPage />
             </>
           </ProtectedRoute>
+        } />
+        <Route path="/products" element={
+          <>
+            <Navbar />
+            <Products />
+          </>
         } />
         {/* Admin routes: show Sidebar, hide Navbar */}
         <Route path="/admin/*" element={
