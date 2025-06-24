@@ -20,6 +20,12 @@ const LoginPage = () => {
         login(res.data);
         localStorage.removeItem('user');
       }
+      // Redirect based on user role
+      if (res.data.role === 'supplier' || res.data.role === 'supplier_department') {
+        window.location.href = '/supplier-dashboard';
+      } else {
+        window.location.href = '/dashboard';
+      }
       alert('Login successful!');
       // Redirect based on role
       if (res.data.role === 'inventory department') {

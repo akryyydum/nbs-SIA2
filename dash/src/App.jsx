@@ -69,6 +69,14 @@ function App() {
             </AdminLayout>
           </ProtectedRoute>
         } />
+        <Route path="/supplier-dashboard" element={
+          <ProtectedRoute allowedRoles={['supplier', 'supplier_department']}>
+            <>
+              <Navbar />
+              <SupplierDashboard />
+            </>
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );
