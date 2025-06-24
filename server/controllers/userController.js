@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const mongoose = require('mongoose');
 
 // @desc    Get all users (admin only)
 exports.getUsers = async (req, res) => {
@@ -45,11 +46,20 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user ID." });
+    }
+    // Prevent admin from deleting themselves
+    if (req.user._id.toString() === id) {
+      return res.status(400).json({ message: "You cannot delete your own account." });
+    }
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    await user.remove();
+    await User.deleteOne({ _id: id });
     res.json({ message: 'User removed' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Delete user error:', err); // Add this for debugging
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };

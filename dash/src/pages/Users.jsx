@@ -95,6 +95,9 @@ const Users = () => {
         >
           <option value="customer">Customer</option>
           <option value="admin">Admin</option>
+          <option value="inventory department">Inventory Department</option>
+          <option value="sales department">Sales Department</option>
+          <option value="supplier department">Supplier Department</option>
         </select>
         <select
           value={form.status}
