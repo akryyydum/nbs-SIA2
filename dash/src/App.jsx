@@ -13,6 +13,8 @@ import Orders from './pages/Orders'; // <-- import Orders
 import Inventory from './pages/Inventory';
 import Products from './pages/Products';
 import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboard
+import SupplierDashboard from './pages/SupplierDashboard'; // <-- import SupplierDashboard
+
 
 function AdminLayout({ children }) {
   return (
@@ -74,6 +76,14 @@ function App() {
             <>
               <Navbar />
               <SupplierDashboard />
+            </>
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory" element={
+          <ProtectedRoute allowedRoles={['inventory department']}>
+            <>
+              <Navbar />
+              <Inventory />
             </>
           </ProtectedRoute>
         } />
