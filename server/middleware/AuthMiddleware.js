@@ -24,10 +24,15 @@ exports.admin = (req, res, next) => {
   }
 };
 
+// /middleware/AuthMiddleware.js
+
 exports.inventory = (req, res, next) => {
-  if (req.user && req.user.role === 'inventory department') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Forbidden: Inventory department only' });
+  const allowedRoles = ['inventory department', 'admin']; // allow both roles
+  const userRole = req.user?.role;
+
+  if (userRole && allowedRoles.includes(userRole)) {
+    return next();
   }
+
+  return res.status(403).json({ message: 'Access denied: Inventory or Admin role required' });
 };
