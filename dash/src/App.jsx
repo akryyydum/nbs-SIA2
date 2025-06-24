@@ -8,9 +8,6 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar'; // <-- import Sidebar
 import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
-import Books from './pages/Books';
-import Orders from './pages/Orders';
-import Products from './pages/Products';
 
 function AdminLayout({ children }) {
   return (
@@ -57,6 +54,14 @@ function App() {
                 {/* Add more admin routes here */}
               </Routes>
             </AdminLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/sales-dashboard" element={
+          <ProtectedRoute allowedRoles={['sales department']}>
+            <>
+              <Navbar />
+              <SalesDashboard />
+            </>
           </ProtectedRoute>
         } />
       </Routes>

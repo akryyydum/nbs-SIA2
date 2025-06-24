@@ -22,7 +22,10 @@ const LoginPage = () => {
         localStorage.removeItem('user');
       }
       alert('Login successful!');
-      window.location.href = '/dashboard';
+      // Redirect based on role
+      if (res.data.role === 'sales department') {
+        window.location.href = '/sales-dashboard';
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }
