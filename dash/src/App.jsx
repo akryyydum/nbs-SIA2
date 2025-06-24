@@ -11,6 +11,10 @@ import Users from './pages/Users';
 import Books from './pages/Books';
 import Orders from './pages/Orders';
 import Inventory from './pages/Inventory'; // <-- import Inventory
+import Products from './pages/Products';
+import Books from './pages/Books'; // <-- import Books
+import Orders from './pages/Orders'; // <-- import Orders
+import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboard
 
 function AdminLayout({ children }) {
   return (
@@ -39,6 +43,12 @@ function App() {
             </>
           </ProtectedRoute>
         } />
+        <Route path="/products" element={
+          <>
+            <Navbar />
+            <Products />
+          </>
+        } />
         {/* Admin routes: show Sidebar, hide Navbar */}
         <Route path="/admin/*" element={
           <ProtectedRoute allowedRoles={['admin']}>
@@ -51,12 +61,6 @@ function App() {
                 {/* Add more admin routes here */}
               </Routes>
             </AdminLayout>
-          </ProtectedRoute>
-        } />
-        {/* Inventory route */}
-        <Route path="/inventory" element={
-          <ProtectedRoute allowedRoles={['inventory department']}>
-            <Inventory />
           </ProtectedRoute>
         } />
       </Routes>

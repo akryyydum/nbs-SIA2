@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { getBooks, createBook, updateBook, deleteBook as deleteBookApi } from '../api/auth';
 import axios from 'axios';
 
 const emptyForm = {
@@ -28,7 +29,7 @@ const Books = () => {
   const fetchBooks = async () => {
     setLoading(true);
     try {
-      const res = await API.get('/books');
+      const res = await getBooks(user.token);
       setBooks(res.data);
     } catch (err) {
       alert('Failed to fetch books');
@@ -42,7 +43,6 @@ const Books = () => {
   }, []);
 
   // Helper to upload image to a free service (imgbb, cloudinary, etc.)
-  // Improved: Show error if API key is not set
   const uploadImage = async (file) => {
     const apiKey = 'b78349dac08c6f87391cc8cd173ae1b0'; // <-- replace with your real imgbb API key
     if (!apiKey || apiKey === 'YOUR_IMGBB_API_KEY') {
@@ -70,9 +70,9 @@ const Books = () => {
       }
       const payload = { ...form, image: imageUrl };
       if (editing) {
-        await API.put(`/books/${editing}`, payload);
+        await updateBook(editing, payload, user.token);
       } else {
-        await API.post('/books', payload);
+        await createBook(payload, user.token);
       }
       setForm(emptyForm);
       setEditing(null);
@@ -98,13 +98,21 @@ const Books = () => {
     setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this book?')) return;
-    try {
-      await API.delete(`/books/${id}`);
-      fetchBooks();
-    } catch (err) {
-      alert('Delete failed');
+  const handleDelete = (book) => {
+    setEditing(null);
+    setForm({
+      title: book.title,
+      author: book.author,
+      price: book.price,
+      description: book.description || '',
+      stock: book.stock,
+      image: book.image || ''
+    });
+    setImageFile(null);
+    if (window.confirm('Delete this book?')) {
+      deleteBookApi(book._id, user.token)
+        .then(fetchBooks)
+        .catch(() => alert('Delete failed'));
     }
   };
 
@@ -296,7 +304,7 @@ const Books = () => {
                   </button>
                   <button
                     className="text-red-600 hover:bg-red-50 transition rounded px-3 py-1"
-                    onClick={() => handleDelete(b._id)}
+                    onClick={() => handleDelete(b)}
                   >
                     Delete
                   </button>

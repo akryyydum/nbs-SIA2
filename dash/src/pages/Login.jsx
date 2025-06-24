@@ -27,6 +27,16 @@ const LoginPage = () => {
       } else {
         window.location.href = '/dashboard';
       }
+      // Redirect based on role
+      if (res.data.role === 'sales department') {
+        window.location.href = '/sales-dashboard';
+      } else if (res.data.role === 'admin') {
+        window.location.href = '/dashboard';
+      } else if (res.data.role === 'customer') {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = '/';
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }
