@@ -47,6 +47,14 @@ function App() {
             <Products />
           </>
         } />
+        <Route path="/sales-dashboard" element={
+          <ProtectedRoute allowedRoles={['sales department']}>
+            <>
+              <Navbar />
+              <SalesDashboard />
+            </>
+          </ProtectedRoute>
+        } />
         {/* Admin routes: show Sidebar, hide Navbar */}
         <Route path="/admin/*" element={
           <ProtectedRoute allowedRoles={['admin']}>

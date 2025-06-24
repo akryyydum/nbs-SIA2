@@ -17,22 +17,16 @@ const LoginPage = () => {
         login(res.data); // localStorage (default)
       } else {
         sessionStorage.setItem('user', JSON.stringify(res.data));
-        // update context as well
         login(res.data);
         localStorage.removeItem('user');
       }
       alert('Login successful!');
+      // Redirect based on role
       if (res.data.role === 'inventory department') {
         window.location.href = '/inventory';
-      } else {
-        window.location.href = '/dashboard';
-      }
-      // Redirect based on role
-      if (res.data.role === 'sales department') {
+      } else if (res.data.role === 'sales department') {
         window.location.href = '/sales-dashboard';
-      } else if (res.data.role === 'admin') {
-        window.location.href = '/dashboard';
-      } else if (res.data.role === 'customer') {
+      } else if (res.data.role === 'admin' || res.data.role === 'customer') {
         window.location.href = '/dashboard';
       } else {
         window.location.href = '/';
