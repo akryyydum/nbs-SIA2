@@ -5,14 +5,25 @@ import RegisterPage from './pages/Register';
 import DashboardPage from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar'; // <-- import Sidebar
 import { useAuth } from './context/AuthContext';
+
+function AdminLayout({ children }) {
+  return (
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const { user } = useAuth();
 
   return (
     <BrowserRouter>
-      {/* Only show Navbar on protected routes */}
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -22,6 +33,16 @@ function App() {
               <Navbar />
               <DashboardPage />
             </>
+          </ProtectedRoute>
+        } />
+        {/* Admin routes: show Sidebar, hide Navbar */}
+        <Route path="/admin/*" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminLayout>
+              {/* You can render your admin dashboard or nested routes here */}
+              {/* Example: <AdminDashboardPage /> */}
+              <div className="p-8">Admin Control Panel Content</div>
+            </AdminLayout>
           </ProtectedRoute>
         } />
       </Routes>
