@@ -6,13 +6,21 @@ import { useAuth } from '../context/AuthContext';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true); // default to true
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await loginUser({ email, password });
-      login(res.data);
+      if (remember) {
+        login(res.data); // localStorage (default)
+      } else {
+        sessionStorage.setItem('user', JSON.stringify(res.data));
+        // update context as well
+        login(res.data);
+        localStorage.removeItem('user');
+      }
       alert('Login successful!');
       window.location.href = '/dashboard';
     } catch (err) {
@@ -49,6 +57,16 @@ const LoginPage = () => {
               required
               className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-red-900"
             />
+            <div className="flex items-center">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={e => setRemember(e.target.checked)}
+                className="mr-2"
+              />
+              <label htmlFor="remember" className="text-sm text-red-700 select-none">Remember me</label>
+            </div>
             <button
               type="submit"
               className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"

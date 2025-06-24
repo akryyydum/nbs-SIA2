@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar'; // <-- import Sidebar
 import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
+import Books from './pages/Books';
 
 function AdminLayout({ children }) {
   return (
@@ -43,6 +44,7 @@ function App() {
               <Routes>
                 <Route path="" element={<div className="p-8">Admin Control Panel Content</div>} />
                 <Route path="users" element={<Users />} />
+                <Route path="books" element={<Books />} />
                 {/* Add more admin routes here */}
               </Routes>
             </AdminLayout>

@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Example links for admin control panel
   const links = [
@@ -35,6 +36,23 @@ const Sidebar = () => {
           </Link>
         ))}
       </nav>
+      <div className="px-4 pb-6 mt-auto flex flex-col gap-2">
+        <Link
+          to="/dashboard"
+          className="block px-4 py-2 rounded-lg font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition-colors duration-200"
+        >
+          ← Back to Dashboard
+        </Link>
+        <button
+          onClick={() => {
+            logout();
+            navigate('/login');
+          }}
+          className="block w-full px-4 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
+        >
+          Logout
+        </button>
+      </div>
     </aside>
   );
 };

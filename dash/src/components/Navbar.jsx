@@ -26,17 +26,22 @@ const Navbar = () => {
           </div>
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 items-center">
-            <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-              Home
-            </Link>
+            {/* Only show Home and Contact if not admin */}
+            {user?.role !== 'admin' && (
+              <>
+                <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                  Home
+                </Link>
+                <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                  Contact
+                </Link>
+              </>
+            )}
             <Link to="/products" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
               Products
             </Link>
             <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
               About
-            </Link>
-            <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-              Contact
             </Link>
             {/* Admin Control Panel Link */}
             {user?.role === 'admin' && (
@@ -109,13 +114,25 @@ const Navbar = () => {
         }`}
         style={{ transitionProperty: 'max-height, padding' }}
       >
-        <Link
-          to="/dashboard"
-          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-          onClick={() => setOpen(false)}
-        >
-          Home
-        </Link>
+        {/* Only show Home and Contact if not admin */}
+        {user?.role !== 'admin' && (
+          <>
+            <Link
+              to="/dashboard"
+              className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
+              onClick={() => setOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              to="/contact"
+              className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
+              onClick={() => setOpen(false)}
+            >
+              Contact
+            </Link>
+          </>
+        )}
         <Link
           to="/products"
           className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
@@ -129,13 +146,6 @@ const Navbar = () => {
           onClick={() => setOpen(false)}
         >
           About
-        </Link>
-        <Link
-          to="/contact"
-          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-          onClick={() => setOpen(false)}
-        >
-          Contact
         </Link>
         {/* Admin Control Panel Link */}
         {user?.role === 'admin' && (
