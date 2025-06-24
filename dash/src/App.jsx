@@ -8,12 +8,10 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar'; // <-- import Sidebar
 import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
-import Books from './pages/Books';
-import Orders from './pages/Orders';
-import Inventory from './pages/Inventory'; // <-- import Inventory
-import Products from './pages/Products';
 import Books from './pages/Books'; // <-- import Books
 import Orders from './pages/Orders'; // <-- import Orders
+import Inventory from './pages/Inventory';
+import Products from './pages/Products';
 import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboard
 
 function AdminLayout({ children }) {
