@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
+import { Pie, Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement } from 'chart.js';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement);
 
 const emptyForm = {
   title: '',
@@ -20,6 +24,7 @@ const Inventory = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [imageFile, setImageFile] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const API = axios.create({
     baseURL: 'http://192.168.9.16:5000/api',
@@ -116,6 +121,14 @@ const Inventory = () => {
     uploadImage(file);
   };
 
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
+  };
+
   // Add styles for table alignment
   const tableStyles = {
     textAlign: 'center',
@@ -134,6 +147,39 @@ const Inventory = () => {
     display: 'block',
     margin: '0 auto',
     maxWidth: '100px',
+  };
+
+  const stockByCategoryData = {
+    labels: ['Fiction', 'Non-Fiction', 'Science', 'History'],
+    datasets: [
+      {
+        data: [300, 500, 200, 100],
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+      },
+    ],
+  };
+
+  const inventoryTrendsData = {
+    labels: ['January', 'February', 'March', 'April', 'May'],
+    datasets: [
+      {
+        label: 'Stock Trends',
+        data: [65, 59, 80, 81, 56],
+        fill: false,
+        borderColor: '#36A2EB',
+      },
+    ],
+  };
+
+  const topProductsData = {
+    labels: ['Book A', 'Book B', 'Book C', 'Book D'],
+    datasets: [
+      {
+        label: 'Top Products',
+        data: [400, 300, 200, 100],
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+      },
+    ],
   };
 
   return (
@@ -299,7 +345,13 @@ const Inventory = () => {
                 <td className="border-b px-6 py-3" style={cellStyles}>{b.stock}</td>
                 <td className="border-b px-6 py-3" style={cellStyles}>
                   {b.image && (
-                    <img src={b.image} alt={b.title} className="h-12 w-12 object-cover rounded shadow" style={imageStyles} />
+                    <img
+                      src={b.image}
+                      alt={b.title}
+                      className="h-12 w-12 object-cover rounded shadow"
+                      style={imageStyles}
+                      onClick={() => handleImageClick(b.image)}
+                    />
                   )}
                 </td>
                 <td className="border-b px-6 py-3 max-w-xs truncate" style={cellStyles}>{b.description}</td>
@@ -322,6 +374,59 @@ const Inventory = () => {
           </tbody>
         </table>
       </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px' }}>
+        <div style={{ width: '30%' }}>
+          <h2 className="text-xl font-bold mb-4 text-red-700">Stock by Category</h2>
+          <Pie data={stockByCategoryData} />
+        </div>
+
+        <div style={{ width: '30%' }}>
+          <h2 className="text-xl font-bold mb-4 text-red-700">Inventory Trends</h2>
+          <Line data={inventoryTrendsData} />
+        </div>
+
+        <div style={{ width: '30%' }}>
+          <h2 className="text-xl font-bold mb-4 text-red-700">Top Products</h2>
+          <Bar data={topProductsData} />
+        </div>
+      </div>
+
+      {selectedImage && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <img
+            src={selectedImage}
+            alt="Book Preview"
+            style={{ maxWidth: '90%', maxHeight: '80%' }}
+          />
+          <button
+            onClick={closeImageModal}
+            style={{
+              marginTop: '20px',
+              backgroundColor: 'white',
+              border: 'none',
+              padding: '10px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <FaArrowLeft style={{ marginRight: '5px' }} /> Back
+          </button>
+        </div>
+      )}
     </div>
   );
 };
