@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 const emptyForm = {
   title: '',
@@ -41,12 +42,26 @@ const Inventory = () => {
     // eslint-disable-next-line
   }, []);
 
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await API.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return `http://192.168.9.16:5000${res.data.url}`; // Append base URL
+    } catch (err) {
+      alert('Failed to upload image');
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       let imageUrl = form.image;
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+        imageUrl = await uploadImage(imageFile); // Use the returned URL
       }
       const payload = { ...form, image: imageUrl };
       if (editing) {
@@ -93,6 +108,32 @@ const Inventory = () => {
     setForm(emptyForm);
     setImageFile(null);
     setModalOpen(true);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setImageFile(file);
+    uploadImage(file);
+  };
+
+  // Add styles for table alignment
+  const tableStyles = {
+    textAlign: 'center',
+    borderCollapse: 'collapse',
+    width: '100%',
+  };
+
+  const cellStyles = {
+    textAlign: 'center',
+    padding: '8px',
+    border: '1px solid #ddd',
+  };
+
+  // Add styles for image alignment
+  const imageStyles = {
+    display: 'block',
+    margin: '0 auto',
+    maxWidth: '100px',
   };
 
   return (
@@ -169,12 +210,7 @@ const Inventory = () => {
                       type="file"
                       accept="image/*"
                       style={{ display: 'none' }}
-                      onChange={e => {
-                        if (e.target.files[0]) {
-                          setImageFile(e.target.files[0]);
-                          setForm(f => ({ ...f, image: '' }));
-                        }
-                      }}
+                      onChange={handleImageChange}
                     />
                     <button
                       type="button"
@@ -234,16 +270,16 @@ const Inventory = () => {
           boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)'
         }}
       >
-        <table className="min-w-full rounded-2xl overflow-hidden">
+        <table className="min-w-full rounded-2xl overflow-hidden" style={tableStyles}>
           <thead>
             <tr className="bg-white/70 text-red-700 font-semibold text-lg">
-              <th className="px-6 py-3 border-b">Title</th>
-              <th className="px-6 py-3 border-b">Author</th>
-              <th className="px-6 py-3 border-b">Price</th>
-              <th className="px-6 py-3 border-b">Stock</th>
-              <th className="px-6 py-3 border-b">Image</th>
-              <th className="px-6 py-3 border-b">Description</th>
-              <th className="px-6 py-3 border-b">Actions</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Title</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Author</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Price</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Stock</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Image</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Description</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -257,28 +293,28 @@ const Inventory = () => {
               </tr>
             ) : books.map(b => (
               <tr key={b._id} className="hover:bg-red-50 transition">
-                <td className="border-b px-6 py-3">{b.title}</td>
-                <td className="border-b px-6 py-3">{b.author}</td>
-                <td className="border-b px-6 py-3">${Number(b.price).toFixed(2)}</td>
-                <td className="border-b px-6 py-3">{b.stock}</td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3" style={cellStyles}>{b.title}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>{b.author}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>${Number(b.price).toFixed(2)}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>{b.stock}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>
                   {b.image && (
-                    <img src={b.image} alt={b.title} className="h-12 w-12 object-cover rounded shadow" />
+                    <img src={b.image} alt={b.title} className="h-12 w-12 object-cover rounded shadow" style={imageStyles} />
                   )}
                 </td>
-                <td className="border-b px-6 py-3 max-w-xs truncate">{b.description}</td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3 max-w-xs truncate" style={cellStyles}>{b.description}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
                     onClick={() => handleEdit(b)}
                   >
-                    Edit
+                    <FaEdit />
                   </button>
                   <button
                     className="text-red-600 hover:bg-red-50 transition rounded px-3 py-1"
                     onClick={() => handleDelete(b._id)}
                   >
-                    Delete
+                    <FaTrash />
                   </button>
                 </td>
               </tr>
