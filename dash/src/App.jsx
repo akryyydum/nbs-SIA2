@@ -14,6 +14,8 @@ import Inventory from './pages/Inventory';
 import Products from './pages/Products';
 import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboard
 import SupplierDashboard from './pages/SupplierDashboard'; // <-- import SupplierDashboard
+import Checkout from './pages/Checkout'; // <-- import Checkout
+import Order from './pages/Order';
 
 
 function AdminLayout({ children }) {
@@ -48,6 +50,25 @@ function App() {
             <Navbar />
             <Products />
           </>
+        } />
+        <Route path="/checkout" element={
+          <>
+            <Navbar />
+            <Checkout />
+          </>
+        } />
+        <Route path="/orders" element={
+          user?.role === 'admin' ? (
+            <>
+              <Navbar />
+              <Orders />
+            </>
+          ) : (
+            <>
+              <Navbar />
+              <Order />
+            </>
+          )
         } />
         <Route path="/sales-dashboard" element={
           <ProtectedRoute allowedRoles={['sales department']}>

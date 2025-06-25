@@ -44,7 +44,24 @@ const Books = () => {
   useEffect(() => {
     fetchBooks();
     // Fetch suppliers for dropdown
-    API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
+    API.get('/suppliers').then(res => {
+      // Fetch users with role 'supplier'
+      API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } })
+        .then(userRes => {
+          const supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
+          // Merge suppliers from /suppliers and supplier users
+          const merged = [
+            ...res.data,
+            ...supplierUsers.map(u => ({
+              _id: u._id,
+              companyName: u.name || u.email || u._id,
+              fromUser: true
+            }))
+          ];
+          setSuppliers(merged);
+        })
+        .catch(() => setSuppliers(res.data));
+    }).catch(() => {});
     // eslint-disable-next-line
   }, []);
 
@@ -261,7 +278,10 @@ const Books = () => {
               >
                 <option value="" disabled>Select Supplier</option>
                 {suppliers.map((supplier) => (
-                  <option key={supplier._id} value={supplier._id}>{supplier.companyName}</option>
+                  <option key={supplier._id} value={supplier._id}>
+                    {supplier.companyName}
+                    {supplier.fromUser ? ' (User)' : ''}
+                  </option>
                 ))}
               </select>
               <div className="flex gap-2 mt-4">

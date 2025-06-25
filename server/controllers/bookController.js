@@ -79,3 +79,24 @@ exports.deleteBook = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// @desc    Decrease stock of a book
+// @route   PUT /api/books/:id/decrease-stock
+exports.decreaseStock = async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ message: 'Quantity must be provided and greater than 0' });
+    }
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+    if (book.stock < quantity) {
+      return res.status(400).json({ message: 'Insufficient stock' });
+    }
+    book.stock -= quantity;
+    await book.save();
+    res.json({ message: 'Stock decreased', stock: book.stock });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

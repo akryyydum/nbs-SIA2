@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, admin, inventory } = require('../middleware/AuthMiddleware');
-const { createBook, getBooks, getBookById, updateBook, deleteBook } = require('../controllers/bookController');
+const { createBook, getBooks, getBookById, updateBook, deleteBook, decreaseStock } = require('../controllers/bookController');
 
 // Public: Get all books
 router.get('/', getBooks);
@@ -17,5 +17,8 @@ router.put('/:id', protect, inventory, updateBook);
 
 // Admin & Inventory: Delete a book
 router.delete('/:id', protect, inventory, deleteBook);
+
+// Admin & Inventory: Decrease stock of a book
+router.put('/:id/decrease-stock', protect, inventory, decreaseStock);
 
 module.exports = router;

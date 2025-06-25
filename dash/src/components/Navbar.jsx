@@ -125,7 +125,7 @@ const Navbar = () => {
                       disabled={cart.length === 0}
                       onClick={() => {
                         setCartOpen(false);
-                        navigate('/cart');
+                        navigate('/checkout');
                       }}
                     >
                       Checkout
@@ -293,7 +293,7 @@ const Navbar = () => {
                   disabled={cart.length === 0}
                   onClick={() => {
                     setCartOpen(false);
-                    navigate('/cart');
+                    navigate('/checkout');
                   }}
                 >
                   Checkout

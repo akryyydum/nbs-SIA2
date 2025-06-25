@@ -10,7 +10,7 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: 'http://192.168.4.104:5000/api',
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -28,7 +28,7 @@ const Orders = () => {
   useEffect(() => {
     fetchOrders();
     // eslint-disable-next-line
-  }, []);
+  }, [modalOpen]); // Refetch orders when modalOpen changes
 
   const handleView = (order) => {
     setSelectedOrder(order);
@@ -42,6 +42,37 @@ const Orders = () => {
       fetchOrders();
     } catch (err) {
       alert('Delete failed');
+    }
+  };
+
+  // Accept order: set status to 'accepted', decrease book stocks
+  const handleAccept = async (order) => {
+    if (!window.confirm('Accept this order? This will decrease book stocks.')) return;
+    try {
+      // 1. Update order status to 'accepted'
+      await API.put(`/orders/${order._id}/accept`);
+      // 2. Decrease stock for each book in the order
+      await Promise.all(
+        order.items
+          .filter(item => item.book && item.book._id)
+          .map(item =>
+            API.put(`/books/${item.book._id}/decrease-stock`, { quantity: item.quantity })
+          )
+      );
+      setModalOpen(false); // This will trigger useEffect to refetch orders
+    } catch (err) {
+      alert('Failed to accept order: ' + (err?.response?.data?.message || err.message));
+    }
+  };
+
+  // Decline order: set status to 'declined'
+  const handleDecline = async (order) => {
+    if (!window.confirm('Decline this order?')) return;
+    try {
+      await API.put(`/orders/${order._id}/decline`);
+      setModalOpen(false); // This will trigger useEffect to refetch orders
+    } catch (err) {
+      alert('Failed to decline order');
     }
   };
 
@@ -79,6 +110,23 @@ const Orders = () => {
               </div>
               <div><span className="font-semibold">Created:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
             </div>
+            {/* Accept/Decline buttons for pending orders */}
+            {selectedOrder.status === 'pending' && (
+              <div className="flex gap-4 mt-6">
+                <button
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  onClick={() => handleAccept(selectedOrder)}
+                >
+                  Accept
+                </button>
+                <button
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                  onClick={() => handleDecline(selectedOrder)}
+                >
+                  Decline
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -120,6 +168,8 @@ const Orders = () => {
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium
                     ${order.status === 'paid' ? 'bg-green-100 text-green-700'
                       : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
+                      : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
+                      : order.status === 'declined' ? 'bg-red-100 text-red-700'
                       : 'bg-gray-100 text-gray-700'}`}>
                     {order.status}
                   </span>

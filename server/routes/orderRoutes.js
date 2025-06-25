@@ -6,7 +6,9 @@ const {
   getMyOrders,
   getAllOrders,
   getOrderById,
-  deleteOrder
+  deleteOrder,
+  acceptOrder,    // add this
+  declineOrder    // add this
 } = require('../controllers/orderController');
 
 // User: Create order
@@ -23,5 +25,11 @@ router.get('/:id', protect, getOrderById);
 
 // Admin: Delete order
 router.delete('/:id', protect, admin, deleteOrder);
+
+// Accept order (admin only)
+router.put('/:id/accept', protect, admin, acceptOrder);
+
+// Decline order (admin only)
+router.put('/:id/decline', protect, admin, declineOrder);
 
 module.exports = router;
