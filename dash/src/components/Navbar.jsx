@@ -51,7 +51,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-lora sticky top-0 z-50">
+    <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-poppins bold sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo and Search Bar */}

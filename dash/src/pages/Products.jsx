@@ -14,6 +14,8 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [modalBook, setModalBook] = useState(null);
+  const [modalQty, setModalQty] = useState(1);
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -25,7 +27,7 @@ const Products = () => {
       try {
         const res = await API.get('/books');
         setBooks(res.data);
-        // Extract unique categories from books
+        // Extract unique categoriexs from books
         const cats = Array.from(new Set(res.data.map(b => b.category).filter(Boolean)));
         setCategories(cats);
       } catch (err) {
@@ -36,16 +38,16 @@ const Products = () => {
   }, []);
 
   // Add to cart handler (syncs with localStorage, increments quantity)
-  const handleAddToCart = (book) => {
+  const handleAddToCart = (book, qty = 1) => {
     let cart = [];
     try {
       cart = JSON.parse(localStorage.getItem('cart')) || [];
     } catch {}
     const idx = cart.findIndex(item => item._id === book._id);
     if (idx !== -1) {
-      cart[idx].quantity = (cart[idx].quantity || 1) + 1;
+      cart[idx].quantity = (cart[idx].quantity || 1) + qty;
     } else {
-      cart.push({ ...book, quantity: 1 });
+      cart.push({ ...book, quantity: qty });
     }
     localStorage.setItem('cart', JSON.stringify(cart));
     alert(`Added "${book.title}" to cart!`);
@@ -121,11 +123,15 @@ const Products = () => {
           filteredBooks.map(book => (
             <div
               key={book._id}
-              className="bg-white/60 rounded-2xl shadow-lg border border-red-100 flex flex-col items-center p-6 transition hover:shadow-2xl"
+              className="bg-white/60 rounded-2xl shadow-lg border border-red-100 flex flex-col items-center p-6 transition hover:shadow-2xl cursor-pointer"
               style={{
                 backdropFilter: 'blur(10px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(10px) saturate(180%)',
                 border: '1px solid rgba(255,255,255,0.18)',
+              }}
+              onClick={() => {
+                setModalBook(book);
+                setModalQty(1);
               }}
             >
               {book.image && (
@@ -148,7 +154,10 @@ const Products = () => {
                 {/* Add to Cart Button */}
                 <button
                   className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                  onClick={() => handleAddToCart(book)}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleAddToCart(book);
+                  }}
                 >
                   Add to Cart
                 </button>
@@ -157,6 +166,89 @@ const Products = () => {
           ))
         )}
       </div>
+
+      {/* Modal */}
+      {modalBook && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setModalBook(null)}
+          />
+          <div
+            className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-50 transition-transform duration-300 ease-in-out animate-slide-in"
+            style={{ maxWidth: '100vw' }}
+          >
+            <button
+              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-600"
+              onClick={() => setModalBook(null)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <div className="p-8 flex flex-col h-full">
+              {modalBook.image && (
+                <img
+                  src={modalBook.image}
+                  alt={modalBook.title}
+                  className="h-48 w-36 object-cover rounded-lg mb-4 mx-auto shadow"
+                />
+              )}
+              <h3 className="text-2xl font-bold text-red-700 mb-2 text-center">{modalBook.title}</h3>
+              <div className="text-md text-gray-700 mb-2 text-center">{modalBook.author}</div>
+              <div className="text-red-600 font-semibold text-xl mb-2 text-center">${Number(modalBook.price).toFixed(2)}</div>
+              <div className="text-sm text-gray-500 mb-4 text-center">{modalBook.description}</div>
+              {modalBook.category && (
+                <div className="text-xs text-gray-400 mb-2 text-center">Category: {modalBook.category}</div>
+              )}
+              <div className="text-xs text-gray-400 mb-4 text-center">Stock: {modalBook.stock}</div>
+              {/* Quantity Selector */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="text-sm">Quantity:</span>
+                <button
+                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={() => setModalQty(q => Math.max(1, q - 1))}
+                  disabled={modalQty <= 1}
+                >-</button>
+                <input
+                  type="number"
+                  min="1"
+                  max={modalBook.stock}
+                  value={modalQty}
+                  onChange={e => setModalQty(Math.max(1, Math.min(Number(e.target.value), modalBook.stock)))}
+                  className="w-12 text-center border rounded"
+                />
+                <button
+                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={() => setModalQty(q => Math.min((modalBook.stock || 99), q + 1))}
+                  disabled={modalQty >= (modalBook.stock || 99)}
+                >+</button>
+              </div>
+              <button
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-lg font-semibold"
+                onClick={() => {
+                  handleAddToCart(modalBook, modalQty);
+                  setModalBook(null);
+                }}
+                disabled={modalBook.stock === 0}
+              >
+                {modalBook.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+              </button>
+            </div>
+          </div>
+          {/* Modal slide-in animation */}
+          <style>
+            {`
+              @keyframes slide-in {
+                from { transform: translateX(100%); }
+                to { transform: translateX(0); }
+              }
+              .animate-slide-in {
+                animation: slide-in 0.3s cubic-bezier(0.4,0,0.2,1) both;
+              }
+            `}
+          </style>
+        </>
+      )}
     </div>
   );
 };

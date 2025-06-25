@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const images = [
-  "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?auto=format&fit=crop&w=1200&q=80"
+  "https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg",
+  "https://images.pexels.com/photos/694740/pexels-photo-694740.jpeg",
+  "https://images.pexels.com/photos/12064/pexels-photo-12064.jpeg"
 ];
 
 const DashboardPage = () => {
@@ -47,14 +47,20 @@ const DashboardPage = () => {
 
       {/* Carousel Section */}
       <div className="flex items-center justify-center w-full h-1/3">
-        <div className="relative w-full h-full flex items-center justify-center">
-          <img
-            src={images[current]}
-            alt={`carousel-${current}`}
-            className={`w-full h-full object-cover transition-all duration-1000 ease-in-out transform ${
-              fade ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-            }`}
-          />
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+          {images.map((img, idx) => (
+            <img
+              key={img}
+              src={img}
+              alt={`carousel-${idx}`}
+              className={`w-full h-full object-cover absolute top-0 left-0 transition-transform duration-700 ease-in-out
+                ${idx === current ? 'z-10 translate-x-0 opacity-100' : idx < current ? '-translate-x-full opacity-0' : 'translate-x-full opacity-0'}
+              `}
+              style={{
+                transitionProperty: 'transform, opacity',
+              }}
+            />
+          ))}
         </div>
       </div>
 
