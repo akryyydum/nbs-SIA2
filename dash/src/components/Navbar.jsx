@@ -189,7 +189,7 @@ const Navbar = () => {
               <button
                 onClick={() => {
                   setAccountOpen(false);
-                  window.location.href = '/login';
+                  window.location.href = '/';
                 }}
                 className="block w-full text-left px-4 py-2 text-black hover:bg-red-50 hover:text-red-900"
               >
