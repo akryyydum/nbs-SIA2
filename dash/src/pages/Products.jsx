@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
+
+// Use Vite env variable if set, otherwise fallback to localhost
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+});
 
 const Products = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
-  });
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const search = searchParams.get('search')?.toLowerCase() || '';
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -16,13 +22,20 @@ const Products = () => {
         const res = await API.get('/books');
         setBooks(res.data);
       } catch (err) {
-        // Optionally handle error
       }
       setLoading(false);
     };
     fetchBooks();
-    // eslint-disable-next-line
   }, []);
+
+  const filteredBooks = search
+    ? books.filter(
+        (book) =>
+          book.title?.toLowerCase().includes(search) ||
+          book.author?.toLowerCase().includes(search) ||
+          book.description?.toLowerCase().includes(search)
+      )
+    : books;
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
@@ -40,10 +53,10 @@ const Products = () => {
       >
         {loading ? (
           <div className="col-span-full text-center text-gray-500 py-12">Loading...</div>
-        ) : books.length === 0 ? (
+        ) : filteredBooks.length === 0 ? (
           <div className="col-span-full text-center text-gray-400 py-12">No books found</div>
         ) : (
-          books.map(book => (
+          filteredBooks.map(book => (
             <div
               key={book._id}
               className="bg-white/60 rounded-2xl shadow-lg border border-red-100 flex flex-col items-center p-6 transition hover:shadow-2xl"

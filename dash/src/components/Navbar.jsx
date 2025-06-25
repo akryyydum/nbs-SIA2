@@ -1,12 +1,21 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const accountRef = useRef();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (search.trim()) {
+      navigate(`/products?search=${encodeURIComponent(search.trim())}`);
+    }
+  };
 
   return (
     <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-lora sticky top-0 z-50">
@@ -16,11 +25,13 @@ const Navbar = () => {
           <div className="flex-shrink-0 flex items-center gap-4">
             <img src="/nbs.svg" alt="NBS Logo" className="h-30 w-30 mr-2" />
             {/* Search Bar (desktop only) */}
-            <form className="hidden md:block">
+            <form className="hidden md:block" onSubmit={handleSearch}>
               <input
                 type="text"
                 placeholder="Search books..."
                 className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-64"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
               />
             </form>
           </div>
@@ -114,6 +125,16 @@ const Navbar = () => {
         }`}
         style={{ transitionProperty: 'max-height, padding' }}
       >
+        {/* Mobile Search Bar */}
+        <form className="block md:hidden px-6 py-2" onSubmit={handleSearch}>
+          <input
+            type="text"
+            placeholder="Search books..."
+            className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-full"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </form>
         {/* Only show Home and Contact if not admin */}
         {user?.role !== 'admin' && (
           <>
