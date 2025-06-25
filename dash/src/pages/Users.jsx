@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getUsers, createUser, updateUser, deleteUser } from '../api/auth';
+import { getUsers, createUser, updateUser, deleteUser, acceptUser, declineUser } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
-const emptyForm = { name: '', email: '', password: '', role: 'customer', status: 'active' };
+const emptyForm = { name: '', email: '', password: '', role: 'customer', status: 'pending' };
 
 const Users = () => {
   const { user } = useAuth();
@@ -33,7 +33,7 @@ const Users = () => {
       if (editing) {
         await updateUser(editing, form, user.token);
       } else {
-        await createUser(form, user.token);
+        await createUser({ ...form, status: 'pending' }, user.token);
       }
       setForm(emptyForm);
       setEditing(null);
@@ -104,8 +104,8 @@ const Users = () => {
           onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
           className="border px-3 py-2 rounded"
         >
-          <option value="active">Active</option>
           <option value="pending">Pending</option>
+          <option value="active">Active</option>
         </select>
         <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">
           {editing ? 'Update' : 'Create'}
@@ -169,6 +169,36 @@ const Users = () => {
                   >
                     Delete
                   </button>
+                  {u.status === 'pending' && (
+                    <>
+                      <button
+                        className="ml-2 text-green-600 hover:bg-green-50 transition rounded px-3 py-1"
+                        onClick={async () => {
+                          try {
+                            await acceptUser(u._id, user.token);
+                            fetchUsers();
+                          } catch (err) {
+                            alert('Failed to accept user');
+                          }
+                        }}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="ml-2 text-yellow-600 hover:bg-yellow-50 transition rounded px-3 py-1"
+                        onClick={async () => {
+                          try {
+                            await declineUser(u._id, user.token);
+                            fetchUsers();
+                          } catch (err) {
+                            alert('Failed to decline user');
+                          }
+                        }}
+                      >
+                        Decline
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

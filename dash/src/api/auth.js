@@ -12,6 +12,8 @@ export const getUsers = (token) => API.get('/users', { headers: { Authorization:
 export const createUser = (data, token) => API.post('/users', data, { headers: { Authorization: `Bearer ${token}` } });
 export const updateUser = (id, data, token) => API.put(`/users/${id}`, data, { headers: { Authorization: `Bearer ${token}` } });
 export const deleteUser = (id, token) => API.delete(`/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+export const acceptUser = (id, token) => API.put(`/users/${id}/accept`, {}, { headers: { Authorization: `Bearer ${token}` } });
+export const declineUser = (id, token) => API.put(`/users/${id}/decline`, {}, { headers: { Authorization: `Bearer ${token}` } });
 
 // Add CRUD for books
 export const getBooks = (token) => API.get('/books', { headers: { Authorization: `Bearer ${token}` } });

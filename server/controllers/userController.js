@@ -17,7 +17,14 @@ exports.createUser = async (req, res) => {
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
-    const user = await User.create({ name, email, password, role, status });
+    // Only admin can set status, otherwise default to 'pending'
+    const user = await User.create({ 
+      name, 
+      email, 
+      password, 
+      role, 
+      status: status || 'pending' 
+    });
     res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -61,5 +68,33 @@ exports.deleteUser = async (req, res) => {
   } catch (err) {
     console.error('Delete user error:', err); // Add this for debugging
     res.status(500).json({ message: err.message || 'Server error' });
+  }
+};
+
+// @desc    Accept a user (admin only)
+exports.acceptUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.status = 'active';
+    await user.save();
+    res.json({ message: 'User accepted', user: { _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status } });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// @desc    Decline a user (admin only)
+exports.declineUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.status = 'declined';
+    await user.save();
+    res.json({ message: 'User declined', user: { _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status } });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };

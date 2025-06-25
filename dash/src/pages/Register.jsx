@@ -10,10 +10,10 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await registerUser(form);
-      login(res.data);
-      alert('Registered and logged in!');
-      window.location.href = '/dashboard';
+      await registerUser({ ...form, status: 'pending' });
+      alert('Registered! Waiting for admin approval.');
+      // Do not log in or redirect
+      setForm({ name: '', email: '', password: '', role: 'customer' });
     } catch (err) {
       alert(err.response?.data?.message || 'Registration failed');
     }
@@ -63,9 +63,9 @@ const RegisterPage = () => {
             >
               <option value="customer">Customer</option>
               <option value="admin">Admin</option>
-                 <option value="inventory department">Inventory Department</option>
-          <option value="sales department">Sales Department</option>
-          <option value="supplier department">Supplier Department</option>
+              <option value="inventory department">Inventory Department</option>
+              <option value="sales department">Sales Department</option>
+              <option value="supplier department">Supplier Department</option>
             </select>
             <button
               type="submit"

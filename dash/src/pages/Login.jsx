@@ -13,6 +13,14 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await loginUser({ email, password });
+      if (res.data.status !== 'active') {
+        alert(
+          res.data.status === 'pending'
+            ? 'Your account is pending approval by admin.'
+            : 'Your registration was declined by admin.'
+        );
+        return;
+      }
       if (remember) {
         login(res.data); // localStorage (default)
       } else {
@@ -108,7 +116,7 @@ const LoginPage = () => {
           className="absolute inset-0 w-full h-full object-cover blur-lg scale-125"
           style={{ zIndex: 0 }}
         />
-        {/* Animated Book */}
+        {/* Ani qmated Book */}
         <div className="relative w-80 h-80 flex items-center justify-center" style={{ zIndex: 1 }}>
           {/* Book cover */}
           <div className="absolute w-52 h-72 bg-white border-4 border-red-600 rounded-lg shadow-lg animate-bounce" style={{ zIndex: 2 }} />
