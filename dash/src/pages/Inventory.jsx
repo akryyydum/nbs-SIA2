@@ -31,7 +31,7 @@ const Inventory = () => {
   const [suppliers, setSuppliers] = useState([]);
 
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: 'http://192.168.4.104:5000/api',
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -173,35 +173,57 @@ const Inventory = () => {
     maxWidth: '100px',
   };
 
+  // --- Real Graph Data ---
+  // 1. Stock by Category
+  const stockByCategory = books.reduce((acc, book) => {
+    if (!book.category) return acc;
+    acc[book.category] = (acc[book.category] || 0) + (Number(book.stock) || 0);
+    return acc;
+  }, {});
   const stockByCategoryData = {
-    labels: ['Fiction', 'Non-Fiction', 'Science', 'History'],
+    labels: Object.keys(stockByCategory),
     datasets: [
       {
-        data: [300, 500, 200, 100],
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+        data: Object.values(stockByCategory),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6', '#FBBF24', '#34D399'],
       },
     ],
   };
 
+  // 2. Inventory Trends (stock added per month, based on createdAt)
+  const inventoryTrends = {};
+  books.forEach(book => {
+    if (!book.createdAt) return;
+    const date = new Date(book.createdAt);
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    inventoryTrends[month] = (inventoryTrends[month] || 0) + (Number(book.stock) || 0);
+  });
+  const sortedMonths = Object.keys(inventoryTrends).sort();
   const inventoryTrendsData = {
-    labels: ['January', 'February', 'March', 'April', 'May'],
+    labels: sortedMonths,
     datasets: [
       {
-        label: 'Stock Trends',
-        data: [65, 59, 80, 81, 56],
+        label: 'Stock Added',
+        data: sortedMonths.map(m => inventoryTrends[m]),
         fill: false,
         borderColor: '#36A2EB',
+        backgroundColor: '#36A2EB',
+        tension: 0.3,
       },
     ],
   };
 
+  // 3. Top Products (by stock)
+  const topProducts = [...books]
+    .sort((a, b) => (b.stock || 0) - (a.stock || 0))
+    .slice(0, 10);
   const topProductsData = {
-    labels: ['Book A', 'Book B', 'Book C', 'Book D'],
+    labels: topProducts.map(b => b.title),
     datasets: [
       {
-        label: 'Top Products',
-        data: [400, 300, 200, 100],
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+        label: 'Stock',
+        data: topProducts.map(b => b.stock),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6', '#FBBF24', '#34D399', '#F87171', '#60A5FA'],
       },
     ],
   };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // Add this import
 
 // Use Vite env variable if set, otherwise fallback to localhost
 const API = axios.create({
@@ -16,6 +17,8 @@ const Products = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [modalBook, setModalBook] = useState(null);
   const [modalQty, setModalQty] = useState(1);
+  const [suppliers, setSuppliers] = useState([]);
+  const { user } = useAuth(); // Add this line
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -35,22 +38,39 @@ const Products = () => {
       setLoading(false);
     };
     fetchBooks();
+    // Fetch suppliers for display
+    API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
   }, []);
 
-  // Add to cart handler (syncs with localStorage, increments quantity)
-  const handleAddToCart = (book, qty = 1) => {
-    let cart = [];
-    try {
-      cart = JSON.parse(localStorage.getItem('cart')) || [];
-    } catch {}
-    const idx = cart.findIndex(item => item._id === book._id);
-    if (idx !== -1) {
-      cart[idx].quantity = (cart[idx].quantity || 1) + qty;
-    } else {
-      cart.push({ ...book, quantity: qty });
+  // Add to cart handler (calls backend API, increments quantity)
+  const handleAddToCart = async (book, qty = 1) => {
+    if (!user?.token) {
+      alert('Please login to add to cart.');
+      return;
     }
-    localStorage.setItem('cart', JSON.stringify(cart));
-    alert(`Added "${book.title}" to cart!`);
+    try {
+      // Fetch current cart from backend (cart.model.js)
+      const res = await API.get('/cart', {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      let items = res.data.items || [];
+      // Find if book already in cart
+      const idx = items.findIndex(item =>
+        (item.book && (item.book._id === book._id || item.book === book._id))
+      );
+      if (idx !== -1) {
+        items[idx].quantity = (items[idx].quantity || 1) + qty;
+      } else {
+        items.push({ book: book._id, quantity: qty });
+      }
+      // Save updated cart to backend
+      await API.post('/cart', { items }, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      alert(`Added "${book.title}" to cart!`);
+    } catch (err) {
+      alert('Failed to add to cart');
+    }
   };
 
   // Filtering logic
@@ -150,6 +170,12 @@ const Products = () => {
                 {book.category && (
                   <div className="text-xs text-gray-400 mb-2 text-center">Category: {book.category}</div>
                 )}
+                {/* Supplier display */}
+                {book.supplier && (
+                  <div className="text-xs text-gray-400 mb-2 text-center">
+                    Supplier: {suppliers.find(s => s._id === book.supplier)?.companyName || book.supplier}
+                  </div>
+                )}
                 <div className="text-xs text-gray-400 mt-auto mb-2">Stock: {book.stock}</div>
                 {/* Add to Cart Button */}
                 <button
@@ -199,6 +225,12 @@ const Products = () => {
               <div className="text-sm text-gray-500 mb-4 text-center">{modalBook.description}</div>
               {modalBook.category && (
                 <div className="text-xs text-gray-400 mb-2 text-center">Category: {modalBook.category}</div>
+              )}
+              {/* Supplier display in modal */}
+              {modalBook.supplier && (
+                <div className="text-xs text-gray-400 mb-4 text-center">
+                  Supplier: {suppliers.find(s => s._id === modalBook.supplier)?.companyName || modalBook.supplier}
+                </div>
               )}
               <div className="text-xs text-gray-400 mb-4 text-center">Stock: {modalBook.stock}</div>
               {/* Quantity Selector */}

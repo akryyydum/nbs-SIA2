@@ -12,6 +12,8 @@ const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes'); // <-- add this line
 const uploadRoutes = require('./routes/uploadRoutes');
+const supplierRoutes = require('./routes/supplierRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -29,6 +31,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes); // <-- add this line
 app.use('/api/upload', uploadRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

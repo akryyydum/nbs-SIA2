@@ -10,17 +10,24 @@ exports.createOrder = async (req, res) => {
   }
 
   try {
-    // Calculate total price
+    // Calculate total price and enrich items with category and supplier
     let totalPrice = 0;
+    const enrichedItems = [];
     for (const item of items) {
       const book = await Book.findById(item.book);
       if (!book) return res.status(404).json({ message: 'Book not found' });
       totalPrice += book.price * item.quantity;
+      enrichedItems.push({
+        book: item.book,
+        quantity: item.quantity,
+        category: book.category,
+        supplier: book.supplier
+      });
     }
 
     const order = new Order({
       user: req.user._id,
-      items,
+      items: enrichedItems,
       totalPrice
     });
 

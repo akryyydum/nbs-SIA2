@@ -1,47 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios'; // Add axios import
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
-  const [cart, setCart] = useState(() => {
-    // Load cart from localStorage if available
-    try {
-      const stored = localStorage.getItem('cart');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [cart, setCart] = useState([]);
   const accountRef = useRef();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Sync cart to localStorage
+  // Fetch cart from backend for the logged-in user
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-
-  // Live update cart from localStorage
-  useEffect(() => {
-    const syncCart = () => {
+    if (!user?.token) {
+      setCart([]);
+      return;
+    }
+    const fetchCart = async () => {
       try {
-        const stored = localStorage.getItem('cart');
-        setCart(stored ? JSON.parse(stored) : []);
-      } catch {}
+        const res = await axios.get(
+          (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') + '/cart',
+          { headers: { Authorization: `Bearer ${user.token}` } }
+        );
+        setCart(res.data.items || []);
+      } catch {
+        setCart([]);
+      }
     };
-    // Listen for storage events (other tabs)
-    window.addEventListener('storage', syncCart);
-    // Poll every 500ms for local changes (same tab)
-    const interval = setInterval(syncCart, 500);
-    return () => {
-      window.removeEventListener('storage', syncCart);
-      clearInterval(interval);
-    };
-  }, []);
+    fetchCart();
+  }, [user]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -116,13 +106,13 @@ const Navbar = () => {
                     ) : (
                       cart.map((item, idx) => (
                         <div key={item._id || idx} className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0">
-                          {item.image && (
-                            <img src={item.image} alt={item.title} className="h-12 w-9 object-cover rounded" />
+                          {item.book?.image && (
+                            <img src={item.book.image} alt={item.book.title} className="h-12 w-9 object-cover rounded" />
                           )}
                           <div className="flex-1">
-                            <div className="font-semibold text-sm">{item.title}</div>
-                            <div className="text-xs text-gray-500">{item.author}</div>
-                            <div className="text-xs text-red-600">${Number(item.price).toFixed(2)}</div>
+                            <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
+                            <div className="text-xs text-gray-500">{item.book?.author}</div>
+                            <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
                             <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                           </div>
                         </div>
@@ -284,13 +274,13 @@ const Navbar = () => {
                 ) : (
                   cart.map((item, idx) => (
                     <div key={item._id || idx} className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0">
-                      {item.image && (
-                        <img src={item.image} alt={item.title} className="h-12 w-9 object-cover rounded" />
+                      {item.book?.image && (
+                        <img src={item.book.image} alt={item.book.title} className="h-12 w-9 object-cover rounded" />
                       )}
                       <div className="flex-1">
-                        <div className="font-semibold text-sm">{item.title}</div>
-                        <div className="text-xs text-gray-500">{item.author}</div>
-                        <div className="text-xs text-red-600">${Number(item.price).toFixed(2)}</div>
+                        <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
+                        <div className="text-xs text-gray-500">{item.book?.author}</div>
+                        <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
                         <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                       </div>
                     </div>

@@ -9,7 +9,9 @@ const emptyForm = {
   price: '',
   description: '',
   stock: '',
-  image: ''
+  image: '',
+  category: '',
+  supplier: ''
 };
 
 const Books = () => {
@@ -20,9 +22,11 @@ const Books = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [imageFile, setImageFile] = useState(null);
+  const [suppliers, setSuppliers] = useState([]);
+  const [categories, setCategories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
 
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: 'http://192.168.4.104:5000/api',
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -39,6 +43,8 @@ const Books = () => {
 
   useEffect(() => {
     fetchBooks();
+    // Fetch suppliers for dropdown
+    API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
     // eslint-disable-next-line
   }, []);
 
@@ -92,7 +98,9 @@ const Books = () => {
       price: b.price,
       description: b.description || '',
       stock: b.stock,
-      image: b.image || ''
+      image: b.image || '',
+      category: b.category || '',
+      supplier: b.supplier || ''
     });
     setImageFile(null);
     setModalOpen(true);
@@ -236,6 +244,26 @@ const Books = () => {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 className="w-full border px-3 py-2 rounded"
               />
+              <select
+                value={form.category || ''}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="" disabled>Select Category</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <select
+                value={form.supplier || ''}
+                onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="" disabled>Select Supplier</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier._id} value={supplier._id}>{supplier.companyName}</option>
+                ))}
+              </select>
               <div className="flex gap-2 mt-4">
                 <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">
                   {editing ? 'Update' : 'Create'}
@@ -271,17 +299,19 @@ const Books = () => {
               <th className="px-6 py-3 border-b">Stock</th>
               <th className="px-6 py-3 border-b">Image</th>
               <th className="px-6 py-3 border-b">Description</th>
+              <th className="px-6 py-3 border-b">Category</th>
+              <th className="px-6 py-3 border-b">Supplier</th>
               <th className="px-6 py-3 border-b">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-gray-500">Loading...</td>
+                <td colSpan={9} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
             ) : books.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-gray-400">No books found</td>
+                <td colSpan={9} className="text-center py-8 text-gray-400">No books found</td>
               </tr>
             ) : books.map(b => (
               <tr key={b._id} className="hover:bg-red-50 transition">
@@ -295,6 +325,8 @@ const Books = () => {
                   )}
                 </td>
                 <td className="border-b px-6 py-3 max-w-xs truncate">{b.description}</td>
+                <td className="border-b px-6 py-3">{b.category}</td>
+                <td className="border-b px-6 py-3">{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
                 <td className="border-b px-6 py-3">
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"

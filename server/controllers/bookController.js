@@ -3,10 +3,10 @@ const Book = require('../models/books.model');
 // @desc    Create a new book (Admin & Inventory department)
 // @route   POST /api/books
 exports.createBook = async (req, res) => {
-  const { title, author, price, description, stock, image } = req.body;
+  const { title, author, price, description, stock, image, category, supplier } = req.body;
 
   try {
-    const book = new Book({ title, author, price, description, stock, image });
+    const book = new Book({ title, author, price, description, stock, image, category, supplier });
     const savedBook = await book.save();
     res.status(201).json(savedBook);
   } catch (err) {
