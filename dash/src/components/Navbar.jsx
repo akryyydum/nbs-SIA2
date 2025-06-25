@@ -1,12 +1,54 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cart, setCart] = useState(() => {
+    // Load cart from localStorage if available
+    try {
+      const stored = localStorage.getItem('cart');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const accountRef = useRef();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Sync cart to localStorage
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
+
+  // Live update cart from localStorage
+  useEffect(() => {
+    const syncCart = () => {
+      try {
+        const stored = localStorage.getItem('cart');
+        setCart(stored ? JSON.parse(stored) : []);
+      } catch {}
+    };
+    // Listen for storage events (other tabs)
+    window.addEventListener('storage', syncCart);
+    // Poll every 500ms for local changes (same tab)
+    const interval = setInterval(syncCart, 500);
+    return () => {
+      window.removeEventListener('storage', syncCart);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (search.trim()) {
+      navigate(`/products?search=${encodeURIComponent(search.trim())}`);
+    }
+  };
 
   return (
     <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-lora sticky top-0 z-50">
@@ -16,11 +58,13 @@ const Navbar = () => {
           <div className="flex-shrink-0 flex items-center gap-4">
             <img src="/nbs.svg" alt="NBS Logo" className="h-30 w-30 mr-2" />
             {/* Search Bar (desktop only) */}
-            <form className="hidden md:block">
+            <form className="hidden md:block" onSubmit={handleSearch}>
               <input
                 type="text"
                 placeholder="Search books..."
                 className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-64"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
               />
             </form>
           </div>
@@ -49,12 +93,57 @@ const Navbar = () => {
                 Control Panel
               </Link>
             )}
-            {/* Cart Icon */}
-            <Link to="/cart" className="ml-4 text-black hover:text-red-900 transition-colors duration-200 relative">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A1 1 0 007 17h10a1 1 0 00.95-.68L21 9M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7" />
-              </svg>
-            </Link>
+            {/* Cart Icon with Dropdown */}
+            <div className="relative">
+              <button
+                className="ml-4 text-black hover:text-red-900 transition-colors duration-200 relative"
+                onClick={() => setCartOpen((v) => !v)}
+                aria-label="Cart"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A1 1 0 007 17h10a1 1 0 00.95-.68L21 9M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7" />
+                </svg>
+                {cart.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5">{cart.length}</span>
+                )}
+              </button>
+              {cartOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
+                  <div className="p-4 max-h-80 overflow-y-auto">
+                    <h4 className="font-bold text-red-700 mb-2">Cart</h4>
+                    {cart.length === 0 ? (
+                      <div className="text-gray-400 text-sm text-center py-4">Cart is empty</div>
+                    ) : (
+                      cart.map((item, idx) => (
+                        <div key={item._id || idx} className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0">
+                          {item.image && (
+                            <img src={item.image} alt={item.title} className="h-12 w-9 object-cover rounded" />
+                          )}
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm">{item.title}</div>
+                            <div className="text-xs text-gray-500">{item.author}</div>
+                            <div className="text-xs text-red-600">${Number(item.price).toFixed(2)}</div>
+                            <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-3 border-t flex justify-end">
+                    <button
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                      disabled={cart.length === 0}
+                      onClick={() => {
+                        setCartOpen(false);
+                        navigate('/cart');
+                      }}
+                    >
+                      Checkout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             {/* Account Icon and Dropdown */}
             <div className="relative" ref={accountRef}>
               <button
@@ -114,6 +203,16 @@ const Navbar = () => {
         }`}
         style={{ transitionProperty: 'max-height, padding' }}
       >
+        {/* Mobile Search Bar */}
+        <form className="block md:hidden px-6 py-2" onSubmit={handleSearch}>
+          <input
+            type="text"
+            placeholder="Search books..."
+            className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-full"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </form>
         {/* Only show Home and Contact if not admin */}
         {user?.role !== 'admin' && (
           <>
@@ -157,19 +256,58 @@ const Navbar = () => {
             Control Panel
           </Link>
         )}
-        {/* Cart Icon */}
-        <Link
-          to="/cart"
-          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-          onClick={() => setOpen(false)}
-        >
-          <span className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        {/* Cart Icon with Dropdown (mobile) */}
+        <div className="relative px-6 py-2">
+          <button
+            className="flex items-center text-black hover:text-red-900 focus:outline-none transition-colors duration-200 w-full"
+            onClick={() => setCartOpen((v) => !v)}
+            aria-label="Cart"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A1 1 0 007 17h10a1 1 0 00.95-.68L21 9M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7" />
             </svg>
             Cart
-          </span>
-        </Link>
+            {cart.length > 0 && (
+              <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-1.5">{cart.length}</span>
+            )}
+          </button>
+          {cartOpen && (
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
+              <div className="p-4 max-h-80 overflow-y-auto">
+                <h4 className="font-bold text-red-700 mb-2">Cart</h4>
+                {cart.length === 0 ? (
+                  <div className="text-gray-400 text-sm text-center py-4">Cart is empty</div>
+                ) : (
+                  cart.map((item, idx) => (
+                    <div key={item._id || idx} className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0">
+                      {item.image && (
+                        <img src={item.image} alt={item.title} className="h-12 w-9 object-cover rounded" />
+                      )}
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">{item.title}</div>
+                        <div className="text-xs text-gray-500">{item.author}</div>
+                        <div className="text-xs text-red-600">${Number(item.price).toFixed(2)}</div>
+                        <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="p-3 border-t flex justify-end">
+                <button
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    setCartOpen(false);
+                    navigate('/cart');
+                  }}
+                >
+                  Checkout
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         {/* Account Icon and Dropdown */}
         <div className="relative px-6 py-2">
           <button
