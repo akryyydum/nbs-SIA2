@@ -13,12 +13,13 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await loginUser({ email, password });
-      if (res.data.status !== 'active') {
-        alert(
-          res.data.status === 'pending'
-            ? 'Your account is pending approval by admin.'
-            : 'Your registration was declined by admin.'
-        );
+      // Only block login if status is exactly 'pending' or 'declined'
+      if (res.data.status === 'pending') {
+        alert('Your account is pending approval by admin.');
+        return;
+      }
+      if (res.data.status === 'declined') {
+        alert('Your registration was declined by admin.');
         return;
       }
       if (remember) {

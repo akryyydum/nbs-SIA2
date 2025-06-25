@@ -17,13 +17,20 @@ exports.createUser = async (req, res) => {
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
-    // Only admin can set status, otherwise default to 'pending'
+    // Always set status to 'pending' for registration and admin creation unless admin explicitly sets 'active' or 'declined'
+    let newStatus = 'pending';
+    if (
+      req.user && req.user.role === 'admin' &&
+      (status === 'active' || status === 'declined')
+    ) {
+      newStatus = status;
+    }
     const user = await User.create({ 
       name, 
       email, 
       password, 
       role, 
-      status: status || 'pending' 
+      status: newStatus 
     });
     res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status });
   } catch (err) {
