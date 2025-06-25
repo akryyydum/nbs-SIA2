@@ -11,6 +11,7 @@ const bookRoutes = require('./routes/bookRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const userRoutes = require('./routes/userRoutes'); // <-- add this line
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -19,6 +20,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json()); // Parse incoming JSON
+app.use('/uploads', express.static('uploads')); // Serve static files from the uploads directory
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -26,6 +28,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes); // <-- add this line
+app.use('/api/upload', uploadRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
