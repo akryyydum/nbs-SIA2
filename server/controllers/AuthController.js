@@ -23,39 +23,50 @@ exports.register = async (req, res) => {
   const userExists = await User.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  // Register all users (including admins) as active immediately
-  const user = await User.create({ name, email, password, role, status: 'active' });
-  const token = generateToken(user);
+  // Register all users as pending (except default admin)
+  const user = await User.create({ name, email, password, role, status: 'pending' });
 
   res.status(201).json({
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
-    token
+    status: user.status
+    // No token returned, user cannot log in until approved
   });
 };
-
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user || !(await user.matchPassword(password))) {
-    return res.status(401).json({ message: 'Invalid email or password' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Block users with pending status
+    if (user.status === 'pending') {
+      return res.status(403).json({ message: 'Your account is pending approval by admin.' });
+    }
+
+    // Block users with declined status
+    if (user.status === 'declined') {
+      return res.status(403).json({ message: 'Your registration was declined by admin.' });
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      token
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
-
-  // Prevent login if admin registration is pending
-  if (user.role === 'admin' && user.status === 'pending') {
-    return res.status(403).json({ message: 'Admin registration pending approval' });
-  }
-
-  const token = generateToken(user);
-
-  res.json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    token
-  });
 };
+
