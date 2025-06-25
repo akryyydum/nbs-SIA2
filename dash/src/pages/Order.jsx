@@ -11,6 +11,15 @@ const Order = () => {
   const [filter, setFilter] = useState('all');
   const [cancelling, setCancelling] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
+  const [bankSystem, setBankSystem] = useState('default'); // 'default' or 'other'
+  const [bankInfo, setBankInfo] = useState({
+    bankName: '',
+    accountNumber: '',
+    accountName: '',
+    balance: ''
+  });
+  const [bankVerified, setBankVerified] = useState(false);
+  const [bankError, setBankError] = useState('');
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -55,6 +64,39 @@ const Order = () => {
     if (filter === 'declined') return order.status === 'declined';
     return true;
   });
+
+  // Replace the simulated verifyBank with a real API call
+  const verifyBank = async () => {
+    setBankError('');
+    setBankVerified(false);
+    if (!bankInfo.bankName || !bankInfo.accountNumber || !bankInfo.accountName) {
+      setBankError('Please fill in all bank fields.');
+      return false;
+    }
+    try {
+      const res = await axios.post(
+        `${API_BASE}/bank/verify`,
+        {
+          bankSystem,
+          bankName: bankInfo.bankName,
+          accountNumber: bankInfo.accountNumber,
+          accountName: bankInfo.accountName
+        },
+        { headers: { Authorization: `Bearer ${user?.token}` } }
+      );
+      if (res.data && res.data.verified) {
+        setBankInfo(b => ({ ...b, balance: res.data.balance }));
+        setBankVerified(true);
+        return true;
+      } else {
+        setBankError(res.data?.message || 'Bank verification failed.');
+        return false;
+      }
+    } catch (err) {
+      setBankError(err.response?.data?.message || 'Bank verification failed.');
+      return false;
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
@@ -184,6 +226,60 @@ const Order = () => {
                 </ul>
               </div>
               <div><span className="font-semibold">Placed:</span> {new Date(modalOrder.createdAt).toLocaleString()}</div>
+            </div>
+            {/* Example: Bank system selection UI */}
+            <div>
+              <span className="font-semibold">Bank System:</span>
+              <select
+                className="ml-2 border px-2 py-1 rounded"
+                value={bankSystem}
+                onChange={e => setBankSystem(e.target.value)}
+              >
+                <option value="default">Default Bank</option>
+                <option value="other">Other Bank</option>
+              </select>
+            </div>
+            {/* Example: Bank info fields */}
+            <div className="mt-2">
+              <input
+                name="bankName"
+                type="text"
+                placeholder="Bank Name"
+                value={bankInfo.bankName}
+                onChange={e => setBankInfo(b => ({ ...b, bankName: e.target.value }))}
+                className="border px-3 py-2 rounded mb-2 w-full"
+              />
+              <input
+                name="accountName"
+                type="text"
+                placeholder="Account Name"
+                value={bankInfo.accountName}
+                onChange={e => setBankInfo(b => ({ ...b, accountName: e.target.value }))}
+                className="border px-3 py-2 rounded mb-2 w-full"
+              />
+              <input
+                name="accountNumber"
+                type="text"
+                placeholder="Account Number"
+                value={bankInfo.accountNumber}
+                onChange={e => setBankInfo(b => ({ ...b, accountNumber: e.target.value }))}
+                className="border px-3 py-2 rounded mb-2 w-full"
+              />
+              <button
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition w-full"
+                onClick={verifyBank}
+                type="button"
+              >
+                Verify Bank
+              </button>
+              {bankVerified && (
+                <div className="text-green-700 text-sm mt-2">
+                  Bank verified. Balance: ₱{Number(bankInfo.balance).toFixed(2)}
+                </div>
+              )}
+              {bankError && (
+                <div className="text-red-600 text-sm mt-2">{bankError}</div>
+              )}
             </div>
           </div>
         </div>

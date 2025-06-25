@@ -76,6 +76,24 @@ const Orders = () => {
     }
   };
 
+  // If you have any bank verification logic in this file, replace simulation with a real API call.
+  // For example, add a function like this:
+
+  const verifyBank = async (bankSystem, bankInfo) => {
+    try {
+      const res = await API.post('/bank/verify', {
+        bankSystem,
+        ...bankInfo
+      });
+      return res.data; // { verified: true/false, balance, message }
+    } catch (err) {
+      return { verified: false, message: err.response?.data?.message || 'Bank verification failed.' };
+    }
+  };
+
+  // Use verifyBank() wherever you need to verify a bank account, and handle the result accordingly.
+  // Remove any simulation or hardcoded logic for bank verification.
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Orders Management</h2>
