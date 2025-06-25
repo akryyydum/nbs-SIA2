@@ -90,13 +90,13 @@ const Products = () => {
   });
 
   return (
-    <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
-      <h2 className="text-2xl font-bold mb-8 text-red-700">All Books</h2>
+    <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <h2 className="text-2xl font-bold mb-8 text-black">All Books</h2>
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
         {/* Category Filter */}
         <select
-          className="border border-red-200 rounded-lg px-3 py-2"
+          className="border border-gray-200 rounded-lg px-3 py-2"
           value={selectedCategory}
           onChange={e => setSelectedCategory(e.target.value)}
         >
@@ -110,7 +110,7 @@ const Products = () => {
           type="number"
           min="0"
           placeholder="Min Price"
-          className="border border-red-200 rounded-lg px-3 py-2 w-28"
+          className="border border-gray-200 rounded-lg px-3 py-2 w-28"
           value={minPrice}
           onChange={e => setMinPrice(e.target.value)}
         />
@@ -119,7 +119,7 @@ const Products = () => {
           type="number"
           min="0"
           placeholder="Max Price"
-          className="border border-red-200 rounded-lg px-3 py-2 w-28"
+          className="border border-gray-200 rounded-lg px-3 py-2 w-28"
           value={maxPrice}
           onChange={e => setMaxPrice(e.target.value)}
         />
@@ -143,7 +143,7 @@ const Products = () => {
           filteredBooks.map(book => (
             <div
               key={book._id}
-              className="bg-white/60 rounded-2xl shadow-lg border border-red-100 flex flex-col items-center p-6 transition hover:shadow-2xl cursor-pointer"
+              className="bg-white/60 rounded-2xl shadow-lg border border-gray-100 flex flex-col items-center p-6 transition hover:shadow-2xl cursor-pointer"
               style={{
                 backdropFilter: 'blur(10px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(10px) saturate(180%)',
@@ -162,9 +162,9 @@ const Products = () => {
                 />
               )}
               <div className="w-full flex-1 flex flex-col items-center">
-                <h3 className="text-lg font-bold text-red-700 mb-1 text-center">{book.title}</h3>
+                <h3 className="text-lg font-bold text-black mb-1 text-center">{book.title}</h3>
                 <div className="text-sm text-gray-700 mb-2 text-center">{book.author}</div>
-                <div className="text-red-600 font-semibold text-lg mb-2">${Number(book.price).toFixed(2)}</div>
+                <div className="text-black font-semibold text-lg mb-2">${Number(book.price).toFixed(2)}</div>
                 <div className="text-xs text-gray-500 mb-2 text-center line-clamp-2">{book.description}</div>
                 {/* Category display */}
                 {book.category && (
@@ -179,7 +179,7 @@ const Products = () => {
                 <div className="text-xs text-gray-400 mt-auto mb-2">Stock: {book.stock}</div>
                 {/* Add to Cart Button */}
                 <button
-                  className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  className="mt-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
                   onClick={e => {
                     e.stopPropagation();
                     handleAddToCart(book);
@@ -205,7 +205,7 @@ const Products = () => {
             style={{ maxWidth: '100vw' }}
           >
             <button
-              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-600"
+              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black"
               onClick={() => setModalBook(null)}
               aria-label="Close"
             >
@@ -219,9 +219,9 @@ const Products = () => {
                   className="h-48 w-36 object-cover rounded-lg mb-4 mx-auto shadow"
                 />
               )}
-              <h3 className="text-2xl font-bold text-red-700 mb-2 text-center">{modalBook.title}</h3>
+              <h3 className="text-2xl font-bold text-black mb-2 text-center">{modalBook.title}</h3>
               <div className="text-md text-gray-700 mb-2 text-center">{modalBook.author}</div>
-              <div className="text-red-600 font-semibold text-xl mb-2 text-center">${Number(modalBook.price).toFixed(2)}</div>
+              <div className="text-black font-semibold text-xl mb-2 text-center">${Number(modalBook.price).toFixed(2)}</div>
               <div className="text-sm text-gray-500 mb-4 text-center">{modalBook.description}</div>
               {modalBook.category && (
                 <div className="text-xs text-gray-400 mb-2 text-center">Category: {modalBook.category}</div>
@@ -256,7 +256,7 @@ const Products = () => {
                 >+</button>
               </div>
               <button
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-lg font-semibold"
+                className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition text-lg font-semibold"
                 onClick={() => {
                   handleAddToCart(modalBook, modalQty);
                   setModalBook(null);

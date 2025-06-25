@@ -121,7 +121,7 @@ const Checkout = () => {
       }));
       // Create order
       const orderRes = await axios.post(
-        `${API_BASE}/order`,
+        `${API_BASE}/orders`, // <-- fix endpoint here
         { items, billing, paymentMethod, bankInfo: paymentMethod === 'bank' ? bankInfo : undefined },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
