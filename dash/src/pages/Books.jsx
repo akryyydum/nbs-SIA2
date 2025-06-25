@@ -36,7 +36,9 @@ const Books = () => {
       const res = await getBooks(user.token);
       setBooks(res.data);
     } catch (err) {
-      alert('Failed to fetch books');
+      // Show more details for debugging 500 errors
+      alert('Failed to fetch books: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+      console.error('Fetch books error:', err);
     }
     setLoading(false);
   };
