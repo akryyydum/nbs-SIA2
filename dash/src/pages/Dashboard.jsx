@@ -164,7 +164,7 @@ const DashboardPage = () => {
             </svg>
           </button>
         </div>
-        {/* Dots/pagination */}
+        {/* Dots/test */}
         {arrivalsTotalPages > 1 && (
           <div className="flex justify-center mt-3 gap-2">
             {Array.from({ length: arrivalsTotalPages }).map((_, idx) => (
