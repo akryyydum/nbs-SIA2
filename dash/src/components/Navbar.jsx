@@ -154,6 +154,10 @@ const Navbar = () => {
                   <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
                   <path stroke="currentColor" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" />
                 </svg>
+                {/* Show user name if logged in */}
+                {user?.name && (
+                  <span className="ml-2 text-sm font-medium text-black max-w-[120px] truncate">{user.name}</span>
+                )}
               </button>
               {/* Dropdown */}
               {accountOpen && (
@@ -318,7 +322,11 @@ const Navbar = () => {
               <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
               <path stroke="currentColor" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" />
             </svg>
-            Account
+            {/* Show user name if logged in */}
+            {user?.name && (
+              <span className="ml-2 text-sm font-medium text-black max-w-[120px] truncate">{user.name}</span>
+            )}
+            {!user?.name && 'Account'}
           </button>
           {accountOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
