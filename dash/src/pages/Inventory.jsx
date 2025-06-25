@@ -12,6 +12,8 @@ const emptyForm = {
   author: '',
   price: '',
   description: '',
+  category: '',
+  supplier: '',
   stock: '',
   image: ''
 };
@@ -25,6 +27,8 @@ const Inventory = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [categories, setCategories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
+  const [suppliers, setSuppliers] = useState([]);
 
   const API = axios.create({
     baseURL: 'http://192.168.9.16:5000/api',
@@ -45,6 +49,19 @@ const Inventory = () => {
   useEffect(() => {
     fetchBooks();
     // eslint-disable-next-line
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      const res = await API.get('/suppliers');
+      setSuppliers(res.data);
+    } catch (err) {
+      alert('Failed to fetch suppliers');
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
   }, []);
 
   const uploadImage = async (file) => {
@@ -68,7 +85,14 @@ const Inventory = () => {
       if (imageFile) {
         imageUrl = await uploadImage(imageFile); // Use the returned URL
       }
-      const payload = { ...form, image: imageUrl };
+
+      const payload = {
+        ...form,
+        image: imageUrl,
+        category: form.category,
+        supplier: form.supplier,
+      };
+
       if (editing) {
         await API.put(`/books/${editing}`, payload);
       } else {
@@ -290,6 +314,26 @@ const Inventory = () => {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 className="w-full border px-3 py-2 rounded"
               />
+              <select
+                value={form.category || ''}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="" disabled>Select Category</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <select
+                value={form.supplier || ''}
+                onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="" disabled>Select Supplier</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier._id} value={supplier._id}>{supplier.companyName}</option>
+                ))}
+              </select>
               <div className="flex gap-2 mt-4">
                 <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">
                   {editing ? 'Update' : 'Create'}
@@ -325,17 +369,19 @@ const Inventory = () => {
               <th className="px-6 py-3 border-b" style={cellStyles}>Stock</th>
               <th className="px-6 py-3 border-b" style={cellStyles}>Image</th>
               <th className="px-6 py-3 border-b" style={cellStyles}>Description</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Category</th>
+              <th className="px-6 py-3 border-b" style={cellStyles}>Supplier</th>
               <th className="px-6 py-3 border-b" style={cellStyles}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-gray-500">Loading...</td>
+                <td colSpan={9} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
             ) : books.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-gray-400">No books found</td>
+                <td colSpan={9} className="text-center py-8 text-gray-400">No books found</td>
               </tr>
             ) : books.map(b => (
               <tr key={b._id} className="hover:bg-red-50 transition">
@@ -355,6 +401,8 @@ const Inventory = () => {
                   )}
                 </td>
                 <td className="border-b px-6 py-3 max-w-xs truncate" style={cellStyles}>{b.description}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>{b.category}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
                 <td className="border-b px-6 py-3" style={cellStyles}>
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
@@ -374,6 +422,11 @@ const Inventory = () => {
           </tbody>
         </table>
       </div>
+
+      <br></br>
+       <br></br>
+        <br></br>
+    
 
       <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px' }}>
         <div style={{ width: '30%' }}>
