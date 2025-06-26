@@ -193,11 +193,19 @@ const Books = () => {
           };
           await API.post('/books', payload);
         } else {
-          // Increase stock of existing book
-          await API.put(`/books/${item.bookId}/increase-stock`, {
-            quantity: item.quantity,
-            supplier: orderSupplier,
-          });
+          // Try increasing stock in both Book and SupplierBook collections
+          try {
+            // Try main Book collection first
+            await API.put(`/books/${item.bookId}/increase-stock`, {
+              quantity: item.quantity,
+              supplier: orderSupplier,
+            });
+          } catch (err) {
+            // If not found, try SupplierBook collection
+            await API.put(`/suppliers/${orderSupplier}/supplierBook/${item.bookId}/increase-stock`, {
+              quantity: item.quantity,
+            });
+          }
         }
       }
       setOrderModalOpen(false);
