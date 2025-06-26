@@ -27,4 +27,22 @@ router.delete('/', protect, async (req, res) => {
   res.json({ message: 'Cart cleared' });
 });
 
+// Remove a single item from cart
+router.delete('/:itemId', protect, async (req, res) => {
+  const { itemId } = req.params;
+  let cart = await Cart.findOne({ user: req.user._id });
+  if (!cart) return res.status(404).json({ message: 'Cart not found' });
+
+  const initialLength = cart.items.length;
+  cart.items = cart.items.filter(item => item._id.toString() !== itemId);
+
+  if (cart.items.length === initialLength) {
+    return res.status(404).json({ message: 'Cart item not found' });
+  }
+
+  cart.updatedAt = new Date();
+  await cart.save();
+  res.json({ message: 'Item removed', cart });
+});
+
 module.exports = router;
