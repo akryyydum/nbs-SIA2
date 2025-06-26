@@ -31,7 +31,7 @@ const Inventory = () => {
   const [suppliers, setSuppliers] = useState([]);
 
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: 'http://192.168.9.16:5173/api',
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -83,7 +83,7 @@ const Inventory = () => {
       const res = await API.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      return `http://192.168.9.16:5000${res.data.url}`; // Append base URL
+      return `http://192.168.9.16:5173${res.data.url}`; // Append base URL
     } catch (err) {
       alert('Failed to upload image');
       throw err;

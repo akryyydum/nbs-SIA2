@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
-    host: true, // <-- change from '0.0.0.0' to true for LAN access in Vite 4+
-    strictPort: true // optional: fail if port is taken
+    host: true, // This is correct for LAN access
+    strictPort: true
   }
 })
