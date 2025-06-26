@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getBooks, createBook, updateBook, deleteBook as deleteBookApi } from '../api/auth';
 import axios from 'axios';
+import { Pie, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { FaBook, FaUser, FaTags, FaWarehouse, FaPlus, FaTruck, FaChartPie, FaChartBar, FaListUl } from 'react-icons/fa';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const emptyForm = {
   title: '',
@@ -31,6 +36,11 @@ const Books = () => {
   const [orderItems, setOrderItems] = useState([
     { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }
   ]);
+  const [supplierBooks, setSupplierBooks] = useState([]); // <-- add this line
+
+  // --- Supplier Filter State ---
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [showDashboard, setShowDashboard] = useState(true);
 
   const API = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
@@ -73,6 +83,18 @@ const Books = () => {
     }).catch(() => {});
     // eslint-disable-next-line
   }, []);
+
+  // Fetch books for selected supplier in order modal
+  useEffect(() => {
+    if (orderSupplier) {
+      API.get(`/suppliers/${orderSupplier}/supplierBook`)
+        .then(res => setSupplierBooks(res.data))
+        .catch(() => setSupplierBooks([]));
+    } else {
+      setSupplierBooks([]);
+    }
+    // eslint-disable-next-line
+  }, [orderSupplier]);
 
   // Helper to upload image to a free service (imgbb, cloudinary, etc.)
   const uploadImage = async (file) => {
@@ -188,23 +210,104 @@ const Books = () => {
     }
   };
 
+  // --- Statistics ---
+  const supplierCounts = books.reduce((acc, b) => {
+    const key = b.supplier || 'Unknown';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const supplierLabels = Object.keys(supplierCounts).map(sid =>
+    suppliers.find(s => s._id === sid)?.companyName || 'Unknown'
+  );
+  const supplierData = Object.values(supplierCounts);
+
+  const categoryCounts = books.reduce((acc, b) => {
+    const key = b.category || 'Uncategorized';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const categoryLabels = Object.keys(categoryCounts);
+  const categoryData = Object.values(categoryCounts);
+
+  // --- Filtered Books ---
+  const filteredBooks = supplierFilter
+    ? books.filter(b => b.supplier === supplierFilter)
+    : books;
+
   return (
-    <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
-      <h2 className="text-2xl font-bold mb-4 text-red-700">Books Management</h2>
-      <div className="flex gap-4 mb-6">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 font-poppins animate-fade-in">
+      <h2 className="text-3xl font-bold mb-6 text-red-700 flex items-center gap-3 animate-fade-in-down">
+        <FaBook className="text-red-500" /> Books Management
+      </h2>
+      <div className="flex gap-4 mb-6 items-center">
         <button
-          className="mb-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
+          className="mb-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow flex items-center gap-2 transition-all duration-200"
           onClick={handleAdd}
         >
-          + Add Book
+          <FaPlus /> Add Book
         </button>
+        {(user?.role === 'admin' || user?.role === 'inventory department') && (
+          <button
+            className="mb-6 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow flex items-center gap-2 transition-all duration-200"
+            onClick={() => setOrderModalOpen(true)}
+          >
+            <FaTruck /> Order from Supplier
+          </button>
+        )}
         <button
-          className="mb-6 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
-          onClick={() => setOrderModalOpen(true)}
+          className={`mb-6 px-6 py-2 rounded shadow font-semibold flex items-center gap-2 transition-all duration-200 ${showDashboard ? 'bg-gray-300 text-black' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+          onClick={() => setShowDashboard(sd => !sd)}
         >
-          Order from Supplier
+          <FaChartPie />
+          {showDashboard ? 'Hide Dashboard' : 'Show Dashboard'}
         </button>
+        <select
+          className="border px-3 py-2 rounded ml-auto transition-all duration-200"
+          value={supplierFilter}
+          onChange={e => setSupplierFilter(e.target.value)}
+        >
+          <option value="">All Suppliers</option>
+          {suppliers.map(s => (
+            <option key={s._id} value={s._id}>
+              {s.companyName}{s.fromUser ? ' (User)' : ''}
+            </option>
+          ))}
+        </select>
       </div>
+      {/* Dashboard Statistics */}
+      {showDashboard && (
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up">
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center hover:scale-105 transition-all duration-300 border-l-4 border-red-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 font-semibold">
+              <FaChartPie className="text-pink-400" /> Books by Supplier
+            </div>
+            <Pie
+              data={{
+                labels: supplierLabels,
+                datasets: [{ data: supplierData, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6', '#FBBF24', '#34D399'] }]
+              }}
+            />
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center hover:scale-105 transition-all duration-300 border-l-4 border-blue-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 font-semibold">
+              <FaChartBar className="text-blue-400" /> Books by Category
+            </div>
+            <Bar
+              data={{
+                labels: categoryLabels,
+                datasets: [{ label: 'Books', data: categoryData, backgroundColor: '#36A2EB' }]
+              }}
+              options={{ plugins: { legend: { display: false } } }}
+            />
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center hover:scale-105 transition-all duration-300 border-l-4 border-green-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 font-semibold">
+              <FaListUl className="text-green-400" /> Total Books
+            </div>
+            <div className="text-3xl font-bold text-red-700 animate-fade-in">{books.length}</div>
+          </div>
+        </div>
+      )}
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -349,7 +452,7 @@ const Books = () => {
         </div>
       )}
       {/* Order from Supplier Modal */}
-      {orderModalOpen && (
+      {(user?.role === 'admin' || user?.role === 'inventory department') && orderModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
             <button
@@ -411,12 +514,29 @@ const Books = () => {
                             setOrderItems(arr);
                           }}
                           required
+                          disabled={!orderSupplier}
                         >
                           <option value="">Select Book</option>
-                          {books.map(b => (
+                          {supplierBooks.map(b => (
                             <option key={b._id} value={b._id}>{b.title} by {b.author}</option>
                           ))}
                         </select>
+                        {/* Optionally, show details of the selected book */}
+                        {item.bookId && (
+                          <div className="text-xs text-gray-600">
+                            {(() => {
+                              const book = supplierBooks.find(b => b._id === item.bookId);
+                              if (!book) return null;
+                              return (
+                                <div>
+                                  <div>Category: {book.category}</div>
+                                  <div>Stock: {book.stock}</div>
+                                  <div>Price: ₱{Number(book.price).toFixed(2)}</div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -591,6 +711,17 @@ const Books = () => {
           </tbody>
         </table>
       </div>
+      {/* Animations */}
+      <style>
+        {`
+          .animate-fade-in { animation: fadeIn 0.7s ease; }
+          .animate-fade-in-up { animation: fadeInUp 0.7s ease; }
+          .animate-fade-in-down { animation: fadeInDown 0.7s ease; }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
+          @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px);} to { opacity: 1; transform: translateY(0);} }
+        `}
+      </style>
     </div>
   );
 };

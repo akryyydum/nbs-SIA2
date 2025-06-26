@@ -15,6 +15,7 @@ const userRoutes = require('./routes/userRoutes'); // <-- add this line
 const uploadRoutes = require('./routes/uploadRoutes');
 const supplierRoutes = require('./routes/supplierRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const supplierBookModel = require('./models/supplierBook.model'); // Ensure model is loaded
 
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 

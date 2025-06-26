@@ -8,8 +8,8 @@ const Sidebar = () => {
 
   const links = [
     { to: '/admin', label: 'Dashboard' },
-    { to: '/admin/books', label: 'Books' },
-    { to: '/admin/orders', label: 'Orders' },
+    { to: '/admin/books', label: 'Inventory' },
+    { to: '/admin/orders', label: 'Sales' },
     { to: '/admin/users', label: 'Users' },
     { to: '/admin/suppliers', label: 'Suppliers' },
   ];

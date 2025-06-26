@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { protect, admin, inventory } = require('../middleware/AuthMiddleware');
-const { createBook, getBooks, getBookById, updateBook, deleteBook, decreaseStock } = require('../controllers/bookController');
+const { protect, inventory } = require('../middleware/AuthMiddleware');
+const { createBook, getBooks, getBookById, updateBook, deleteBook, decreaseStock, increaseStock } = require('../controllers/bookController');
 
 // Public: Get all books
 router.get('/', getBooks);
@@ -20,6 +20,9 @@ router.delete('/:id', protect, inventory, deleteBook);
 
 // Admin & Inventory: Decrease stock of a book
 router.put('/:id/decrease-stock', protect, inventory, decreaseStock);
+
+// Admin & Inventory: Increase stock of a book
+router.put('/:id/increase-stock', protect, inventory, increaseStock);
 
 // router.post('/', upload.single('image'), bookController.createBook);
 

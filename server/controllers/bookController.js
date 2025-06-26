@@ -106,3 +106,21 @@ exports.decreaseStock = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// @desc    Increase stock of a book
+// @route   PUT /api/books/:id/increase-stock
+exports.increaseStock = async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ message: 'Quantity must be provided and greater than 0' });
+    }
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+    book.stock += quantity;
+    await book.save();
+    res.json({ message: 'Stock increased', stock: book.stock });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

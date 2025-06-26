@@ -29,6 +29,7 @@ const Inventory = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [categories, setCategories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
   const [suppliers, setSuppliers] = useState([]);
+  const [supplierUsers, setSupplierUsers] = useState([]); // <-- add this line
 
   // --- Order from Supplier Modal State ---
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -96,7 +97,16 @@ const Inventory = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+    // Fetch all users with role 'supplier department' if inventory department
+    if (user?.role === 'inventory department') {
+      API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } })
+        .then(res => {
+          const users = (res.data || []).filter(u => u.role === 'supplier department');
+          setSupplierUsers(users);
+        })
+        .catch(() => setSupplierUsers([]));
+    }
+  }, [user]);
 
   // Correct the base URL for uploaded images
   const uploadImage = async (file) => {
@@ -207,11 +217,19 @@ const Inventory = () => {
           };
           await API.post('/books', payload);
         } else {
-          // Increase stock of existing book
-          await API.put(`/books/${item.bookId}/increase-stock`, {
-            quantity: item.quantity,
-            supplier: orderSupplier,
-          });
+          // Try increasing stock in both Book and SupplierBook collections
+          try {
+            // Try main Book collection first
+            await API.put(`/books/${item.bookId}/increase-stock`, {
+              quantity: item.quantity,
+              supplier: orderSupplier,
+            });
+          } catch (err) {
+            // If not found, try SupplierBook collection
+            await API.put(`/suppliers/${orderSupplier}/supplierBook/${item.bookId}/increase-stock`, {
+              quantity: item.quantity,
+            });
+          }
         }
       }
       setOrderModalOpen(false);
@@ -299,9 +317,52 @@ const Inventory = () => {
     ],
   };
 
+  // Add handler to order from a supplier user
+  const handleOrderFromSupplierUser = (supplierUserId) => {
+    setOrderSupplier(supplierUserId);
+    setOrderModalOpen(true);
+  };
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Inventory Management</h2>
+      {/* Show all supplier department users if inventory department */}
+      {user?.role === 'inventory department' && (
+        <div className="mb-8 bg-white rounded shadow p-4">
+          <h3 className="text-lg font-bold mb-2 text-red-700">Registered Supplier Department Users</h3>
+          {supplierUsers.length === 0 ? (
+            <div className="text-gray-500">No supplier department users found.</div>
+          ) : (
+            <table className="min-w-full table-auto">
+              <thead>
+                <tr className="bg-red-100">
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Order</th>
+                </tr>
+              </thead>
+              <tbody>
+                {supplierUsers.map(u => (
+                  <tr key={u._id}>
+                    <td>{u.name || u.email || u._id}</td>
+                    <td>{u.email}</td>
+                    <td>{u.phone || '-'}</td>
+                    <td>
+                      <button
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
+                        onClick={() => handleOrderFromSupplierUser(u._id)}
+                      >
+                        Order from this Supplier
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
       <div className="flex gap-4 mb-6">
         <button
           className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
@@ -309,12 +370,14 @@ const Inventory = () => {
         >
           + Add Book
         </button>
-        <button
-          className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
-          onClick={() => setOrderModalOpen(true)}
-        >
-          Order from Supplier
-        </button>
+        {(user?.role === 'admin' || user?.role === 'inventory department') && (
+          <button
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
+            onClick={() => setOrderModalOpen(true)}
+          >
+            Order from Supplier
+          </button>
+        )}
       </div>
       {/* Modal */}
       {modalOpen && (
@@ -455,7 +518,7 @@ const Inventory = () => {
         </div>
       )}
       {/* Order from Supplier Modal */}
-      {orderModalOpen && (
+      {(user?.role === 'admin' || user?.role === 'inventory department') && orderModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
             <button

@@ -17,6 +17,7 @@ import SupplierDashboard from './pages/SupplierDashboard'; // <-- import Supplie
 import Checkout from './pages/Checkout'; // <-- import Checkout
 import Order from './pages/Order';
 import AdminDashboard from './pages/AdminDashboard'; // <-- import AdminDashboard
+import SupplierBooks from './pages/Supplier'; // <-- import SupplierBooks
 
 
 function AdminLayout() {
@@ -96,7 +97,7 @@ function App() {
           <ProtectedRoute allowedRoles={['supplier department', 'supplier', 'Supplier Department']}>
             <>
               <Navbar />
-              <SupplierDashboard />
+              <SupplierBooks />
             </>
           </ProtectedRoute>
         } />

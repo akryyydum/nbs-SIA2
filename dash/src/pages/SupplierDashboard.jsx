@@ -22,6 +22,16 @@ const SupplierDashboard = () => {
   const [kpis, setKpis] = useState({});
   const [products, setProducts] = useState([]);
   const [booksModal, setBooksModal] = useState({ open: false, books: [], supplier: null });
+  const [showBookModal, setShowBookModal] = useState(false);
+  const [bookForm, setBookForm] = useState({
+    title: '',
+    author: '',
+    price: '',
+    category: '',
+    description: '',
+    image: '',
+    stock: 0,
+  });
 
   const { user } = useAuth();
 
@@ -64,6 +74,51 @@ const SupplierDashboard = () => {
     const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
     const res = await getBooksBySupplier(supplier._id, config);
     setBooksModal({ open: true, books: res.data, supplier });
+  };
+
+  // Add Book Handler
+  const handleAddBook = (supplier) => {
+    setSelectedSupplier(supplier);
+    setBookForm({
+      title: '',
+      author: '',
+      price: '',
+      category: '',
+      description: '',
+      image: '',
+      stock: 0,
+    });
+    setShowBookModal(true);
+  };
+
+  const handleBookFormChange = (e) => {
+    const { name, value } = e.target;
+    setBookForm(f => ({ ...f, [name]: value }));
+  };
+
+  const handleBookSubmit = async (e) => {
+    e.preventDefault();
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+    try {
+      await axios.post(`/api/suppliers/${selectedSupplier._id}/books`, bookForm, config);
+      setShowBookModal(false);
+      setBookForm({
+        title: '',
+        author: '',
+        price: '',
+        category: '',
+        description: '',
+        image: '',
+        stock: 0,
+      });
+      // Optionally refresh books modal if open
+      if (booksModal.open && booksModal.supplier?._id === selectedSupplier._id) {
+        const res = await getBooksBySupplier(selectedSupplier._id, config);
+        setBooksModal(bm => ({ ...bm, books: res.data }));
+      }
+    } catch (err) {
+      alert('Failed to add book: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   // Merge suppliers and supplierUsers for table
@@ -144,7 +199,16 @@ const SupplierDashboard = () => {
                     <>
                       <button onClick={() => handleEdit(supplier)} className="text-blue-600 mr-2">Edit</button>
                       <button onClick={() => handleDelete(supplier._id)} className="text-red-600 mr-2">Delete</button>
-                      <button onClick={() => handleViewBooks(supplier)} className="text-green-600">View Books</button>
+                      <button onClick={() => handleViewBooks(supplier)} className="text-green-600 mr-2">View Books</button>
+                      {/* Show Add Book button only for inventory role or admin */}
+                      {(user?.role === 'inventory department' || user?.role === 'admin' || user?.role === 'supplier department') && (
+                        <button
+                          onClick={() => handleAddBook(supplier)}
+                          className="text-purple-600"
+                        >
+                          Add Book
+                        </button>
+                      )}
                     </>
                   ) : (
                     <>
@@ -349,6 +413,99 @@ const SupplierDashboard = () => {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+      )}
+      {/* Add Book Modal */}
+      {showBookModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setShowBookModal(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-red-700">
+              Add Book for {selectedSupplier?.companyName}
+            </h3>
+            <form onSubmit={handleBookSubmit} className="space-y-4">
+              <input
+                type="text"
+                name="title"
+                placeholder="Title"
+                value={bookForm.title}
+                onChange={handleBookFormChange}
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="author"
+                placeholder="Author"
+                value={bookForm.author}
+                onChange={handleBookFormChange}
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="number"
+                name="price"
+                placeholder="Price"
+                value={bookForm.price}
+                onChange={handleBookFormChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="number"
+                name="stock"
+                placeholder="Stock"
+                value={bookForm.stock}
+                onChange={handleBookFormChange}
+                required
+                min="0"
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="category"
+                placeholder="Category"
+                value={bookForm.category}
+                onChange={handleBookFormChange}
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="image"
+                placeholder="Image URL"
+                value={bookForm.image}
+                onChange={handleBookFormChange}
+                className="w-full border px-3 py-2 rounded"
+              />
+              <textarea
+                name="description"
+                placeholder="Description"
+                value={bookForm.description}
+                onChange={handleBookFormChange}
+                className="w-full border px-3 py-2 rounded"
+              />
+              <div className="flex gap-2 mt-4">
+                <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">
+                  Save Book
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded border flex-1"
+                  onClick={() => setShowBookModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Supplier = require('../models/supplier.model');
 const Book = require('../models/books.model'); // Add this line
+const SupplierBook = require('../models/supplierBook.model'); // Add this line
 
 // Get all suppliers
 router.get('/', async (req, res) => {
@@ -18,6 +19,16 @@ router.get('/:id/books', async (req, res) => {
   try {
     const books = await Book.find({ supplier: req.params.id });
     res.json(books);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get all books for a supplier from SupplierBook collection
+router.get('/:id/supplierBook', async (req, res) => {
+  try {
+    const supplierBooks = await SupplierBook.find({ supplier: req.params.id });
+    res.json(supplierBooks);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -55,6 +66,104 @@ router.get('/kpis', async (req, res) => {
       mostUsedSupplier,
       newSuppliersThisMonth
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// CRUD for Supplier's own books
+// GET all books for a supplier (already exists above)
+
+// POST: Add a book to supplier's catalog
+router.post('/:id/books', async (req, res) => {
+  try {
+    const { title, author, price, category, description, image, stock } = req.body;
+    const supplierId = req.params.id;
+    const book = new SupplierBook({
+      supplier: supplierId,
+      title,
+      author,
+      price,
+      category,
+      description,
+      image,
+      stock,
+    });
+    await book.save();
+    res.status(201).json(book);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// PUT: Update a supplier's book
+router.put('/:supplierId/books/:bookId', async (req, res) => {
+  try {
+    const { supplierId, bookId } = req.params;
+    const book = await SupplierBook.findOne({ _id: bookId, supplier: supplierId });
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+    Object.assign(book, req.body);
+    await book.save();
+    res.json(book);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// DELETE: Remove a supplier's book
+router.delete('/:supplierId/books/:bookId', async (req, res) => {
+  try {
+    const { supplierId, bookId } = req.params;
+    const book = await SupplierBook.findOneAndDelete({ _id: bookId, supplier: supplierId });
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+    res.json({ message: 'Book deleted' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Utility: Copy all current books for a supplier to SupplierBook database
+router.post('/:id/copy-books-to-supplier-db', async (req, res) => {
+  try {
+    const supplierId = req.params.id;
+    // Find all books in the main Book collection for this supplier
+    const books = await Book.find({ supplier: supplierId });
+    if (!books.length) return res.status(404).json({ message: 'No books found for this supplier.' });
+
+    // Prepare SupplierBook documents
+    const supplierBooks = books.map(b => ({
+      supplier: supplierId,
+      title: b.title,
+      author: b.author,
+      price: b.price,
+      category: b.category,
+      description: b.description,
+      image: b.image,
+      stock: b.stock,
+    }));
+
+    // Insert into SupplierBook collection
+    await SupplierBook.insertMany(supplierBooks);
+
+    res.json({ message: `Copied ${supplierBooks.length} books to SupplierBook database.` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Increase stock of a supplier's book
+router.put('/:supplierId/supplierBook/:bookId/increase-stock', async (req, res) => {
+  try {
+    const { supplierId, bookId } = req.params;
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ message: 'Quantity must be provided and greater than 0' });
+    }
+    const book = await SupplierBook.findOne({ _id: bookId, supplier: supplierId });
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+    book.stock += quantity;
+    await book.save();
+    res.json({ message: 'Stock increased', stock: book.stock });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
