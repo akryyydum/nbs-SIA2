@@ -53,11 +53,7 @@ const SalesDashboard = () => {
     if (!window.confirm("Accept this order? This will decrease book stocks.")) return;
     setActionLoading(orderId);
     try {
-      await axios.put(
-        `${API_BASE}/orders/${orderId}/accept`,
-        {},
-        { headers: { Authorization: `Bearer ${user?.token}` } }
-      );
+      await API.put(`/orders/${orderId}/accept`, {});
       fetchOrders();
       setModalOrder(null);
     } catch (err) {
@@ -71,11 +67,7 @@ const SalesDashboard = () => {
     if (!window.confirm("Decline this order?")) return;
     setActionLoading(orderId);
     try {
-      await axios.put(
-        `${API_BASE}/orders/${orderId}/decline`,
-        {},
-        { headers: { Authorization: `Bearer ${user?.token}` } }
-      );
+      await API.put(`/orders/${orderId}/decline`, {});
       fetchOrders();
       setModalOrder(null);
     } catch (err) {
