@@ -76,6 +76,7 @@ const Inventory = () => {
     fetchSuppliers();
   }, []);
 
+  // Correct the base URL for uploaded images
   const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -83,7 +84,7 @@ const Inventory = () => {
       const res = await API.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      return `http://192.168.9.16:5173${res.data.url}`; // Append base URL
+      return `http://192.168.9.16:5000${res.data.url}`; // Correct base URL
     } catch (err) {
       alert('Failed to upload image');
       throw err;
