@@ -29,6 +29,7 @@ function AdminLayout() {
           <Route path="users" element={<Users />} />
           <Route path="books" element={<Books />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="suppliers" element={<SupplierDashboard />} />
           {/* Add more admin routes here */}
         </Routes>
       </div>
