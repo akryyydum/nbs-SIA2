@@ -136,13 +136,115 @@ const SupplierDashboard = () => {
           </tbody>
         </table>
       </div>
-      {/* Modal for Add/Edit Supplier (to be implemented) */}
+      {/* Modal for Add/Edit Supplier */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h3 className="text-lg font-bold mb-4">{selectedSupplier ? 'Edit Supplier' : 'Add Supplier'}</h3>
-            {/* Form fields here */}
-            <button onClick={() => setShowModal(false)} className="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setShowModal(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-red-700">
+              {selectedSupplier ? 'Edit Supplier' : 'Add Supplier'}
+            </h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const supplierData = {
+                  companyName: e.target.companyName.value,
+                  contactPerson: e.target.contactPerson.value,
+                  email: e.target.email.value,
+                  phone: e.target.phone.value,
+                  address: e.target.address.value,
+                  productCategories: e.target.productCategories.value.split(',').map(cat => cat.trim()),
+                  status: e.target.status.value,
+                };
+                if (selectedSupplier) {
+                  updateSupplier(selectedSupplier._id, supplierData).then(() => {
+                    setShowModal(false);
+                    getSuppliers().then(res => setSuppliers(res.data));
+                  });
+                } else {
+                  createSupplier(supplierData).then(() => {
+                    setShowModal(false);
+                    getSuppliers().then(res => setSuppliers(res.data));
+                  });
+                }
+              }}
+              className="space-y-4"
+            >
+              <input
+                type="text"
+                name="companyName"
+                defaultValue={selectedSupplier?.companyName || ''}
+                placeholder="Company Name"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="contactPerson"
+                defaultValue={selectedSupplier?.contactPerson || ''}
+                placeholder="Contact Person"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="email"
+                name="email"
+                defaultValue={selectedSupplier?.email || ''}
+                placeholder="Email"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="phone"
+                defaultValue={selectedSupplier?.phone || ''}
+                placeholder="Phone"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="address"
+                defaultValue={selectedSupplier?.address || ''}
+                placeholder="Address"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="productCategories"
+                defaultValue={selectedSupplier?.productCategories?.join(', ') || ''}
+                placeholder="Product Categories (comma-separated)"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <select
+                name="status"
+                defaultValue={selectedSupplier?.status || 'active'}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <div className="flex gap-2 mt-4">
+                <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded border flex-1"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
