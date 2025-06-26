@@ -34,8 +34,6 @@ exports.createPaymentIntent = async (req, res) => {
   }
 };
 
-// @desc    Confirm payment and update order status
-// @route   POST /api/payments/confirm
 exports.confirmPayment = async (req, res) => {
   const { orderId, paymentIntentId } = req.body;
   if (!orderId || !paymentIntentId) {

@@ -25,7 +25,25 @@ ChartJS.register(
   LineElement
 );
 
-const API_BASE = 'http://192.168.9.16:5173/api';
+// API base URL (use proxy, so keep /api)
+const API_BASE = "/api";
+
+// Chart color palettes
+const COLORS = [
+  "#FF6384",
+  "#36A2EB",
+  "#FFCE56",
+  "#4BC0C0",
+  "#A78BFA",
+  "#F472B6",
+  "#FBBF24",
+  "#34D399",
+  "#F87171",
+  "#60A5FA",
+];
+
+// Helper for auth headers
+const authHeader = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -37,22 +55,22 @@ const AdminDashboard = () => {
     totalSales: 0,
     supplierLogins: [],
     stockByCategory: {},
-    salesTrends: [],
+    salesTrends: {},
     topBooks: [],
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
+    if (!user?.token) return;
+    setLoading(true);
+    (async () => {
       try {
-        // You should implement these endpoints in your backend for real data
         const [booksRes, usersRes, suppliersRes, ordersRes, logsRes] = await Promise.all([
-          axios.get(`${API_BASE}/books`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/logs/supplier-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })),
+          axios.get(`${API_BASE}/books`, authHeader(user.token)),
+          axios.get(`${API_BASE}/users`, authHeader(user.token)),
+          axios.get(`${API_BASE}/suppliers`, authHeader(user.token)),
+          axios.get(`${API_BASE}/orders`, authHeader(user.token)),
+          axios.get(`${API_BASE}/logs/supplier-logins`, authHeader(user.token)).catch(() => ({ data: [] })),
         ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
@@ -62,6 +80,8 @@ const AdminDashboard = () => {
 
         // Calculate statistics
         const totalSales = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+
+        // Stock by category
         const stockByCategory = {};
         books.forEach((b) => {
           if (!b.category) return;
@@ -105,13 +125,11 @@ const AdminDashboard = () => {
           salesTrends,
           topBooks,
         });
-      } catch (err) {
-        // fallback to empty stats
+      } catch {
         setStats((s) => ({ ...s }));
       }
       setLoading(false);
-    };
-    fetchStats();
+    })();
   }, [user]);
 
   // Chart data
@@ -120,16 +138,7 @@ const AdminDashboard = () => {
     datasets: [
       {
         data: Object.values(stats.stockByCategory),
-        backgroundColor: [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56",
-          "#4BC0C0",
-          "#A78BFA",
-          "#F472B6",
-          "#FBBF24",
-          "#34D399",
-        ],
+        backgroundColor: COLORS,
       },
     ],
   };
@@ -142,8 +151,8 @@ const AdminDashboard = () => {
         label: "Sales",
         data: salesTrendsMonths.map((m) => stats.salesTrends[m]),
         fill: false,
-        borderColor: "#36A2EB",
-        backgroundColor: "#36A2EB",
+        borderColor: COLORS[1],
+        backgroundColor: COLORS[1],
         tension: 0.3,
       },
     ],
@@ -155,23 +164,12 @@ const AdminDashboard = () => {
       {
         label: "Units Sold",
         data: stats.topBooks.map((b) => b.sales),
-        backgroundColor: [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56",
-          "#4BC0C0",
-          "#A78BFA",
-          "#F472B6",
-          "#FBBF24",
-          "#34D399",
-          "#F87171",
-          "#60A5FA",
-        ],
+        backgroundColor: COLORS,
       },
     ],
   };
 
-  // Supplier logins per day (if available)
+  // Supplier logins per day
   const supplierLoginCounts = {};
   (stats.supplierLogins || []).forEach((log) => {
     const date = log.timestamp ? log.timestamp.slice(0, 10) : "Unknown";
@@ -184,7 +182,7 @@ const AdminDashboard = () => {
       {
         label: "Supplier Logins",
         data: supplierLoginDates.map((d) => supplierLoginCounts[d]),
-        backgroundColor: "#FBBF24",
+        backgroundColor: COLORS[6],
         borderColor: "#F59E42",
         fill: true,
       },
@@ -200,52 +198,57 @@ const AdminDashboard = () => {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Total Books</div>
-              <div className="text-2xl font-bold text-red-700">{stats.totalBooks}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Total Users</div>
-              <div className="text-2xl font-bold text-red-700">{stats.totalUsers}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Total Suppliers</div>
-              <div className="text-2xl font-bold text-red-700">{stats.totalSuppliers}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Total Orders</div>
-              <div className="text-2xl font-bold text-red-700">{stats.totalOrders}</div>
-            </div>
+            <KpiCard label="Total Books" value={stats.totalBooks} />
+            <KpiCard label="Total Users" value={stats.totalUsers} />
+            <KpiCard label="Total Suppliers" value={stats.totalSuppliers} />
+            <KpiCard label="Total Orders" value={stats.totalOrders} />
           </div>
           {/* Sales and Stock Graphs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-2">Stock by Category</div>
+            <ChartCard title="Stock by Category">
               <Pie data={stockByCategoryData} />
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-2">Sales Trends</div>
+            </ChartCard>
+            <ChartCard title="Sales Trends">
               <Line data={salesTrendsData} />
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-2">Top Selling Books</div>
+            </ChartCard>
+            <ChartCard title="Top Selling Books">
               <Bar data={topBooksData} />
-            </div>
+            </ChartCard>
           </div>
           {/* Supplier Logins */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="text-sm text-gray-500 mb-2">Supplier Logins (per day)</div>
+          <ChartCard title="Supplier Logins (per day)" className="mb-8">
             <Line data={supplierLoginsData} />
-          </div>
+          </ChartCard>
           {/* Total Sales */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="text-sm text-gray-500 mb-2">Total Sales</div>
-            <div className="text-3xl font-bold text-green-700">₱{Number(stats.totalSales).toLocaleString()}</div>
-          </div>
+          <ChartCard title="Total Sales" className="mb-8">
+            <div className="text-3xl font-bold text-green-700">
+              ₱{Number(stats.totalSales).toLocaleString()}
+            </div>
+          </ChartCard>
         </>
       )}
     </div>
   );
 };
+
+// KPI Card component
+function KpiCard({ label, value }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+      <div className="text-sm text-gray-500">{label}</div>
+      <div className="text-2xl font-bold text-red-700">{value}</div>
+    </div>
+  );
+}
+
+// Chart Card component
+function ChartCard({ title, children, className = "" }) {
+  return (
+    <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
+      <div className="text-sm text-gray-500 mb-2">{title}</div>
+      {children}
+    </div>
+  );
+}
 
 export default AdminDashboard;

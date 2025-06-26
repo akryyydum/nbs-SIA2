@@ -79,9 +79,13 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// @desc    Delete order (admin only)
+// @desc    Delete order (admin or sales department)
 // @route   DELETE /api/orders/:id
 exports.deleteOrder = async (req, res) => {
+  // Allow only admin or sales department
+  if (!['admin', 'sales department'].includes(req.user.role)) {
+    return res.status(403).json({ message: 'Forbidden: Only admin or sales department can delete orders' });
+  }
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });

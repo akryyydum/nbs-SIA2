@@ -38,9 +38,9 @@ exports.inventory = (req, res, next) => {
 };
 
 exports.sales = (req, res, next) => {
-  if (req.user && (req.user.role === 'sales department' || req.user.role === 'admin')) {
-    next();
-  } else {
-    res.status(403).json({ message: 'Forbidden: Sales department or Admins only' });
+  const allowedRoles = ['sales department', 'admin'];
+  if (req.user && allowedRoles.includes(req.user.role)) {
+    return next();
   }
+  res.status(403).json({ message: 'Forbidden: Sales department or Admins only' });
 };
