@@ -22,7 +22,10 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // For development, allow all origins. For production, use: origin: 'http://192.168.0.110:5173'
+  credentials: true,
+}));
 app.use(express.json()); // Parse incoming JSON
 
 // Serve static files from the uploads directory for any IP address

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = 'http://192.168.9.16:5173/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.origin.replace(':5173', ':5000')}/api`;
 
 const Checkout = () => {
   const { user } = useAuth();
