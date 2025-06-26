@@ -53,13 +53,27 @@ const Inventory = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await API.get('/suppliers');
-      // Fetch users with role 'supplier'
-      const userRes = await API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } });
-      const supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
-      // Merge suppliers from /suppliers and supplier users
+      // Try to fetch /suppliers, fallback to empty array if fails
+      let supplierList = [];
+      try {
+        const res = await API.get('/suppliers');
+        supplierList = res.data || [];
+      } catch {
+        supplierList = [];
+      }
+
+      // Try to fetch users with role 'supplier department', fallback to empty array if fails/forbidden
+      let supplierUsers = [];
+      try {
+        const userRes = await API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } });
+        supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
+      } catch {
+        supplierUsers = [];
+      }
+
+      // Merge both sources
       const merged = [
-        ...res.data,
+        ...supplierList,
         ...supplierUsers.map(u => ({
           _id: u._id,
           companyName: u.name || u.email || u._id,
@@ -68,6 +82,7 @@ const Inventory = () => {
       ];
       setSuppliers(merged);
     } catch (err) {
+      // Only alert if both fail
       alert('Failed to fetch suppliers');
     }
   };
@@ -444,7 +459,39 @@ const Inventory = () => {
                 </td>
                 <td className="border-b px-6 py-3 max-w-xs truncate" style={cellStyles}>{b.description}</td>
                 <td className="border-b px-6 py-3" style={cellStyles}>{b.category}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
+                <td className="border-b px-6 py-3" style={cellStyles}>
+                  {
+                    // Robust supplier display for all roles, fallback to book's supplier object if not found in suppliers list
+                    (() => {
+                      // Defensive: handle null/undefined supplier
+                      let supplierId = '';
+                      if (b.supplier) {
+                        if (typeof b.supplier === 'object') {
+                          supplierId = b.supplier._id || b.supplier.id || b.supplier;
+                        } else {
+                          supplierId = b.supplier;
+                        }
+                      }
+                      let supplierObj = suppliers.find(
+                        s =>
+                          s &&
+                          s._id &&
+                          supplierId &&
+                          s._id.toString() === supplierId.toString()
+                      );
+                      // Fallback: if not found in suppliers, try to display from book.supplier object
+                      if (!supplierObj && b.supplier && typeof b.supplier === 'object') {
+                        if (b.supplier.companyName) return b.supplier.companyName;
+                        if (b.supplier.name) return b.supplier.name;
+                        if (b.supplier.email) return b.supplier.email;
+                      }
+                      return supplierObj
+                        ? supplierObj.companyName + (supplierObj.fromUser ? ' (User)' : '')
+                        : (typeof b.supplier === 'string' && b.supplier)
+                        || 'Unknown';
+                    })()
+                  }
+                </td>
                 <td className="border-b px-6 py-3" style={cellStyles}>
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
