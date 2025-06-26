@@ -87,9 +87,9 @@ const SalesDashboard = () => {
   // Delete order
   const handleDeleteOrder = (order) => {
     if (window.confirm('Delete this order?')) {
-      API.delete(`/orders/${order._id}`)
-        .then(fetchOrders)
-        .catch(() => alert('Delete failed'));
+      API.delete(`/orders/${order._id}`, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
     }
   };
 

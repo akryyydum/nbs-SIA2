@@ -82,8 +82,7 @@ exports.getOrderById = async (req, res) => {
 // @desc    Delete order (admin or sales department)
 // @route   DELETE /api/orders/:id
 exports.deleteOrder = async (req, res) => {
-  console.log('Delete order requested by:', req.user); // Add this line
-  // Allow only admin or sales department
+  console.log('Delete order requested by:', req.user);
   if (!['admin', 'sales department'].includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden: Only admin or sales department can delete orders' });
   }
@@ -91,10 +90,11 @@ exports.deleteOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    await order.remove();
+    await Order.deleteOne({ _id: order._id }); // <-- Use deleteOne instead of remove
     res.json({ message: 'Order removed' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Delete order error:', err);
+    res.status(500).json({ message: err.message || 'Internal server error' });
   }
 };
 
