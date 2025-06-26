@@ -37,6 +37,16 @@ exports.inventory = (req, res, next) => {
   return res.status(403).json({ message: 'Access denied: Inventory or Admin role required' });
 };
 
+exports.supplier = (req, res, next) => {
+  const allowedRoles = ['supplier department', 'admin']; 
+  const userRole = req.user?.role;
+
+  if (userRole && allowedRoles.includes(userRole)) {
+    return next();
+    }
+    return res.status(403).json({ message: 'Access denied: Supplier or Admin role required' });
+};
+
 exports.sales = (req, res, next) => {
   const allowedRoles = ['sales department', 'admin']; // allow both roles
   if (req.user &&  allowedRoles.includes(req.user.role)) {
@@ -44,4 +54,12 @@ exports.sales = (req, res, next) => {
   } else {
     res.status(403).json({ message: 'Forbidden: Sales department or Admins only' });
   }
+};
+
+exports.adminOrSupplier = (req, res, next) => {
+  const allowedRoles = ['admin', 'supplier department'];
+  if (req.user && allowedRoles.includes(req.user.role)) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Forbidden: Admin or Supplier Department only' });
 };

@@ -19,8 +19,12 @@ router.post('/', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
-  const filePath = path.join('/uploads', req.file.filename);
-  res.status(200).json({ url: filePath });
+  // Use a fixed backend IP for the absolute URL
+  // Set UPLOAD_BASE_URL in your .env, e.g. UPLOAD_BASE_URL=http://192.168.4.103:5000
+  const baseUrl = process.env.UPLOAD_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const filePath = `/uploads/${req.file.filename}`;
+  const absoluteUrl = `${baseUrl}${filePath}`;
+  res.status(200).json({ url: absoluteUrl });
 });
 
 module.exports = router;

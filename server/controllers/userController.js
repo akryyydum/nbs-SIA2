@@ -1,10 +1,17 @@
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
 
-// @desc    Get all users (admin only)
+// @desc    Get all users (admin and supplier department)
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    let users;
+    if (req.user.role === 'admin') {
+      users = await User.find().select('-password');
+    } else if (req.user.role === 'supplier department') {
+      users = await User.find({ role: 'supplier department' }).select('-password');
+    } else {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

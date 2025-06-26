@@ -3,9 +3,9 @@ import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // Add this import
 
-// Use Vite env variable if set, otherwise fallback to localhost
+// Use Vite env variable if set, otherwise fallback to current origin for LAN support
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
 });
 
 const Products = () => {
@@ -156,8 +156,8 @@ const Products = () => {
             >
               {book.image && (
                 <img
-                  src={book.image}
-                  alt={book.title}
+                 src={`${import.meta.env.VITE_API_BASE_URL || window.location.origin}${book.image}`}
+  alt={book.title}
                   className="h-40 w-32 object-cover rounded-lg mb-4 shadow"
                 />
               )}

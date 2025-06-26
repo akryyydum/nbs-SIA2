@@ -1,9 +1,9 @@
 // src/api/auth.js
 import axios from 'axios';
 
-// Use Vite env variable if set, otherwise fallback to localhost
+// Use Vite env variable if set, otherwise fallback to window.location.origin
 const API = axios.create({
-  baseURL: 'http://192.168.9.16:5000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
 });
 
 export const loginUser = (data) => API.post('/auth/login', data);
