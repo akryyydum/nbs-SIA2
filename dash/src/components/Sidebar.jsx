@@ -6,14 +6,12 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Example links for admin control panel
   const links = [
     { to: '/admin', label: 'Dashboard' },
     { to: '/admin/books', label: 'Books' },
     { to: '/admin/orders', label: 'Orders' },
     { to: '/admin/users', label: 'Users' },
     { to: '/admin/suppliers', label: 'Suppliers' },
-    // Add more links as needed
   ];
 
   return (
@@ -28,7 +26,8 @@ const Sidebar = () => {
             key={link.to}
             to={link.to}
             className={`block px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
-              location.pathname === link.to
+              (location.pathname === link.to ||
+                (link.to === '/admin' && location.pathname === '/admin/')) // Highlight Dashboard for both /admin and /admin/
                 ? 'bg-red-100 text-red-900'
                 : 'text-black hover:bg-red-50 hover:text-red-900'
             }`}

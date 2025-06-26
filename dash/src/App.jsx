@@ -16,14 +16,21 @@ import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboar
 import SupplierDashboard from './pages/SupplierDashboard'; // <-- import SupplierDashboard
 import Checkout from './pages/Checkout'; // <-- import Checkout
 import Order from './pages/Order';
+import AdminDashboard from './pages/AdminDashboard'; // <-- import AdminDashboard
 
 
-function AdminLayout({ children }) {
+function AdminLayout() {
   return (
     <div className="flex">
       <Sidebar />
       <div className="flex-1">
-        {children}
+        <Routes>
+          <Route index element={<AdminDashboard />} /> {/* Show AdminDashboard for /admin or /admin/ */}
+          <Route path="users" element={<Users />} />
+          <Route path="books" element={<Books />} />
+          <Route path="orders" element={<Orders />} />
+          {/* Add more admin routes here */}
+        </Routes>
       </div>
     </div>
   );
@@ -81,15 +88,7 @@ function App() {
         {/* Admin routes: show Sidebar, hide Navbar */}
         <Route path="/admin/*" element={
           <ProtectedRoute allowedRoles={['admin']}>
-            <AdminLayout>
-              <Routes>
-                <Route path="" element={<div className="p-8">Admin Control Panel Content</div>} />
-                <Route path="users" element={<Users />} />
-                <Route path="books" element={<Books />} />
-                <Route path="orders" element={<Orders />} />
-                {/* Add more admin routes here */}
-              </Routes>
-            </AdminLayout>
+            <AdminLayout />
           </ProtectedRoute>
         } />
         <Route path="/supplier-dashboard" element={
