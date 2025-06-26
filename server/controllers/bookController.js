@@ -1,3 +1,4 @@
+const mongoose = require('mongoose'); // ✅ FIXED: Add this import
 const Book = require('../models/books.model');
 
 // @desc    Create a new book (Admin & Inventory department)
@@ -40,7 +41,7 @@ exports.getBookById = async (req, res) => {
 // @desc    Update a book (Admin & Inventory department)
 // @route   PUT /api/books/:id
 exports.updateBook = async (req, res) => {
-  const { title, author, price, description, stock, image } = req.body;
+  const { title, author, price, description, stock, image, category, supplier } = req.body;
 
   try {
     const book = await Book.findById(req.params.id);
@@ -49,8 +50,8 @@ exports.updateBook = async (req, res) => {
     book.title = title || book.title;
     book.author = author || book.author;
     book.price = price || book.price;
-    book.category = req.body.category || book.category; // Assuming category is part of the request body
-    book.supplier = req.body.supplier || book.supplier; // Assuming supplier is part of the request body
+    book.category = category || book.category;
+    book.supplier = supplier || book.supplier;
     book.description = description || book.description;
     book.stock = stock || book.stock;
     book.image = image || book.image;
@@ -65,17 +66,22 @@ exports.updateBook = async (req, res) => {
 // @desc    Delete a book (Admin & Inventory department)
 // @route   DELETE /api/books/:id
 exports.deleteBook = async (req, res) => {
+  const { id } = req.params;
+
+  // ✅ Validate ID format to prevent crash
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid book ID format' });
+  }
+
   try {
-    const book = await Book.findById(req.params.id);
+    const book = await Book.findById(id);
     if (!book) {
-      console.error(`Book with ID ${req.params.id} not found`);
       return res.status(404).json({ message: 'Book not found' });
     }
 
-    await book.remove();
-    res.json({ message: 'Book removed' });
+    await book.deleteOne(); // ✅ Consistent and safe
+    res.status(200).json({ message: 'Book deleted successfully' });
   } catch (err) {
-    console.error(`Error deleting book with ID ${req.params.id}:`, err);
     res.status(500).json({ message: err.message });
   }
 };

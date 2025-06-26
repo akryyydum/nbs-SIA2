@@ -90,6 +90,7 @@ const Inventory = () => {
     }
   };
 
+  // Ensure supplier field is properly handled
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -102,8 +103,10 @@ const Inventory = () => {
         ...form,
         image: imageUrl,
         category: form.category,
-        supplier: form.supplier,
+        supplier: form.supplier || null, // Set supplier to null if not selected
       };
+
+      console.log('Payload being sent:', payload); // Debugging log
 
       if (editing) {
         await API.put(`/books/${editing}`, payload);
@@ -116,6 +119,7 @@ const Inventory = () => {
       setModalOpen(false);
       fetchBooks();
     } catch (err) {
+      console.error('Error during submission:', err.response?.data || err.message); // Debugging log
       alert(err.response?.data?.message || err.message || 'Error');
     }
   };
