@@ -6,23 +6,38 @@ import {
   deleteSupplier,
   getSupplierProducts,
   getSupplierLogs,
-  getSupplierKPIs
+  getSupplierKPIs,
+  getBooksBySupplier
 } from '../api/supplier';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
 const SupplierDashboard = () => {
   // State placeholders
   const [suppliers, setSuppliers] = useState([]);
+  const [supplierUsers, setSupplierUsers] = useState([]); // NEW: users with role 'supplier department'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [logs, setLogs] = useState([]);
   const [kpis, setKpis] = useState({});
   const [products, setProducts] = useState([]);
+  const [booksModal, setBooksModal] = useState({ open: false, books: [], supplier: null });
 
-  // Fetch data (replace with real API calls)
+  const { user } = useAuth();
+
+  // Fetch data (with auth)
   useEffect(() => {
-    getSuppliers().then(res => setSuppliers(res.data));
-    getSupplierKPIs().then(res => setKpis(res.data));
-  }, []);
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+    getSuppliers(config).then(res => setSuppliers(res.data));
+    getSupplierKPIs(config).then(res => setKpis(res.data));
+    // Fetch users with role 'supplier department'
+    axios.get('/api/users', config)
+      .then(res => {
+        const users = (res.data || []).filter(u => u.role === 'supplier department');
+        setSupplierUsers(users);
+      })
+      .catch(() => setSupplierUsers([]));
+  }, [user]);
 
   // Handlers for CRUD (to be implemented)
   const handleAdd = () => {
@@ -32,15 +47,41 @@ const SupplierDashboard = () => {
   const handleEdit = (supplier) => {
     setSelectedSupplier(supplier);
     setShowModal(true);
-    getSupplierProducts(supplier._id).then(res => setProducts(res.data));
-    getSupplierLogs(supplier._id).then(res => setLogs(res.data));
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+    getSupplierProducts(supplier._id, config).then(res => setProducts(res.data));
+    getSupplierLogs(supplier._id, config).then(res => setLogs(res.data));
   };
   const handleDelete = async (id) => {
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
     if (window.confirm('Are you sure you want to delete this supplier?')) {
-      await deleteSupplier(id);
+      await deleteSupplier(id, config);
       setSuppliers(suppliers.filter(s => s._id !== id));
     }
   };
+
+  // Show books for a supplier
+  const handleViewBooks = async (supplier) => {
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+    const res = await getBooksBySupplier(supplier._id, config);
+    setBooksModal({ open: true, books: res.data, supplier });
+  };
+
+  // Merge suppliers and supplierUsers for table
+  const allSuppliers = [
+    ...suppliers.map(s => ({ ...s, _type: 'Supplier' })),
+    ...supplierUsers.map(u => ({
+      _id: u._id,
+      companyName: u.name || u.email || u._id,
+      contactPerson: u.name || '',
+      email: u.email,
+      phone: u.phone || '',
+      address: u.address || '',
+      productCategories: [],
+      status: u.status || 'active',
+      _type: 'User',
+      userObj: u
+    }))
+  ];
 
   return (
     <div className="p-8">
@@ -73,11 +114,19 @@ const SupplierDashboard = () => {
         <table className="min-w-full table-auto">
           <thead>
             <tr className="bg-red-100">
-              <th>ID</th><th>Company</th><th>Contact</th><th>Email/Phone</th><th>Address</th><th>Categories</th><th>Status</th><th>Actions</th>
+              <th>ID</th>
+              <th>Company</th>
+              <th>Contact</th>
+              <th>Email/Phone</th>
+              <th>Address</th>
+              <th>Categories</th>
+              <th>Status</th>
+              <th>Type</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {suppliers.map(supplier => (
+            {allSuppliers.map(supplier => (
               <tr key={supplier._id}>
                 <td>{supplier._id}</td>
                 <td>{supplier.companyName}</td>
@@ -87,8 +136,22 @@ const SupplierDashboard = () => {
                 <td>{supplier.productCategories?.join(', ')}</td>
                 <td>{supplier.status}</td>
                 <td>
-                  <button onClick={() => handleEdit(supplier)} className="text-blue-600 mr-2">Edit</button>
-                  <button onClick={() => handleDelete(supplier._id)} className="text-red-600">Delete</button>
+                  {supplier._type}
+                </td>
+                <td>
+                  {/* Only allow edit/delete for Supplier documents, not for users */}
+                  {supplier._type === 'Supplier' ? (
+                    <>
+                      <button onClick={() => handleEdit(supplier)} className="text-blue-600 mr-2">Edit</button>
+                      <button onClick={() => handleDelete(supplier._id)} className="text-red-600 mr-2">Delete</button>
+                      <button onClick={() => handleViewBooks(supplier)} className="text-green-600">View Books</button>
+                    </>
+                  ) : (
+                    <>
+                      {/* For users, only allow View Books */}
+                      <button onClick={() => handleViewBooks(supplier)} className="text-green-600">View Books</button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
@@ -136,13 +199,156 @@ const SupplierDashboard = () => {
           </tbody>
         </table>
       </div>
-      {/* Modal for Add/Edit Supplier (to be implemented) */}
+      {/* Modal for Add/Edit Supplier */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h3 className="text-lg font-bold mb-4">{selectedSupplier ? 'Edit Supplier' : 'Add Supplier'}</h3>
-            {/* Form fields here */}
-            <button onClick={() => setShowModal(false)} className="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setShowModal(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-red-700">
+              {selectedSupplier ? 'Edit Supplier' : 'Add Supplier'}
+            </h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const supplierData = {
+                  companyName: e.target.companyName.value,
+                  contactPerson: e.target.contactPerson.value,
+                  email: e.target.email.value,
+                  phone: e.target.phone.value,
+                  address: e.target.address.value,
+                  productCategories: e.target.productCategories.value.split(',').map(cat => cat.trim()),
+                  status: e.target.status.value,
+                };
+                if (selectedSupplier) {
+                  updateSupplier(selectedSupplier._id, supplierData).then(() => {
+                    setShowModal(false);
+                    getSuppliers().then(res => setSuppliers(res.data));
+                  });
+                } else {
+                  createSupplier(supplierData).then(() => {
+                    setShowModal(false);
+                    getSuppliers().then(res => setSuppliers(res.data));
+                  });
+                }
+              }}
+              className="space-y-4"
+            >
+              <input
+                type="text"
+                name="companyName"
+                defaultValue={selectedSupplier?.companyName || ''}
+                placeholder="Company Name"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="contactPerson"
+                defaultValue={selectedSupplier?.contactPerson || ''}
+                placeholder="Contact Person"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="email"
+                name="email"
+                defaultValue={selectedSupplier?.email || ''}
+                placeholder="Email"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="phone"
+                defaultValue={selectedSupplier?.phone || ''}
+                placeholder="Phone"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="address"
+                defaultValue={selectedSupplier?.address || ''}
+                placeholder="Address"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="text"
+                name="productCategories"
+                defaultValue={selectedSupplier?.productCategories?.join(', ') || ''}
+                placeholder="Product Categories (comma-separated)"
+                required
+                className="w-full border px-3 py-2 rounded"
+              />
+              <select
+                name="status"
+                defaultValue={selectedSupplier?.status || 'active'}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <div className="flex gap-2 mt-4">
+                <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded border flex-1"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Books Modal */}
+      {booksModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setBooksModal({ open: false, books: [], supplier: null })}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-red-700">
+              Books for {booksModal.supplier?.companyName}
+            </h3>
+            {booksModal.books.length === 0 ? (
+              <div className="text-gray-500">No books found for this supplier.</div>
+            ) : (
+              <table className="min-w-full table-auto">
+                <thead>
+                  <tr className="bg-red-100">
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {booksModal.books.map(book => (
+                    <tr key={book._id}>
+                      <td>{book.title}</td>
+                      <td>{book.author}</td>
+                      <td>₱{Number(book.price).toFixed(2)}</td>
+                      <td>{book.stock}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}

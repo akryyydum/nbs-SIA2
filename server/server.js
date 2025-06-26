@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -22,7 +23,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json()); // Parse incoming JSON
-app.use('/uploads', express.static('uploads')); // Serve static files from the uploads directory
+
+// Serve static files from the uploads directory for any IP address
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);

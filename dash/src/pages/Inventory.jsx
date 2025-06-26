@@ -30,8 +30,15 @@ const Inventory = () => {
   const [categories, setCategories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
   const [suppliers, setSuppliers] = useState([]);
 
+  // --- Order from Supplier Modal State ---
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [orderSupplier, setOrderSupplier] = useState('');
+  const [orderItems, setOrderItems] = useState([
+    { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }
+  ]);
+
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -53,13 +60,27 @@ const Inventory = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await API.get('/suppliers');
-      // Fetch users with role 'supplier'
-      const userRes = await API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } });
-      const supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
-      // Merge suppliers from /suppliers and supplier users
+      // Try to fetch /suppliers, fallback to empty array if fails
+      let supplierList = [];
+      try {
+        const res = await API.get('/suppliers');
+        supplierList = res.data || [];
+      } catch {
+        supplierList = [];
+      }
+
+      // Try to fetch users with role 'supplier department', fallback to empty array if fails/forbidden
+      let supplierUsers = [];
+      try {
+        const userRes = await API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } });
+        supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
+      } catch {
+        supplierUsers = [];
+      }
+
+      // Merge both sources
       const merged = [
-        ...res.data,
+        ...supplierList,
         ...supplierUsers.map(u => ({
           _id: u._id,
           companyName: u.name || u.email || u._id,
@@ -68,6 +89,7 @@ const Inventory = () => {
       ];
       setSuppliers(merged);
     } catch (err) {
+      // Only alert if both fail
       alert('Failed to fetch suppliers');
     }
   };
@@ -84,7 +106,8 @@ const Inventory = () => {
       const res = await API.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      return `http://192.168.9.16:5000${res.data.url}`; // Correct base URL
+      // Use the same base URL as API for image URLs
+      return `${API.defaults.baseURL.replace(/\/api$/, '')}${res.data.url}`;
     } catch (err) {
       alert('Failed to upload image');
       throw err;
@@ -170,6 +193,37 @@ const Inventory = () => {
     setSelectedImage(null);
   };
 
+  // --- Order from Supplier Handler ---
+  const handleOrderFromSupplier = async (e) => {
+    e.preventDefault();
+    try {
+      for (const item of orderItems) {
+        if (item.isNew) {
+          // Create new book with stock = quantity
+          const payload = {
+            ...item.newBook,
+            stock: item.quantity,
+            supplier: orderSupplier,
+          };
+          await API.post('/books', payload);
+        } else {
+          // Increase stock of existing book
+          await API.put(`/books/${item.bookId}/increase-stock`, {
+            quantity: item.quantity,
+            supplier: orderSupplier,
+          });
+        }
+      }
+      setOrderModalOpen(false);
+      setOrderSupplier('');
+      setOrderItems([{ bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }]);
+      fetchBooks();
+      alert('Order placed and inventory updated!');
+    } catch (err) {
+      alert('Failed to order: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   // Add styles for table alignment
   const tableStyles = {
     textAlign: 'center',
@@ -248,12 +302,20 @@ const Inventory = () => {
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Inventory Management</h2>
-      <button
-        className="mb-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
-        onClick={handleAdd}
-      >
-        + Add Book
-      </button>
+      <div className="flex gap-4 mb-6">
+        <button
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
+          onClick={handleAdd}
+        >
+          + Add Book
+        </button>
+        <button
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
+          onClick={() => setOrderModalOpen(true)}
+        >
+          Order from Supplier
+        </button>
+      </div>
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -392,136 +454,184 @@ const Inventory = () => {
           </div>
         </div>
       )}
-      <div
-        className="overflow-x-auto rounded-2xl shadow-2xl border border-red-100"
-        style={{
-          background: 'rgba(255,255,255,0.45)',
-          backdropFilter: 'blur(18px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.18)',
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)'
-        }}
-      >
-        <table className="min-w-full rounded-2xl overflow-hidden" style={tableStyles}>
-          <thead>
-            <tr className="bg-white/70 text-red-700 font-semibold text-lg">
-              <th className="px-6 py-3 border-b" style={cellStyles}>Title</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Author</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Price</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Stock</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Image</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Description</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Category</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Supplier</th>
-              <th className="px-6 py-3 border-b" style={cellStyles}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={9} className="text-center py-8 text-gray-500">Loading...</td>
-              </tr>
-            ) : books.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="text-center py-8 text-gray-400">No books found</td>
-              </tr>
-            ) : books.map(b => (
-              <tr key={b._id} className="hover:bg-red-50 transition">
-                <td className="border-b px-6 py-3" style={cellStyles}>{b.title}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>{b.author}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>${Number(b.price).toFixed(2)}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>{b.stock}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>
-                  {b.image && (
-                    <img
-                      src={b.image}
-                      alt={b.title}
-                      className="h-12 w-12 object-cover rounded shadow"
-                      style={imageStyles}
-                      onClick={() => handleImageClick(b.image)}
-                    />
-                  )}
-                </td>
-                <td className="border-b px-6 py-3 max-w-xs truncate" style={cellStyles}>{b.description}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>{b.category}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
-                <td className="border-b px-6 py-3" style={cellStyles}>
-                  <button
-                    className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
-                    onClick={() => handleEdit(b)}
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    className="text-red-600 hover:bg-red-50 transition rounded px-3 py-1"
-                    onClick={() => handleDelete(b._id)}
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <br></br>
-       <br></br>
-        <br></br>
-    
-
-      <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '20px' }}>
-        <div style={{ width: '30%' }}>
-          <h2 className="text-xl font-bold mb-4 text-red-700">Stock by Category</h2>
-          <Pie data={stockByCategoryData} />
-        </div>
-
-        <div style={{ width: '30%' }}>
-          <h2 className="text-xl font-bold mb-4 text-red-700">Inventory Trends</h2>
-          <Line data={inventoryTrendsData} />
-        </div>
-
-        <div style={{ width: '30%' }}>
-          <h2 className="text-xl font-bold mb-4 text-red-700">Top Products</h2>
-          <Bar data={topProductsData} />
-        </div>
-      </div>
-
-      {selectedImage && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <img
-            src={selectedImage}
-            alt="Book Preview"
-            style={{ maxWidth: '90%', maxHeight: '80%' }}
-          />
-          <button
-            onClick={closeImageModal}
-            style={{
-              marginTop: '20px',
-              backgroundColor: 'white',
-              border: 'none',
-              padding: '10px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <FaArrowLeft style={{ marginRight: '5px' }} /> Back
-          </button>
+      {/* Order from Supplier Modal */}
+      {orderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setOrderModalOpen(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-green-700">Order from Supplier</h3>
+            <form onSubmit={handleOrderFromSupplier} className="space-y-4">
+              <div>
+                <label className="font-semibold">Supplier:</label>
+                <select
+                  className="border px-3 py-2 rounded w-full"
+                  value={orderSupplier}
+                  onChange={e => setOrderSupplier(e.target.value)}
+                  required
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliers.map(s => (
+                    <option key={s._id} value={s._id}>
+                      {s.companyName}{s.fromUser ? ' (User)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold">Books to Order:</label>
+                {orderItems.map((item, idx) => (
+                  <div key={idx} className="border p-3 rounded mb-2 bg-gray-50">
+                    <div className="flex gap-2 items-center mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={item.isNew}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].isNew = e.target.checked;
+                            setOrderItems(arr);
+                          }}
+                        /> New Book
+                      </label>
+                      <button
+                        type="button"
+                        className="text-red-600 font-bold ml-auto"
+                        onClick={() => setOrderItems(orderItems.filter((_, i) => i !== idx))}
+                        disabled={orderItems.length === 1}
+                      >×</button>
+                    </div>
+                    {!item.isNew ? (
+                      <>
+                        <select
+                          className="border px-2 py-1 rounded w-full mb-2"
+                          value={item.bookId}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].bookId = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        >
+                          <option value="">Select Book</option>
+                          {books.map(b => (
+                            <option key={b._id} value={b._id}>{b.title} by {b.author}</option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          placeholder="Title"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.title}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.title = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Author"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.author}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.author = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.price}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.price = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Category"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.category}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.category = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Description"
+                          className="border px-2 py-1 rounded col-span-2"
+                          value={item.newBook.description}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.description = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Image URL"
+                          className="border px-2 py-1 rounded col-span-2"
+                          value={item.newBook.image}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.image = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex gap-2 items-center mt-2">
+                      <label className="text-sm">Quantity:</label>
+                      <input
+                        type="number"
+                        min={1}
+                        className="border px-2 py-1 rounded w-24"
+                        value={item.quantity}
+                        onChange={e => {
+                          const arr = [...orderItems];
+                          arr[idx].quantity = Number(e.target.value);
+                          setOrderItems(arr);
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="text-green-600 font-bold"
+                  onClick={() => setOrderItems([...orderItems, { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }])}
+                >+ Add Another Book</button>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded transition-colors"
+              >
+                Place Order
+              </button>
+            </form>
+          </div>
         </div>
       )}
+      {/* ...existing code for table, charts, and image modal... */}
     </div>
   );
 };

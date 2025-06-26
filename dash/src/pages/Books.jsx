@@ -25,8 +25,15 @@ const Books = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [categories, setCategories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
 
+  // --- Order from Supplier Modal State ---
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [orderSupplier, setOrderSupplier] = useState('');
+  const [orderItems, setOrderItems] = useState([
+    { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }
+  ]);
+
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -150,15 +157,54 @@ const Books = () => {
     setModalOpen(true);
   };
 
+  // --- Order from Supplier Handler ---
+  const handleOrderFromSupplier = async (e) => {
+    e.preventDefault();
+    try {
+      for (const item of orderItems) {
+        if (item.isNew) {
+          // Create new book with stock = quantity
+          const payload = {
+            ...item.newBook,
+            stock: item.quantity,
+            supplier: orderSupplier,
+          };
+          await API.post('/books', payload);
+        } else {
+          // Increase stock of existing book
+          await API.put(`/books/${item.bookId}/increase-stock`, {
+            quantity: item.quantity,
+            supplier: orderSupplier,
+          });
+        }
+      }
+      setOrderModalOpen(false);
+      setOrderSupplier('');
+      setOrderItems([{ bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }]);
+      fetchBooks();
+      alert('Order placed and inventory updated!');
+    } catch (err) {
+      alert('Failed to order: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Books Management</h2>
-      <button
-        className="mb-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
-        onClick={handleAdd}
-      >
-        + Add Book
-      </button>
+      <div className="flex gap-4 mb-6">
+        <button
+          className="mb-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
+          onClick={handleAdd}
+        >
+          + Add Book
+        </button>
+        <button
+          className="mb-6 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
+          onClick={() => setOrderModalOpen(true)}
+        >
+          Order from Supplier
+        </button>
+      </div>
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -298,6 +344,183 @@ const Books = () => {
                   Cancel
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Order from Supplier Modal */}
+      {orderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setOrderModalOpen(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-green-700">Order from Supplier</h3>
+            <form onSubmit={handleOrderFromSupplier} className="space-y-4">
+              <div>
+                <label className="font-semibold">Supplier:</label>
+                <select
+                  className="border px-3 py-2 rounded w-full"
+                  value={orderSupplier}
+                  onChange={e => setOrderSupplier(e.target.value)}
+                  required
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliers.map(s => (
+                    <option key={s._id} value={s._id}>
+                      {s.companyName}{s.fromUser ? ' (User)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold">Books to Order:</label>
+                {orderItems.map((item, idx) => (
+                  <div key={idx} className="border p-3 rounded mb-2 bg-gray-50">
+                    <div className="flex gap-2 items-center mb-2">
+                      <label className="text-sm">
+                        <input
+                          type="checkbox"
+                          checked={item.isNew}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].isNew = e.target.checked;
+                            setOrderItems(arr);
+                          }}
+                        /> New Book
+                      </label>
+                      <button
+                        type="button"
+                        className="text-red-600 font-bold ml-auto"
+                        onClick={() => setOrderItems(orderItems.filter((_, i) => i !== idx))}
+                        disabled={orderItems.length === 1}
+                      >×</button>
+                    </div>
+                    {!item.isNew ? (
+                      <>
+                        <select
+                          className="border px-2 py-1 rounded w-full mb-2"
+                          value={item.bookId}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].bookId = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        >
+                          <option value="">Select Book</option>
+                          {books.map(b => (
+                            <option key={b._id} value={b._id}>{b.title} by {b.author}</option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          placeholder="Title"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.title}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.title = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Author"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.author}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.author = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.price}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.price = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Category"
+                          className="border px-2 py-1 rounded"
+                          value={item.newBook.category}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.category = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                          required
+                        />
+                        <input
+                          type="text"
+                          placeholder="Description"
+                          className="border px-2 py-1 rounded col-span-2"
+                          value={item.newBook.description}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.description = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Image URL"
+                          className="border px-2 py-1 rounded col-span-2"
+                          value={item.newBook.image}
+                          onChange={e => {
+                            const arr = [...orderItems];
+                            arr[idx].newBook.image = e.target.value;
+                            setOrderItems(arr);
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex gap-2 items-center mt-2">
+                      <label className="text-sm">Quantity:</label>
+                      <input
+                        type="number"
+                        min={1}
+                        className="border px-2 py-1 rounded w-24"
+                        value={item.quantity}
+                        onChange={e => {
+                          const arr = [...orderItems];
+                          arr[idx].quantity = Number(e.target.value);
+                          setOrderItems(arr);
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="text-green-600 font-bold"
+                  onClick={() => setOrderItems([...orderItems, { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }])}
+                >+ Add Another Book</button>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded transition-colors"
+              >
+                Place Order
+              </button>
             </form>
           </div>
         </div>
