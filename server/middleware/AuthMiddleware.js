@@ -36,3 +36,11 @@ exports.inventory = (req, res, next) => {
 
   return res.status(403).json({ message: 'Access denied: Inventory or Admin role required' });
 };
+
+exports.sales = (req, res, next) => {
+  if (req.user && (req.user.role === 'sales department' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden: Sales department or Admins only' });
+  }
+};
