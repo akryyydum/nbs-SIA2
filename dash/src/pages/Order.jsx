@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
-const API_BASE = 'http://192.168.9.16:5000/api';
+const API_BASE = '/api'; // Use relative path for any IP
 
 const Order = () => {
   const { user } = useAuth();

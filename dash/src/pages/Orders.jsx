@@ -10,7 +10,7 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const API = axios.create({
-    baseURL: 'http://192.168.9.16:5000/api',
+    baseURL: '/api', // Use relative path for any IP
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
