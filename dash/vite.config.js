@@ -8,6 +8,13 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // This is correct for LAN access
-    strictPort: true
-  }
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://192.168.9.16:5000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+      },
+    },
+  },
 })
