@@ -31,8 +31,7 @@ const DashboardPage = () => {
   useEffect(() => {
     axios
       .get(
-        (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') +
-          '/books?sort=-createdAt&limit=20'
+        'http://192.168.9.16:5173/api/books?sort=-createdAt&limit=20'
       )
       .then(res => setNewArrivals(res.data))
       .catch(() => setNewArrivals([]));
