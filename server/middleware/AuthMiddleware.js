@@ -27,14 +27,15 @@ exports.admin = (req, res, next) => {
 // /middleware/AuthMiddleware.js
 
 exports.inventory = (req, res, next) => {
-  const allowedRoles = ['inventory department', 'admin']; // allow both roles
+  // allow inventory department, supplier department, and admin
+  const allowedRoles = ['inventory department', 'supplier department', 'admin'];
   const userRole = req.user?.role;
 
   if (userRole && allowedRoles.includes(userRole)) {
     return next();
   }
 
-  return res.status(403).json({ message: 'Access denied: Inventory or Admin role required' });
+  return res.status(403).json({ message: 'Access denied: Inventory, Supplier, or Admin role required' });
 };
 
 exports.supplier = (req, res, next) => {

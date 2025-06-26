@@ -159,11 +159,36 @@ router.put('/:supplierId/supplierBook/:bookId/increase-stock', async (req, res) 
     if (!quantity || quantity <= 0) {
       return res.status(400).json({ message: 'Quantity must be provided and greater than 0' });
     }
-    const book = await SupplierBook.findOne({ _id: bookId, supplier: supplierId });
-    if (!book) return res.status(404).json({ message: 'Book not found' });
-    book.stock += quantity;
-    await book.save();
-    res.json({ message: 'Stock increased', stock: book.stock });
+    const supplierBook = await SupplierBook.findOne({ _id: bookId, supplier: supplierId });
+    if (!supplierBook) return res.status(404).json({ message: 'Book not found in supplier catalog' });
+
+    // Try to find the book in the main Book collection
+    let book = await Book.findOne({ title: supplierBook.title, author: supplierBook.author, supplier: supplierId });
+
+    if (book) {
+      // If book exists in main collection, increase its stock
+      book.stock += quantity;
+      await book.save();
+    } else {
+      // If not, create it in the main Book collection
+      book = new Book({
+        title: supplierBook.title,
+        author: supplierBook.author,
+        price: supplierBook.price,
+        category: supplierBook.category,
+        supplier: supplierBook.supplier,
+        description: supplierBook.description,
+        stock: quantity,
+        image: supplierBook.image
+      });
+      await book.save();
+    }
+
+    // Optionally, also increase stock in SupplierBook (if you want to track supplier's own stock)
+    supplierBook.stock += quantity;
+    await supplierBook.save();
+
+    res.json({ message: 'Book added to inventory and stock updated', book });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
