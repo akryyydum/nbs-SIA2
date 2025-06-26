@@ -25,7 +25,7 @@ router.get('/', protect, sales, getAllOrders);
 router.get('/:id', protect, getOrderById);
 
 // Admin: Delete order
-router.delete('/:id', protect, admin, deleteOrder);
+router.delete('/:id', protect, sales, deleteOrder);
 
 // Accept order
 router.put('/:id/accept', protect, sales, acceptOrder);

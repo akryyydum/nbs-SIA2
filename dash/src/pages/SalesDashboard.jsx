@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = 'http://192.168.9.16:5173/api';
+const API_BASE = 'http://192.168.9.16:5000/api';
 
 const SalesDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -78,6 +78,22 @@ const SalesDashboard = () => {
       setModalOrder(null);
     } catch (err) {
       alert("Failed to decline order");
+    }
+    setActionLoading(false);
+  };
+
+  // Delete order
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("Delete this order?")) return;
+    setActionLoading(orderId);
+    try {
+      await axios.delete(`${API_BASE}/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      fetchOrders();
+      setModalOrder(null);
+    } catch (err) {
+      alert("Failed to delete order: " + (err?.response?.data?.message || err.message));
     }
     setActionLoading(false);
   };
@@ -264,6 +280,13 @@ const SalesDashboard = () => {
                       onClick={() => setModalOrder(order)}
                     >
                       View
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                      onClick={() => handleDeleteOrder(order._id)}
+                      disabled={actionLoading === order._id}
+                    >
+                      {actionLoading === order._id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </div>
