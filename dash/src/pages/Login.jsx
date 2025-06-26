@@ -30,14 +30,15 @@ const LoginPage = () => {
         localStorage.removeItem('user');
       }
       // Redirect based on user role
-      if (res.data.role === 'supplier' || res.data.role === 'supplier_department') {
+      console.log('Login role:', res.data.role);
+
+      if (
+        res.data.role === 'supplier department' ||
+        res.data.role === 'supplier' ||
+        res.data.role === 'Supplier Department'
+      ) {
         window.location.href = '/supplier-dashboard';
-      } else {
-        window.location.href = '/dashboard';
-      }
-      alert('Login successful!');
-      // Redirect based on role
-      if (res.data.role === 'inventory department') {
+      } else if (res.data.role === 'inventory department') {
         window.location.href = '/inventory';
       } else if (res.data.role === 'sales department') {
         window.location.href = '/sales-dashboard';
@@ -46,6 +47,7 @@ const LoginPage = () => {
       } else {
         window.location.href = '/';
       }
+      alert('Login successful!');
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }

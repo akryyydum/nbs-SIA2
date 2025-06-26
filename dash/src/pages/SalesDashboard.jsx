@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = 'http://192.168.9.16:5000/api';
+const API = axios.create({
+  baseURL: 'http://192.168.9.16:5000/api',
+});
 
 const SalesDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -27,24 +29,24 @@ const SalesDashboard = () => {
   });
   const { user } = useAuth();
 
+  API.defaults.headers.common['Authorization'] = `Bearer ${user?.token}`;
+
   // Fetch all orders for sales department
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/orders`, {
-        headers: { Authorization: `Bearer ${user?.token}` }
-      });
-      setOrders(res.data || []);
-    } catch {
-      setOrders([]);
+      const res = await API.get('/orders');
+      setOrders(res.data);
+    } catch (err) {
+      alert('Failed to fetch orders');
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    if (activeTab === "orders") fetchOrders();
+    fetchOrders();
     // eslint-disable-next-line
-  }, [activeTab]);
+  }, []);
 
   // Accept order
   const handleAccept = async (orderId) => {
@@ -83,19 +85,12 @@ const SalesDashboard = () => {
   };
 
   // Delete order
-  const handleDeleteOrder = async (orderId) => {
-    if (!window.confirm("Delete this order?")) return;
-    setActionLoading(orderId);
-    try {
-      await axios.delete(`${API_BASE}/orders/${orderId}`, {
-        headers: { Authorization: `Bearer ${user?.token}` }
-      });
-      fetchOrders();
-      setModalOrder(null);
-    } catch (err) {
-      alert("Failed to delete order: " + (err?.response?.data?.message || err.message));
+  const handleDeleteOrder = (order) => {
+    if (window.confirm('Delete this order?')) {
+      API.delete(`/orders/${order._id}`)
+        .then(fetchOrders)
+        .catch(() => alert('Delete failed'));
     }
-    setActionLoading(false);
   };
 
   // Filtering
@@ -283,7 +278,7 @@ const SalesDashboard = () => {
                     </button>
                     <button
                       className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                      onClick={() => handleDeleteOrder(order._id)}
+                      onClick={() => handleDeleteOrder(order)}
                       disabled={actionLoading === order._id}
                     >
                       {actionLoading === order._id ? "Deleting..." : "Delete"}
