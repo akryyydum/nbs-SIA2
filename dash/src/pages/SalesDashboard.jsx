@@ -85,11 +85,19 @@ const SalesDashboard = () => {
   };
 
   // Delete order
-  const handleDeleteOrder = (order) => {
+  const handleDeleteOrder = async (order) => {
     if (window.confirm('Delete this order?')) {
-      API.delete(`/orders/${order._id}`, {
-        headers: { Authorization: `Bearer ${user?.token}` }
-      });
+      setActionLoading(order._id);
+      try {
+        await API.delete(`/orders/${order._id}`, {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        fetchOrders();
+        setModalOrder(null);
+      } catch (err) {
+        alert('Delete failed: ' + (err?.response?.data?.message || err.message));
+      }
+      setActionLoading(false);
     }
   };
 
@@ -105,10 +113,8 @@ const SalesDashboard = () => {
   // Fetch users and books for the add order form
   useEffect(() => {
     if (showAddModal) {
-      axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } })
-        .then(res => setUsers(res.data || []));
-      axios.get(`${API_BASE}/books`)
-        .then(res => setBooks(res.data || []));
+      API.get('/users').then(res => setUsers(res.data || []));
+      API.get('/books').then(res => setBooks(res.data || []));
     }
   }, [showAddModal, user]);
 
@@ -116,10 +122,10 @@ const SalesDashboard = () => {
   const handleAddOrder = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/orders`, {
+      await API.post('/orders', {
         user: newOrder.user,
         items: newOrder.items.map(i => ({ book: i.book, quantity: Number(i.quantity) }))
-      }, { headers: { Authorization: `Bearer ${user?.token}` } });
+      });
       setShowAddModal(false);
       setNewOrder({ user: "", items: [{ book: "", quantity: 1 }] });
       fetchOrders();
