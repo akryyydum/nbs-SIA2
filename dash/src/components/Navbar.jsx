@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // <-- add useLocation
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 // Add icons
@@ -14,6 +14,7 @@ const Navbar = () => {
   const accountRef = useRef();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // <-- get current location
 
   // Fetch cart from backend for the logged-in user
   useEffect(() => {
@@ -42,6 +43,9 @@ const Navbar = () => {
     }
   };
 
+  // Determine if we are on the sales dashboard
+  const isSalesDashboard = location.pathname === '/sales-dashboard';
+
   return (
     <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-poppins bold sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -55,20 +59,23 @@ const Navbar = () => {
                   Control Panel
                 </Link>
               ) : (
-                <>
-                  <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-                    Home
-                  </Link>
-                  <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-                    Contact
-                  </Link>
-                  <Link to="/products" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-                    Products
-                  </Link>
-                  <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-                    About
-                  </Link>
-                </>
+                // Only show these links if NOT on sales dashboard
+                !isSalesDashboard && (
+                  <>
+                    <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                      Home
+                    </Link>
+                    <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                      Contact
+                    </Link>
+                    <Link to="/products" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                      Products
+                    </Link>
+                    <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                      About
+                    </Link>
+                  </>
+                )
               )}
             </div>
           </div>
