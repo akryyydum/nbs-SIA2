@@ -92,7 +92,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/supplier-dashboard" element={
-          <ProtectedRoute allowedRoles={['supplier', 'supplier_department']}>
+          <ProtectedRoute allowedRoles={['supplier department', 'supplier', 'Supplier Department']}>
             <>
               <Navbar />
               <SupplierDashboard />
