@@ -11,7 +11,6 @@ const {
   declineOrder,    // add this
   getOrderMetrics
 } = require('../controllers/orderController');
-
 // User: Create order
 router.post('/', protect, createOrder);
 
