@@ -13,6 +13,7 @@ import {
   PointElement,
   LineElement,
 } from "chart.js";
+import { FaBook, FaUsers, FaTruck, FaShoppingCart, FaChartPie, FaChartLine, FaCrown, FaUserClock, FaMoneyBillWave } from "react-icons/fa";
 
 ChartJS.register(
   ArcElement,
@@ -25,25 +26,14 @@ ChartJS.register(
   LineElement
 );
 
-// API base URL (use proxy, so keep /api)
-const API_BASE = "/api";
+const API_BASE = 'http://192.168.9.16:5173/api';
 
-// Chart color palettes
-const COLORS = [
-  "#FF6384",
-  "#36A2EB",
-  "#FFCE56",
-  "#4BC0C0",
-  "#A78BFA",
-  "#F472B6",
-  "#FBBF24",
-  "#34D399",
-  "#F87171",
-  "#60A5FA",
+const ICONS = [
+  <FaBook className="text-3xl text-red-400" />,
+  <FaUsers className="text-3xl text-blue-400" />,
+  <FaTruck className="text-3xl text-green-400" />,
+  <FaShoppingCart className="text-3xl text-yellow-400" />,
 ];
-
-// Helper for auth headers
-const authHeader = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -55,22 +45,22 @@ const AdminDashboard = () => {
     totalSales: 0,
     supplierLogins: [],
     stockByCategory: {},
-    salesTrends: {},
+    salesTrends: [],
     topBooks: [],
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.token) return;
-    setLoading(true);
-    (async () => {
+    const fetchStats = async () => {
+      setLoading(true);
       try {
+        // You should implement these endpoints in your backend for real data
         const [booksRes, usersRes, suppliersRes, ordersRes, logsRes] = await Promise.all([
-          axios.get(`${API_BASE}/books`, authHeader(user.token)),
-          axios.get(`${API_BASE}/users`, authHeader(user.token)),
-          axios.get(`${API_BASE}/suppliers`, authHeader(user.token)),
-          axios.get(`${API_BASE}/orders`, authHeader(user.token)),
-          axios.get(`${API_BASE}/logs/supplier-logins`, authHeader(user.token)).catch(() => ({ data: [] })),
+          axios.get(`${API_BASE}/books`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get(`${API_BASE}/logs/supplier-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })),
         ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
@@ -80,8 +70,6 @@ const AdminDashboard = () => {
 
         // Calculate statistics
         const totalSales = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-
-        // Stock by category
         const stockByCategory = {};
         books.forEach((b) => {
           if (!b.category) return;
@@ -125,11 +113,13 @@ const AdminDashboard = () => {
           salesTrends,
           topBooks,
         });
-      } catch {
+      } catch (err) {
+        // fallback to empty stats
         setStats((s) => ({ ...s }));
       }
       setLoading(false);
-    })();
+    };
+    fetchStats();
   }, [user]);
 
   // Chart data
@@ -138,7 +128,16 @@ const AdminDashboard = () => {
     datasets: [
       {
         data: Object.values(stats.stockByCategory),
-        backgroundColor: COLORS,
+        backgroundColor: [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#A78BFA",
+          "#F472B6",
+          "#FBBF24",
+          "#34D399",
+        ],
       },
     ],
   };
@@ -151,8 +150,8 @@ const AdminDashboard = () => {
         label: "Sales",
         data: salesTrendsMonths.map((m) => stats.salesTrends[m]),
         fill: false,
-        borderColor: COLORS[1],
-        backgroundColor: COLORS[1],
+        borderColor: "#36A2EB",
+        backgroundColor: "#36A2EB",
         tension: 0.3,
       },
     ],
@@ -164,12 +163,23 @@ const AdminDashboard = () => {
       {
         label: "Units Sold",
         data: stats.topBooks.map((b) => b.sales),
-        backgroundColor: COLORS,
+        backgroundColor: [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#A78BFA",
+          "#F472B6",
+          "#FBBF24",
+          "#34D399",
+          "#F87171",
+          "#60A5FA",
+        ],
       },
     ],
   };
 
-  // Supplier logins per day
+  // Supplier logins per day (if available)
   const supplierLoginCounts = {};
   (stats.supplierLogins || []).forEach((log) => {
     const date = log.timestamp ? log.timestamp.slice(0, 10) : "Unknown";
@@ -182,7 +192,7 @@ const AdminDashboard = () => {
       {
         label: "Supplier Logins",
         data: supplierLoginDates.map((d) => supplierLoginCounts[d]),
-        backgroundColor: COLORS[6],
+        backgroundColor: "#FBBF24",
         borderColor: "#F59E42",
         fill: true,
       },
@@ -190,38 +200,40 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 font-lora">
-      <h1 className="text-3xl font-bold text-red-700 mb-8">Admin Dashboard</h1>
+    <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 font-poppins">
+      <h1 className="text-3xl font-bold text-red-700 mb-8 flex items-center gap-3 animate-fade-in-down">
+        <FaChartPie className="text-red-500" /> Admin Dashboard
+      </h1>
       {loading ? (
-        <div className="text-center text-gray-500 py-8">Loading statistics...</div>
+        <div className="text-center text-gray-500 py-8 animate-pulse">Loading statistics...</div>
       ) : (
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <KpiCard label="Total Books" value={stats.totalBooks} />
-            <KpiCard label="Total Users" value={stats.totalUsers} />
-            <KpiCard label="Total Suppliers" value={stats.totalSuppliers} />
-            <KpiCard label="Total Orders" value={stats.totalOrders} />
+            <KpiCard label="Total Books" value={stats.totalBooks} icon={ICONS[0]} />
+            <KpiCard label="Total Users" value={stats.totalUsers} icon={ICONS[1]} />
+            <KpiCard label="Total Suppliers" value={stats.totalSuppliers} icon={ICONS[2]} />
+            <KpiCard label="Total Orders" value={stats.totalOrders} icon={ICONS[3]} />
           </div>
           {/* Sales and Stock Graphs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <ChartCard title="Stock by Category">
-              <Pie data={stockByCategoryData} />
+            <ChartCard title="Stock by Category" icon={<FaChartPie className="text-xl text-pink-400" />}>
+              <Pie data={stockByCategoryData} className="animate-fade-in" />
             </ChartCard>
-            <ChartCard title="Sales Trends">
-              <Line data={salesTrendsData} />
+            <ChartCard title="Sales Trends" icon={<FaChartLine className="text-xl text-blue-400" />}>
+              <Line data={salesTrendsData} className="animate-fade-in" />
             </ChartCard>
-            <ChartCard title="Top Selling Books">
-              <Bar data={topBooksData} />
+            <ChartCard title="Top Selling Books" icon={<FaCrown className="text-xl text-yellow-400" />}>
+              <Bar data={topBooksData} className="animate-fade-in" />
             </ChartCard>
           </div>
           {/* Supplier Logins */}
-          <ChartCard title="Supplier Logins (per day)" className="mb-8">
-            <Line data={supplierLoginsData} />
+          <ChartCard title="Supplier Logins (per day)" icon={<FaUserClock className="text-xl text-green-400" />} className="mb-8">
+            <Line data={supplierLoginsData} className="animate-fade-in" />
           </ChartCard>
           {/* Total Sales */}
-          <ChartCard title="Total Sales" className="mb-8">
-            <div className="text-3xl font-bold text-green-700">
+          <ChartCard title="Total Sales" icon={<FaMoneyBillWave className="text-xl text-green-600" />} className="mb-8">
+            <div className="text-3xl font-bold text-green-700 animate-fade-in">
               ₱{Number(stats.totalSales).toLocaleString()}
             </div>
           </ChartCard>
@@ -231,24 +243,39 @@ const AdminDashboard = () => {
   );
 };
 
-// KPI Card component
-function KpiCard({ label, value }) {
+// KPI Card component with icon, animation, and hover effect
+function KpiCard({ label, value, icon }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500 flex flex-col items-center gap-2 animate-fade-in-up transition-all duration-500 hover:scale-105 hover:shadow-xl hover:border-red-700 cursor-pointer">
+      <div>{icon}</div>
       <div className="text-sm text-gray-500">{label}</div>
       <div className="text-2xl font-bold text-red-700">{value}</div>
     </div>
   );
 }
 
-// Chart Card component
-function ChartCard({ title, children, className = "" }) {
+// Chart Card component with icon, animation, and hover effect
+function ChartCard({ title, icon, children, className = "" }) {
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
-      <div className="text-sm text-gray-500 mb-2">{title}</div>
+    <div className={`bg-white rounded-lg shadow p-6 ${className} animate-fade-in transition-all duration-500 hover:scale-105 hover:shadow-xl cursor-pointer`}>
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 font-semibold">
+        {icon} {title}
+      </div>
       {children}
     </div>
   );
 }
+
+// Tailwind CSS custom animation classes (add to your global CSS if not present)
+/*
+@layer utilities {
+  .animate-fade-in { animation: fadeIn 0.7s ease; }
+  .animate-fade-in-up { animation: fadeInUp 0.7s ease; }
+  .animate-fade-in-down { animation: fadeInDown 0.7s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px);} to { opacity: 1; transform: translateY(0);} }
+}
+*/
 
 export default AdminDashboard;
