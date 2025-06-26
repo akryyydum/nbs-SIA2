@@ -42,41 +42,37 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-poppins bold sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Logo and Search Bar */}
-          <div className="flex-shrink-0 flex items-center gap-4">
-            <img src="/nbs.svg" alt="NBS Logo" className="h-30 w-30 mr-2" />
-            {/* Search Bar (desktop only) */}
-            <form className="hidden md:block" onSubmit={handleSearch}>
-              <input
-                type="text"
-                placeholder="Search books..."
-                className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-64"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </form>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="flex h-16 items-center relative">
+          {/* Left Section (Nav Links - desktop only) */}
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            {/* Nav Links (desktop only) */}
+            <div className="hidden md:flex space-x-6 items-center flex-shrink-0">
+              {/* Only show Home and Contact if not admin */}
+              {user?.role !== 'admin' && (
+                <>
+                  <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    Home
+                  </Link>
+                  <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    Contact
+                  </Link>
+                </>
+              )}
+              <Link to="/products" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                Products
+              </Link>
+              <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                About
+              </Link>
+            </div>
           </div>
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8 items-center">
-            {/* Only show Home and Contact if not admin */}
-            {user?.role !== 'admin' && (
-              <>
-                <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-                  Home
-                </Link>
-                <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-                  Contact
-                </Link>
-              </>
-            )}
-            <Link to="/products" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-              Products
-            </Link>
-            <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
-              About
-            </Link>
+          {/* Center Logo */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none select-none z-10">
+            <img src="/nbs.svg" alt="NBS Logo" className="h-12 object-contain" />
+          </div>
+          {/* Right Section (Cart, Account, Admin, Search) */}
+          <div className="hidden md:flex space-x-8 items-center flex-shrink-0">
             {/* Admin Control Panel Link */}
             {user?.role === 'admin' && (
               <Link to="/admin" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
@@ -106,6 +102,17 @@ const Navbar = () => {
                     ) : (
                       cart.map((item, idx) => (
                         <div key={item._id || idx} className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0">
+                          {/* Checkbox for selection */}
+                          <input
+                            type="checkbox"
+                            checked={item.selected || false}
+                            onChange={e => {
+                              setCart(cart.map((c, i) =>
+                                i === idx ? { ...c, selected: e.target.checked } : c
+                              ));
+                            }}
+                            className="accent-red-600"
+                          />
                           {item.book?.image && (
                             <img src={item.book.image} alt={item.book.title} className="h-12 w-9 object-cover rounded" />
                           )}
@@ -115,20 +122,51 @@ const Navbar = () => {
                             <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
                             <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                           </div>
+                          {/* Delete button */}
+                          <button
+                            className="text-red-500 hover:text-red-700 text-lg px-2"
+                            title="Remove from cart"
+                            onClick={async () => {
+                              try {
+                                await axios.delete(
+                                  (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') + `/cart/${item._id}`,
+                                  { headers: { Authorization: `Bearer ${user.token}` } }
+                                );
+                                setCart(cart.filter((_, i) => i !== idx));
+                              } catch {
+                                // Optionally show error
+                              }
+                            }}
+                          >
+                            &times;
+                          </button>
                         </div>
                       ))
                     )}
                   </div>
-                  <div className="p-3 border-t flex justify-end">
+                  <div className="p-3 border-t flex justify-between items-center">
+                    {/* Select/Deselect All */}
                     <button
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-                      disabled={cart.length === 0}
+                      className="text-xs text-red-600 hover:underline"
+                      type="button"
                       onClick={() => {
-                        setCartOpen(false);
-                        navigate('/checkout');
+                        const allSelected = cart.every(item => item.selected);
+                        setCart(cart.map(item => ({ ...item, selected: !allSelected })));
                       }}
                     >
-                      Checkout
+                      {cart.every(item => item.selected) ? 'Deselect All' : 'Select All'}
+                    </button>
+                    <button
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                      disabled={cart.filter(item => item.selected).length === 0}
+                      onClick={() => {
+                        setCartOpen(false);
+                        // Pass selected items to checkout (example: via state or query)
+                        const selectedIds = cart.filter(item => item.selected).map(item => item._id);
+                        navigate('/checkout', { state: { selectedCartIds: selectedIds } });
+                      }}
+                    >
+                      Checkout Selected
                     </button>
                   </div>
                 </div>
@@ -144,10 +182,6 @@ const Navbar = () => {
                   <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
                   <path stroke="currentColor" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" />
                 </svg>
-                {/* Show user name if logged in */}
-                {user?.name && (
-                  <span className="ml-2 text-sm font-medium text-black max-w-[120px] truncate">{user.name}</span>
-                )}
               </button>
               {/* Dropdown */}
               {accountOpen && (
@@ -166,6 +200,16 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+            {/* Search Bar (desktop only, now after profile) */}
+            <form className="hidden md:block" onSubmit={handleSearch}>
+              <input
+                type="text"
+                placeholder="Search books..."
+                className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-64"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </form>
           </div>
           {/* Mobile Hamburger */}
           <div className="md:hidden flex items-center">
@@ -262,7 +306,8 @@ const Navbar = () => {
             </svg>
             Cart
             {cart.length > 0 && (
-              <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-1.5">{cart.length}</span>
+<span className="absolute -top-1 right-0 bg-red-600 text-white text-xs rounded-full px-1.5">{cart.length}</span>
+
             )}
           </button>
           {cartOpen && (
@@ -274,6 +319,17 @@ const Navbar = () => {
                 ) : (
                   cart.map((item, idx) => (
                     <div key={item._id || idx} className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0">
+                      {/* Checkbox for selection */}
+                      <input
+                        type="checkbox"
+                        checked={item.selected || false}
+                        onChange={e => {
+                          setCart(cart.map((c, i) =>
+                            i === idx ? { ...c, selected: e.target.checked } : c
+                          ));
+                        }}
+                        className="accent-red-600"
+                      />
                       {item.book?.image && (
                         <img src={item.book.image} alt={item.book.title} className="h-12 w-9 object-cover rounded" />
                       )}
@@ -287,16 +343,29 @@ const Navbar = () => {
                   ))
                 )}
               </div>
-              <div className="p-3 border-t flex justify-end">
+              <div className="p-3 border-t flex justify-between items-center">
+                {/* Select/Deselect All */}
                 <button
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-                  disabled={cart.length === 0}
+                  className="text-xs text-red-600 hover:underline"
+                  type="button"
                   onClick={() => {
-                    setCartOpen(false);
-                    navigate('/checkout');
+                    const allSelected = cart.every(item => item.selected);
+                    setCart(cart.map(item => ({ ...item, selected: !allSelected })));
                   }}
                 >
-                  Checkout
+                  {cart.every(item => item.selected) ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                  disabled={cart.filter(item => item.selected).length === 0}
+                  onClick={() => {
+                    setCartOpen(false);
+                    // Pass selected items to checkout (example: via state or query)
+                    const selectedIds = cart.filter(item => item.selected).map(item => item._id);
+                    navigate('/checkout', { state: { selectedCartIds: selectedIds } });
+                  }}
+                >
+                  Checkout Selected
                 </button>
               </div>
             </div>
