@@ -21,4 +21,6 @@ router.delete('/:id', protect, inventory, deleteBook);
 // Admin & Inventory: Decrease stock of a book
 router.put('/:id/decrease-stock', protect, inventory, decreaseStock);
 
+router.post('/', upload.single('image'), bookController.createBook);
+
 module.exports = router;
