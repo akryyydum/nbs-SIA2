@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
-import { Pie, Line, Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement } from 'chart.js';
-
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement);
+import { FaBook, FaUser, FaTags, FaWarehouse, FaPlus, FaTruck, FaChartPie, FaChartBar, FaListUl } from 'react-icons/fa';
 
 const emptyForm = {
   title: '',
@@ -26,17 +22,11 @@ const Inventory = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [imageFile, setImageFile] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [categories, setCategories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
+  const [categories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
   const [suppliers, setSuppliers] = useState([]);
-  const [supplierUsers, setSupplierUsers] = useState([]); // <-- add this line
-
-  // --- Order from Supplier Modal State ---
   const [orderModalOpen, setOrderModalOpen] = useState(false);
-  const [orderSupplier, setOrderSupplier] = useState('');
-  const [orderItems, setOrderItems] = useState([
-    { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }
-  ]);
+  const [orderDetails, setOrderDetails] = useState([{ book: '', quantity: 1 }]);
+  const [selectedSupplier, setSelectedSupplier] = useState('');
 
   const API = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
@@ -56,59 +46,21 @@ const Inventory = () => {
 
   useEffect(() => {
     fetchBooks();
-    // eslint-disable-next-line
   }, []);
 
   const fetchSuppliers = async () => {
     try {
-      // Try to fetch /suppliers, fallback to empty array if fails
-      let supplierList = [];
-      try {
-        const res = await API.get('/suppliers');
-        supplierList = res.data || [];
-      } catch {
-        supplierList = [];
-      }
-
-      // Try to fetch users with role 'supplier department', fallback to empty array if fails/forbidden
-      let supplierUsers = [];
-      try {
-        const userRes = await API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } });
-        supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
-      } catch {
-        supplierUsers = [];
-      }
-
-      // Merge both sources
-      const merged = [
-        ...supplierList,
-        ...supplierUsers.map(u => ({
-          _id: u._id,
-          companyName: u.name || u.email || u._id,
-          fromUser: true
-        }))
-      ];
-      setSuppliers(merged);
+      const res = await API.get('/suppliers');
+      setSuppliers(res.data || []);
     } catch (err) {
-      // Only alert if both fail
       alert('Failed to fetch suppliers');
     }
   };
 
   useEffect(() => {
     fetchSuppliers();
-    // Fetch all users with role 'supplier department' if inventory department
-    if (user?.role === 'inventory department') {
-      API.get('/users', { headers: { Authorization: `Bearer ${user?.token}` } })
-        .then(res => {
-          const users = (res.data || []).filter(u => u.role === 'supplier department');
-          setSupplierUsers(users);
-        })
-        .catch(() => setSupplierUsers([]));
-    }
-  }, [user]);
+  }, []);
 
-  // Correct the base URL for uploaded images
   const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -116,44 +68,46 @@ const Inventory = () => {
       const res = await API.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      // Use the same base URL as API for image URLs
-      return `${API.defaults.baseURL.replace(/\/api$/, '')}${res.data.url}`;
+
+      // Ensure only one baseURL is used
+      const base = API.defaults.baseURL.replace('/api', '');
+      const url = res.data.url.startsWith('/')
+        ? `${base}${res.data.url}`
+        : res.data.url;
+      return url;
     } catch (err) {
       alert('Failed to upload image');
       throw err;
     }
   };
 
-  // Ensure supplier field is properly handled
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       let imageUrl = form.image;
+
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile); // Use the returned URL
+        imageUrl = await uploadImage(imageFile);
       }
 
       const payload = {
         ...form,
         image: imageUrl,
-        category: form.category,
-        supplier: form.supplier || null, // Set supplier to null if not selected
+        supplier: form.supplier || null
       };
-
-      console.log('Payload being sent:', payload); // Debugging log
 
       if (editing) {
         await API.put(`/books/${editing}`, payload);
       } else {
         await API.post('/books', payload);
       }
+
       setForm(emptyForm);
       setEditing(null);
       setImageFile(null);
       setModalOpen(false);
       fetchBooks();
     } catch (err) {
-      console.error('Error during submission:', err.response?.data || err.message); // Debugging log
       alert(err.response?.data?.message || err.message || 'Error');
     }
   };
@@ -165,6 +119,8 @@ const Inventory = () => {
       author: b.author,
       price: b.price,
       description: b.description || '',
+      category: b.category || '',
+      supplier: b.supplier || '',
       stock: b.stock,
       image: b.image || ''
     });
@@ -189,60 +145,48 @@ const Inventory = () => {
     setModalOpen(true);
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     setImageFile(file);
-    uploadImage(file);
-  };
-
-  const handleImageClick = (imageUrl) => {
-    setSelectedImage(imageUrl);
-  };
-
-  const closeImageModal = () => {
-    setSelectedImage(null);
-  };
-
-  // --- Order from Supplier Handler ---
-  const handleOrderFromSupplier = async (e) => {
-    e.preventDefault();
     try {
-      for (const item of orderItems) {
-        if (item.isNew) {
-          // Create new book with stock = quantity
-          const payload = {
-            ...item.newBook,
-            stock: item.quantity,
-            supplier: orderSupplier,
-          };
-          await API.post('/books', payload);
-        } else {
-          // Try increasing stock in both Book and SupplierBook collections
-          try {
-            // Try main Book collection first
-            await API.put(`/books/${item.bookId}/increase-stock`, {
-              quantity: item.quantity,
-              supplier: orderSupplier,
-            });
-          } catch (err) {
-            // If not found, try SupplierBook collection
-            await API.put(`/suppliers/${orderSupplier}/supplierBook/${item.bookId}/increase-stock`, {
-              quantity: item.quantity,
-            });
-          }
-        }
-      }
-      setOrderModalOpen(false);
-      setOrderSupplier('');
-      setOrderItems([{ bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }]);
-      fetchBooks();
-      alert('Order placed and inventory updated!');
+      const imageUrl = await uploadImage(file);
+      setForm((f) => ({ ...f, image: imageUrl }));
     } catch (err) {
-      alert('Failed to order: ' + (err.response?.data?.message || err.message));
+      alert('Image upload failed');
     }
   };
 
-  // Add styles for table alignment
+  const handleOrderFromSupplier = async (orderDetails) => {
+    try {
+      await API.post('/orders', orderDetails);
+      alert('Order placed successfully!');
+      fetchBooks();
+    } catch (err) {
+      alert('Failed to place order');
+    }
+  };
+
+  const handleAddOrderBook = () => {
+    setOrderDetails([...orderDetails, { book: '', quantity: 1 }]);
+  };
+
+  const handleOrderSubmit = async () => {
+    if (!selectedSupplier || orderDetails.some(o => !o.book || o.quantity <= 0)) {
+      alert('Please complete all fields');
+      return;
+    }
+
+    const payload = {
+      supplier: selectedSupplier,
+      books: orderDetails
+    };
+
+    await handleOrderFromSupplier(payload);
+    setOrderModalOpen(false);
+    setOrderDetails([{ book: '', quantity: 1 }]);
+    setSelectedSupplier('');
+  };
+
   const tableStyles = {
     textAlign: 'center',
     borderCollapse: 'collapse',
@@ -255,137 +199,44 @@ const Inventory = () => {
     border: '1px solid #ddd',
   };
 
-  // Add styles for image alignment
   const imageStyles = {
     display: 'block',
     margin: '0 auto',
     maxWidth: '100px',
   };
 
-  // --- Real Graph Data ---
-  // 1. Stock by Category
-  const stockByCategory = books.reduce((acc, book) => {
-    if (!book.category) return acc;
-    acc[book.category] = (acc[book.category] || 0) + (Number(book.stock) || 0);
-    return acc;
-  }, {});
-  const stockByCategoryData = {
-    labels: Object.keys(stockByCategory),
-    datasets: [
-      {
-        data: Object.values(stockByCategory),
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6', '#FBBF24', '#34D399'],
-      },
-    ],
-  };
-
-  // 2. Inventory Trends (stock added per month, based on createdAt)
-  const inventoryTrends = {};
-  books.forEach(book => {
-    if (!book.createdAt) return;
-    const date = new Date(book.createdAt);
-    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    inventoryTrends[month] = (inventoryTrends[month] || 0) + (Number(book.stock) || 0);
-  });
-  const sortedMonths = Object.keys(inventoryTrends).sort();
-  const inventoryTrendsData = {
-    labels: sortedMonths,
-    datasets: [
-      {
-        label: 'Stock Added',
-        data: sortedMonths.map(m => inventoryTrends[m]),
-        fill: false,
-        borderColor: '#36A2EB',
-        backgroundColor: '#36A2EB',
-        tension: 0.3,
-      },
-    ],
-  };
-
-  // 3. Top Products (by stock)
-  const topProducts = [...books]
-    .sort((a, b) => (b.stock || 0) - (a.stock || 0))
-    .slice(0, 10);
-  const topProductsData = {
-    labels: topProducts.map(b => b.title),
-    datasets: [
-      {
-        label: 'Stock',
-        data: topProducts.map(b => b.stock),
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6', '#FBBF24', '#34D399', '#F87171', '#60A5FA'],
-      },
-    ],
-  };
-
-  // Add handler to order from a supplier user
-  const handleOrderFromSupplierUser = (supplierUserId) => {
-    setOrderSupplier(supplierUserId);
-    setOrderModalOpen(true);
-  };
-
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Inventory Management</h2>
-      {/* Show all supplier department users if inventory department */}
-      {user?.role === 'inventory department' && (
-        <div className="mb-8 bg-white rounded shadow p-4">
-          <h3 className="text-lg font-bold mb-2 text-red-700">Registered Supplier Department Users</h3>
-          {supplierUsers.length === 0 ? (
-            <div className="text-gray-500">No supplier department users found.</div>
-          ) : (
-            <table className="min-w-full table-auto">
-              <thead>
-                <tr className="bg-red-100">
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Order</th>
-                </tr>
-              </thead>
-              <tbody>
-                {supplierUsers.map(u => (
-                  <tr key={u._id}>
-                    <td>{u.name || u.email || u._id}</td>
-                    <td>{u.email}</td>
-                    <td>{u.phone || '-'}</td>
-                    <td>
-                      <button
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
-                        onClick={() => handleOrderFromSupplierUser(u._id)}
-                      >
-                        Order from this Supplier
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
       <div className="flex gap-4 mb-6">
         <button
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded shadow"
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded flex items-center gap-2 shadow"
           onClick={handleAdd}
         >
-          + Add Book
+          <FaPlus />
+          Add Book
         </button>
-        {(user?.role === 'admin' || user?.role === 'inventory department') && (
-          <button
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
-            onClick={() => setOrderModalOpen(true)}
-          >
-            Order from Supplier
-          </button>
-        )}
+        <button
+          type="button"
+          className="px-6 py-2 bg-green-600 text-white rounded flex items-center gap-2 shadow hover:bg-green-700 transition"
+          onClick={() => setOrderModalOpen(true)}
+        >
+          <FaTruck />
+          Order from Supplier
+        </button>
       </div>
-      {/* Modal */}
+
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
             <button
               className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
-              onClick={() => { setModalOpen(false); setEditing(null); setForm(emptyForm); setImageFile(null); }}
+              onClick={() => {
+                setModalOpen(false);
+                setEditing(null);
+                setForm(emptyForm);
+                setImageFile(null);
+              }}
               aria-label="Close"
             >
               &times;
@@ -394,122 +245,55 @@ const Inventory = () => {
               {editing ? 'Edit Book' : 'Add Book'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Title"
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="text"
-                placeholder="Author"
-                value={form.author}
-                onChange={e => setForm(f => ({ ...f, author: e.target.value }))}
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                value={form.price}
-                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                required
-                min="0"
-                step="0.01"
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="number"
-                placeholder="Stock"
-                value={form.stock}
-                onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
-                required
-                min="0"
-                className="w-full border px-3 py-2 rounded"
-              />
-              <div>
-                <label className="block mb-1 text-sm text-red-700 font-semibold">Book Image</label>
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={form.image}
-                  onChange={e => { setForm(f => ({ ...f, image: e.target.value })); setImageFile(null); }}
-                  className="w-full border px-3 py-2 rounded mb-2"
-                />
-                <div className="flex items-center gap-2">
-                  <label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleImageChange}
-                    />
-                    <button
-                      type="button"
-                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                      onClick={e => {
-                        e.preventDefault();
-                        e.target.previousSibling.click();
-                      }}
-                    >
-                      Choose File
-                    </button>
-                  </label>
-                  {imageFile && (
-                    <span className="text-xs text-green-700">{imageFile.name}</span>
-                  )}
-                </div>
-                {(form.image || imageFile) && (
-                  <div className="mt-2">
-                    <img
-                      src={imageFile ? URL.createObjectURL(imageFile) : form.image}
-                      alt="Preview"
-                      className="h-16 w-16 object-cover rounded shadow"
-                    />
-                  </div>
-                )}
+              <input type="text" placeholder="Title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
+              <input type="text" placeholder="Author" value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
+              <input type="number" placeholder="Price" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
+              <input type="number" placeholder="Stock" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
+              
+              {/* Hidden Image URL field to avoid user interference */}
+              <input type="hidden" value={form.image} readOnly />
+
+              <div className="flex items-center gap-2 mb-2">
+                <label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleImageChange}
+                  />
+                  <button
+                    type="button"
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                    onClick={(e) => e.target.previousSibling.click()}
+                  >
+                    Choose File
+                  </button>
+                </label>
+                {imageFile && <span className="text-xs text-green-700">{imageFile.name}</span>}
               </div>
-              <input
-                type="text"
-                placeholder="Description"
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full border px-3 py-2 rounded"
-              />
-              <select
-                value={form.category || ''}
-                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                className="w-full border px-3 py-2 rounded"
-              >
+
+              {form.image && (
+                <div className="mt-2">
+                  <img
+                    src={form.image}
+                    alt="Preview"
+                    className="h-16 w-16 object-cover rounded shadow"
+                  />
+                </div>
+              )}
+              
+              <input type="text" placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full border px-3 py-2 rounded" />
+              <select value={form.category || ''} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full border px-3 py-2 rounded">
                 <option value="" disabled>Select Category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <select
-                value={form.supplier || ''}
-                onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
-                className="w-full border px-3 py-2 rounded"
-              >
+              <select value={form.supplier || ''} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} className="w-full border px-3 py-2 rounded">
                 <option value="" disabled>Select Supplier</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier._id} value={supplier._id}>
-                    {supplier.companyName}
-                    {supplier.fromUser ? ' (User)' : ''}
-                  </option>
-                ))}
+                {suppliers.map((s) => <option key={s._id} value={s._id}>{s.companyName}</option>)}
               </select>
               <div className="flex gap-2 mt-4">
-                <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">
-                  {editing ? 'Update' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded border flex-1"
-                  onClick={() => { setModalOpen(false); setEditing(null); setForm(emptyForm); setImageFile(null); }}
-                >
+                <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">{editing ? 'Update' : 'Create'}</button>
+                <button type="button" className="px-4 py-2 rounded border flex-1" onClick={() => { setModalOpen(false); setEditing(null); setForm(emptyForm); setImageFile(null); }}>
                   Cancel
                 </button>
               </div>
@@ -517,10 +301,10 @@ const Inventory = () => {
           </div>
         </div>
       )}
-      {/* Order from Supplier Modal */}
-      {(user?.role === 'admin' || user?.role === 'inventory department') && orderModalOpen && (
+
+      {orderModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
             <button
               className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
               onClick={() => setOrderModalOpen(false)}
@@ -529,172 +313,214 @@ const Inventory = () => {
               &times;
             </button>
             <h3 className="text-xl font-bold mb-4 text-green-700">Order from Supplier</h3>
-            <form onSubmit={handleOrderFromSupplier} className="space-y-4">
-              <div>
-                <label className="font-semibold">Supplier:</label>
-                <select
-                  className="border px-3 py-2 rounded w-full"
-                  value={orderSupplier}
-                  onChange={e => setOrderSupplier(e.target.value)}
-                  required
-                >
-                  <option value="">Select Supplier</option>
-                  {suppliers.map(s => (
-                    <option key={s._id} value={s._id}>
-                      {s.companyName}{s.fromUser ? ' (User)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="font-semibold">Books to Order:</label>
-                {orderItems.map((item, idx) => (
-                  <div key={idx} className="border p-3 rounded mb-2 bg-gray-50">
-                    <div className="flex gap-2 items-center mb-2">
-                      <label className="text-sm">
-                        <input
-                          type="checkbox"
-                          checked={item.isNew}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].isNew = e.target.checked;
-                            setOrderItems(arr);
-                          }}
-                        /> New Book
-                      </label>
-                      <button
-                        type="button"
-                        className="text-red-600 font-bold ml-auto"
-                        onClick={() => setOrderItems(orderItems.filter((_, i) => i !== idx))}
-                        disabled={orderItems.length === 1}
-                      >×</button>
-                    </div>
-                    {!item.isNew ? (
-                      <>
-                        <select
-                          className="border px-2 py-1 rounded w-full mb-2"
-                          value={item.bookId}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].bookId = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                          required
-                        >
-                          <option value="">Select Book</option>
-                          {books.map(b => (
-                            <option key={b._id} value={b._id}>{b.title} by {b.author}</option>
-                          ))}
-                        </select>
-                      </>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          placeholder="Title"
-                          className="border px-2 py-1 rounded"
-                          value={item.newBook.title}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.title = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          placeholder="Author"
-                          className="border px-2 py-1 rounded"
-                          value={item.newBook.author}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.author = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                          required
-                        />
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          className="border px-2 py-1 rounded"
-                          value={item.newBook.price}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.price = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          placeholder="Category"
-                          className="border px-2 py-1 rounded"
-                          value={item.newBook.category}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.category = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                          required
-                        />
-                        <input
-                          type="text"
-                          placeholder="Description"
-                          className="border px-2 py-1 rounded col-span-2"
-                          value={item.newBook.description}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.description = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Image URL"
-                          className="border px-2 py-1 rounded col-span-2"
-                          value={item.newBook.image}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.image = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex gap-2 items-center mt-2">
-                      <label className="text-sm">Quantity:</label>
+            <form className="space-y-4">
+              <select
+                value={selectedSupplier}
+                onChange={e => setSelectedSupplier(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="" disabled>Select Supplier</option>
+                {suppliers.map(s => (
+                  <option key={s._id} value={s._id}>{s.companyName}</option>
+                ))}
+              </select>
+              {orderDetails.map((order, index) => (
+                <div key={index} className="border p-4 rounded mb-2 relative">
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 text-red-600 text-lg"
+                    onClick={() => {
+                      const updatedOrders = orderDetails.filter((_, i) => i !== index);
+                      setOrderDetails(updatedOrders);
+                    }}
+                    aria-label="Remove"
+                  >
+                    &times;
+                  </button>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={order.newBook || false}
+                      onChange={e => {
+                        const updatedOrders = [...orderDetails];
+                        updatedOrders[index].newBook = e.target.checked;
+                        setOrderDetails(updatedOrders);
+                      }}
+                    />
+                    <span>New Book</span>
+                  </div>
+                  {order.newBook ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Title"
+                        value={order.title || ''}
+                        onChange={e => {
+                          const updatedOrders = [...orderDetails];
+                          updatedOrders[index].title = e.target.value;
+                          setOrderDetails(updatedOrders);
+                        }}
+                        className="w-full border px-3 py-2 rounded"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Author"
+                        value={order.author || ''}
+                        onChange={e => {
+                          const updatedOrders = [...orderDetails];
+                          updatedOrders[index].author = e.target.value;
+                          setOrderDetails(updatedOrders);
+                        }}
+                        className="w-full border px-3 py-2 rounded"
+                      />
                       <input
                         type="number"
-                        min={1}
-                        className="border px-2 py-1 rounded w-24"
-                        value={item.quantity}
+                        placeholder="Price"
+                        value={order.price || ''}
                         onChange={e => {
-                          const arr = [...orderItems];
-                          arr[idx].quantity = Number(e.target.value);
-                          setOrderItems(arr);
+                          const updatedOrders = [...orderDetails];
+                          updatedOrders[index].price = e.target.value;
+                          setOrderDetails(updatedOrders);
                         }}
-                        required
+                        className="w-full border px-3 py-2 rounded"
+                      />
+                      <select
+                        value={order.category || ''}
+                        onChange={e => {
+                          const updatedOrders = [...orderDetails];
+                          updatedOrders[index].category = e.target.value;
+                          setOrderDetails(updatedOrders);
+                        }}
+                        className="w-full border px-3 py-2 rounded"
+                      >
+                        <option value="" disabled>Select Category</option>
+                        {categories.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Description"
+                        value={order.description || ''}
+                        onChange={e => {
+                          const updatedOrders = [...orderDetails];
+                          updatedOrders[index].description = e.target.value;
+                          setOrderDetails(updatedOrders);
+                        }}
+                        className="w-full border px-3 py-2 rounded"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Image URL"
+                        value={order.image || ''}
+                        onChange={e => {
+                          const updatedOrders = [...orderDetails];
+                          updatedOrders[index].image = e.target.value;
+                          setOrderDetails(updatedOrders);
+                        }}
+                        className="w-full border px-3 py-2 rounded"
                       />
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    <select
+                      value={order.book}
+                      onChange={e => {
+                        const updatedOrders = [...orderDetails];
+                        updatedOrders[index].book = e.target.value;
+                        setOrderDetails(updatedOrders);
+                      }}
+                      className="w-full border px-3 py-2 rounded"
+                    >
+                      <option value="" disabled>Select Book</option>
+                      {books.map(b => (
+                        <option key={b._id} value={b._id}>{b.title}</option>
+                      ))}
+                    </select>
+                  )}
+                  <input
+                    type="number"
+                    value={order.quantity}
+                    onChange={e => {
+                      const updatedOrders = [...orderDetails];
+                      updatedOrders[index].quantity = Number(e.target.value);
+                      setOrderDetails(updatedOrders);
+                    }}
+                    className="w-full border px-3 py-2 rounded mt-2"
+                    min="1"
+                    placeholder="Quantity"
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                className="text-green-600 hover:text-green-700 text-sm"
+                onClick={handleAddOrderBook}
+              >
+                + Add Another Book
+              </button>
+              <div className="flex gap-2 mt-4">
                 <button
                   type="button"
-                  className="text-green-600 font-bold"
-                  onClick={() => setOrderItems([...orderItems, { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }])}
-                >+ Add Another Book</button>
+                  className="bg-green-600 text-white px-4 py-2 rounded flex-1"
+                  onClick={handleOrderSubmit}
+                >
+                  Place Order
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded border flex-1"
+                  onClick={() => setOrderModalOpen(false)}
+                >
+                  Cancel
+                </button>
               </div>
-              <button
-                type="submit"
-                className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded transition-colors"
-              >
-                Place Order
-              </button>
             </form>
           </div>
         </div>
       )}
-      {/* ...existing code for table, charts, and image modal... */}
+
+      <div className="mt-8 bg-white rounded shadow p-4">
+        <h3 className="text-lg font-bold mb-2 text-red-700">Inventory Table</h3>
+        <table style={tableStyles}>
+          <thead>
+            <tr style={{ backgroundColor: '#f8f8f8' }}>
+              <th style={cellStyles}>Title</th>
+              <th style={cellStyles}>Author</th>
+              <th style={cellStyles}>Price</th>
+              <th style={cellStyles}>Stock</th>
+              <th style={cellStyles}>Image</th>
+              <th style={cellStyles}>Description</th>
+              <th style={cellStyles}>Category</th>
+              <th style={cellStyles}>Supplier</th>
+              <th style={cellStyles}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {books.map((b) => (
+              <tr key={b._id}>
+                <td style={cellStyles}>{b.title}</td>
+                <td style={cellStyles}>{b.author}</td>
+                <td style={cellStyles}>${Number(b.price).toFixed(2)}</td>
+                <td style={cellStyles}>{b.stock}</td>
+                <td style={cellStyles}>
+                  {b.image ? (
+                    <img src={b.image} alt={b.title} style={imageStyles} />
+                  ) : (
+                    <span style={{ color: 'gray' }}>No image</span>
+                  )}
+                </td>
+                <td style={cellStyles}>{b.description}</td>
+                <td style={cellStyles}>{b.category}</td>
+                <td style={cellStyles}>{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
+                <td style={cellStyles}>
+                  <button onClick={() => handleEdit(b)} style={{ color: 'blue', marginRight: '8px' }}>Edit</button>
+                  <button onClick={() => handleDelete(b._id)} style={{ color: 'red' }}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
