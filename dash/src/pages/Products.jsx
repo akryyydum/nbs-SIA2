@@ -52,7 +52,7 @@ const Products = () => {
       return;
     }
     try {
-      // Fetch current cart from backend (cart.model.js)
+      // Always use API instance for LAN compatibility
       const res = await API.get('/cart', {
         headers: { Authorization: `Bearer ${user.token}` }
       });

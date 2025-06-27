@@ -4,6 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { FaTrashAlt, FaCheckSquare, FaRegSquare, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSearch } from 'react-icons/fa';
 
+// Add this API instance for LAN compatibility
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
+});
+
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -22,10 +27,9 @@ const Navbar = () => {
       return;
     }
     try {
-      const res = await axios.get(
-        (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') + '/cart',
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
+      const res = await API.get('/cart', {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
       setCart(res.data.items || []);
     } catch {
       setCart([]);
@@ -150,10 +154,7 @@ const Navbar = () => {
                             title="Remove from cart"
                             onClick={async () => {
                               try {
-                                await axios.delete(
-                                  (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') + `/cart/${item._id}`,
-                                  { headers: { Authorization: `Bearer ${user.token}` } }
-                                );
+                                await API.delete(`/cart/${item._id}`, { headers: { Authorization: `Bearer ${user.token}` } });
                                 setCart(cart.filter((_, i) => i !== idx));
                               } catch {
                                 // Optionally show error
