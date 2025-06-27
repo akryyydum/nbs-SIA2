@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Add this import
-import { io } from 'socket.io-client'; // Add this import
+import { useAuth } from '../context/AuthContext';
+import { io } from 'socket.io-client';
 
 // Use Vite env variable if set, otherwise fallback to current origin for LAN support
 const API = axios.create({
@@ -21,29 +21,32 @@ const Products = () => {
   const [modalBook, setModalBook] = useState(null);
   const [modalQty, setModalQty] = useState(1);
   const [suppliers, setSuppliers] = useState([]);
-  const { user } = useAuth(); // Add this line
+  const { user } = useAuth();
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const search = searchParams.get('search')?.toLowerCase() || '';
 
+  // Move fetchBooks outside useEffect so it can be reused
+  const fetchBooks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await API.get('/books');
+      setBooks(res.data);
+      // Extract unique categoriexs from books
+      const cats = Array.from(new Set(res.data.map(b => b.category).filter(Boolean)));
+      setCategories(cats);
+    } catch (err) {
+      setBooks([]);
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
-    const fetchBooks = async () => {
-      setLoading(true);
-      try {
-        const res = await API.get('/books');
-        setBooks(res.data);
-        // Extract unique categoriexs from books
-        const cats = Array.from(new Set(res.data.map(b => b.category).filter(Boolean)));
-        setCategories(cats);
-      } catch (err) {
-      }
-      setLoading(false);
-    };
     fetchBooks();
     // Fetch suppliers for display
     API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
-  }, []);
+  }, [fetchBooks]);
 
   useEffect(() => {
     // Listen for real-time updates
@@ -51,7 +54,7 @@ const Products = () => {
     return () => {
       socket.off('booksUpdated', fetchBooks);
     };
-  }, []);
+  }, [fetchBooks]);
 
   // Add to cart handler (calls backend API, increments quantity)
   const handleAddToCart = async (book, qty = 1) => {
