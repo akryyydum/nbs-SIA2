@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import SalesTrendsChart from "../components/SalesTrendsChart";
+import TopProductsBar from "../components/TopProductsBar";
+import OrdersByCategory from "../components/OrdersByCategory";
 
 const API = axios.create({
   baseURL: 'http://192.168.9.16:5000/api',
@@ -486,9 +489,10 @@ const SalesDashboard = () => {
         </section>
       )}
 
-      {/* 1. Key Sales Metrics / KPIs */}
+      {/* Dashboard Tab */}
       {activeTab === "dashboard" && (
         <section>
+          {/* 1. Key Sales Metrics / KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
               <div className="text-sm text-gray-500">Total Sales Revenue</div>
@@ -509,25 +513,99 @@ const SalesDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* 2. Top-Selling Products & 3. Sales by Category */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-sm text-gray-500 mb-2">Top-Selling Products</div>
               <ul className="list-disc ml-6">
-                {metrics.topProducts.map((prod) => (
-                  <li key={prod} className="text-red-700 font-semibold">{prod}</li>
-                ))}
+                {metrics.topProducts.length === 0 ? (
+                  <li className="text-gray-400">No data</li>
+                ) : (
+                  metrics.topProducts.map((prod, idx) => (
+                    <li key={idx} className="text-red-700 font-semibold">{prod}</li>
+                  ))
+                )}
               </ul>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-sm text-gray-500 mb-2">Sales by Category</div>
               <ul>
-                {metrics.salesByCategory.map((cat) => (
-                  <li key={cat.category} className="flex justify-between">
-                    <span>{cat.category}</span>
-                    <span className="font-semibold text-red-700">₱{Number(cat.value).toLocaleString()}</span>
-                  </li>
-                ))}
+                {metrics.salesByCategory.length === 0 ? (
+                  <li className="text-gray-400">No data</li>
+                ) : (
+                  metrics.salesByCategory.map((cat, idx) => (
+                    <li key={cat.category || idx} className="flex justify-between">
+                      <span>{cat.category}</span>
+                      <span className="font-semibold text-red-700">₱{Number(cat.value).toLocaleString()}</span>
+                    </li>
+                  ))
+                )}
               </ul>
+            </div>
+          </div>
+
+          {/* 4. Sales Trends (Line Chart) */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8 flex flex-col items-center">
+            <div className="text-gray-500 mb-2">Sales Trends</div>
+            <div className="w-full h-40">
+              <SalesTrendsChart data={metrics.salesTrends || []} />
+            </div>
+          </div>
+
+          {/* 5. Recent Orders (Optional) */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <div className="text-gray-500 mb-2 font-semibold">Recent Orders</div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-2 text-left">Order ID</th>
+                    <th className="py-2 px-2 text-left">Customer</th>
+                    <th className="py-2 px-2 text-left">Total</th>
+                    <th className="py-2 px-2 text-left">Status</th>
+                    <th className="py-2 px-2 text-left">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders
+                    .slice()
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 5)
+                    .map(order => (
+                      <tr key={order._id} className="border-b">
+                        <td className="py-1 px-2">{order._id}</td>
+                        <td className="py-1 px-2">{order.user?.name || order.user || "N/A"}</td>
+                        <td className="py-1 px-2">₱{Number(order.totalPrice).toFixed(2)}</td>
+                        <td className="py-1 px-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium
+                            ${order.status === "paid" ? "bg-green-100 text-green-700"
+                              : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
+                              : order.status === "accepted" ? "bg-blue-100 text-blue-700"
+                              : order.status === "declined" ? "bg-gray-300 text-gray-700"
+                              : "bg-gray-100 text-gray-700"}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="py-1 px-2">{new Date(order.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 6. Other Visuals (Optional) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+              <div className="text-gray-500 mb-2">Top Products (Bar Chart)</div>
+              {/* TODO: Replace with a real bar chart */}
+              <TopProductsBar data={metrics.topProductsData || []} />
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+              <div className="text-gray-500 mb-2">Orders by Category (Pie Chart)</div>
+              {/* TODO: Replace with a real pie chart */}
+              <OrdersByCategory data={metrics.salesByCategory || []} />
             </div>
           </div>
         </section>
