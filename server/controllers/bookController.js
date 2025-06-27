@@ -9,6 +9,8 @@ exports.createBook = async (req, res) => {
   try {
     const book = new Book({ title, author, price, description, stock, image, category, supplier });
     const savedBook = await book.save();
+    // Emit real-time update
+    req.app.get('io').emit('booksUpdated');
     res.status(201).json(savedBook);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -57,6 +59,7 @@ exports.updateBook = async (req, res) => {
     book.image = image || book.image;
 
     const updatedBook = await book.save();
+    req.app.get('io').emit('booksUpdated');
     res.json(updatedBook);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -79,7 +82,8 @@ exports.deleteBook = async (req, res) => {
       return res.status(404).json({ message: 'Book not found' });
     }
 
-    await book.deleteOne(); // ✅ Consistent and safe
+    await book.deleteOne();
+    req.app.get('io').emit('booksUpdated');
     res.status(200).json({ message: 'Book deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });

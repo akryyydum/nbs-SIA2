@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Add this import
+import { useAuth } from '../context/AuthContext';
+import { io } from 'socket.io-client';
 
 // Use Vite env variable if set, otherwise fallback to current origin for LAN support
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
 });
+
+const socket = io(import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || window.location.origin.replace(':5173', ':5000'));
 
 const Products = () => {
   const [books, setBooks] = useState([]);
@@ -18,29 +21,40 @@ const Products = () => {
   const [modalBook, setModalBook] = useState(null);
   const [modalQty, setModalQty] = useState(1);
   const [suppliers, setSuppliers] = useState([]);
-  const { user } = useAuth(); // Add this line
+  const { user } = useAuth();
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const search = searchParams.get('search')?.toLowerCase() || '';
 
+  // Move fetchBooks outside useEffect so it can be reused
+  const fetchBooks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await API.get('/books');
+      setBooks(res.data);
+      // Extract unique categoriexs from books
+      const cats = Array.from(new Set(res.data.map(b => b.category).filter(Boolean)));
+      setCategories(cats);
+    } catch (err) {
+      setBooks([]);
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
-    const fetchBooks = async () => {
-      setLoading(true);
-      try {
-        const res = await API.get('/books');
-        setBooks(res.data);
-        // Extract unique categoriexs from books
-        const cats = Array.from(new Set(res.data.map(b => b.category).filter(Boolean)));
-        setCategories(cats);
-      } catch (err) {
-      }
-      setLoading(false);
-    };
     fetchBooks();
     // Fetch suppliers for display
     API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
-  }, []);
+  }, [fetchBooks]);
+
+  useEffect(() => {
+    // Listen for real-time updates
+    socket.on('booksUpdated', fetchBooks);
+    return () => {
+      socket.off('booksUpdated', fetchBooks);
+    };
+  }, [fetchBooks]);
 
   // Add to cart handler (calls backend API, increments quantity)
   const handleAddToCart = async (book, qty = 1) => {
@@ -156,8 +170,12 @@ const Products = () => {
             >
               {book.image && (
                 <img
-                 src={`${import.meta.env.VITE_API_BASE_URL || window.location.origin}${book.image}`}
-  alt={book.title}
+                  src={
+                    book.image.startsWith('http')
+                      ? book.image
+                      : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${book.image.startsWith('/') ? '' : '/'}${book.image}`
+                  }
+                  alt={book.title}
                   className="h-40 w-32 object-cover rounded-lg mb-4 shadow"
                 />
               )}
@@ -214,7 +232,11 @@ const Products = () => {
             <div className="p-8 flex flex-col h-full">
               {modalBook.image && (
                 <img
-                  src={modalBook.image}
+                  src={
+                    modalBook.image.startsWith('http')
+                      ? modalBook.image
+                      : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${modalBook.image.startsWith('/') ? '' : '/'}${modalBook.image}`
+                  }
                   alt={modalBook.title}
                   className="h-48 w-36 object-cover rounded-lg mb-4 mx-auto shadow"
                 />

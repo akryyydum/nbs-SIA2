@@ -2,8 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom'; // <-- add useLocation
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { io } from 'socket.io-client'; // Add this import
 // Add icons
 import { FaTrashAlt, FaCheckSquare, FaRegSquare, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSearch } from 'react-icons/fa';
+
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  (import.meta.env.VITE_API_BASE_URL
+    ? import.meta.env.VITE_API_BASE_URL.replace('/api', '')
+    : window.location.origin.replace(':5173', ':5000'));
+
+const socket = io(SOCKET_URL, { transports: ['websocket'] });
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -34,6 +43,16 @@ const Navbar = () => {
       }
     };
     fetchCart();
+  }, [user]);
+
+  useEffect(() => {
+    // Listen for real-time cart updates
+    socket.on('cartUpdated', () => {
+      if (user?.token) fetchCart();
+    });
+    return () => {
+      socket.off('cartUpdated');
+    };
   }, [user]);
 
   const handleSearch = (e) => {

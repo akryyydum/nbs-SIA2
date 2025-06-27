@@ -49,16 +49,8 @@ const Orders = () => {
   const handleAccept = async (order) => {
     if (!window.confirm('Accept this order? This will decrease book stocks.')) return;
     try {
-      // 1. Update order status to 'accepted'
+      // Only update order status to 'accepted' (backend will handle stock)
       await API.put(`/orders/${order._id}/accept`);
-      // 2. Decrease stock for each book in the order
-      await Promise.all(
-        order.items
-          .filter(item => item.book && item.book._id)
-          .map(item =>
-            API.put(`/books/${item.book._id}/decrease-stock`, { quantity: item.quantity })
-          )
-      );
       setModalOpen(false); // This will trigger useEffect to refetch orders
     } catch (err) {
       alert('Failed to accept order: ' + (err?.response?.data?.message || err.message));
