@@ -1,18 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // <-- add useLocation
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { io } from 'socket.io-client'; // Add this import
-// Add icons
 import { FaTrashAlt, FaCheckSquare, FaRegSquare, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSearch } from 'react-icons/fa';
-
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ||
-  (import.meta.env.VITE_API_BASE_URL
-    ? import.meta.env.VITE_API_BASE_URL.replace('/api', '')
-    : window.location.origin.replace(':5173', ':5000'));
-
-const socket = io(SOCKET_URL, { transports: ['websocket'] });
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -25,35 +15,29 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation(); // <-- get current location
 
-  // Fetch cart from backend for the logged-in user
-  useEffect(() => {
+  // Define fetchCart so it can be reused
+  const fetchCart = async () => {
     if (!user?.token) {
       setCart([]);
       return;
     }
-    const fetchCart = async () => {
-      try {
-        const res = await axios.get(
-          (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') + '/cart',
-          { headers: { Authorization: `Bearer ${user.token}` } }
-        );
-        setCart(res.data.items || []);
-      } catch {
-        setCart([]);
-      }
-    };
+    try {
+      const res = await axios.get(
+        (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') + '/cart',
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      setCart(res.data.items || []);
+    } catch {
+      setCart([]);
+    }
+  };
+
+  // Fetch cart from backend for the logged-in user
+  useEffect(() => {
     fetchCart();
   }, [user]);
 
-  useEffect(() => {
-    // Listen for real-time cart updates
-    socket.on('cartUpdated', () => {
-      if (user?.token) fetchCart();
-    });
-    return () => {
-      socket.off('cartUpdated');
-    };
-  }, [user]);
+  // Remove socket.io useEffect for cart updates
 
   const handleSearch = (e) => {
     e.preventDefault();

@@ -96,6 +96,28 @@ router.post('/:id/books', async (req, res) => {
   }
 });
 
+// POST: Add a book to SupplierBook collection for a supplier
+router.post('/:id/supplierBook', async (req, res) => {
+  try {
+    const { title, author, price, category, description, image, stock } = req.body;
+    const supplierId = req.params.id;
+    const book = new SupplierBook({
+      supplier: supplierId,
+      title,
+      author,
+      price,
+      category,
+      description,
+      image,
+      stock,
+    });
+    await book.save();
+    res.status(201).json(book);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // PUT: Update a supplier's book
 router.put('/:supplierId/books/:bookId', async (req, res) => {
   try {

@@ -2,14 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { io } from 'socket.io-client';
 
 // Use Vite env variable if set, otherwise fallback to current origin for LAN support
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
 });
-
-const socket = io(import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || window.location.origin.replace(':5173', ':5000'));
 
 const Products = () => {
   const [books, setBooks] = useState([]);
@@ -46,14 +43,6 @@ const Products = () => {
     fetchBooks();
     // Fetch suppliers for display
     API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
-  }, [fetchBooks]);
-
-  useEffect(() => {
-    // Listen for real-time updates
-    socket.on('booksUpdated', fetchBooks);
-    return () => {
-      socket.off('booksUpdated', fetchBooks);
-    };
   }, [fetchBooks]);
 
   // Add to cart handler (calls backend API, increments quantity)

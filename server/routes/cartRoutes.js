@@ -18,14 +18,12 @@ router.post('/', protect, async (req, res) => {
   cart.items = items;
   cart.updatedAt = new Date();
   await cart.save();
-  req.app.get('io').emit('cartUpdated', { userId: req.user._id });
   res.json(cart);
 });
 
 // Clear cart
 router.delete('/', protect, async (req, res) => {
   await Cart.findOneAndDelete({ user: req.user._id });
-  req.app.get('io').emit('cartUpdated', { userId: req.user._id });
   res.json({ message: 'Cart cleared' });
 });
 
@@ -44,7 +42,6 @@ router.delete('/:itemId', protect, async (req, res) => {
 
   cart.updatedAt = new Date();
   await cart.save();
-  req.app.get('io').emit('cartUpdated', { userId: req.user._id });
   res.json({ message: 'Item removed', cart });
 });
 
@@ -62,7 +59,6 @@ router.delete('/:id', protect, async (req, res) => {
       return res.status(404).json({ message: 'Cart item not found' });
     }
     await cart.save();
-    req.app.get('io').emit('cartUpdated', { userId: req.user._id });
     res.json({ message: 'Item removed from cart', cart });
   } catch (err) {
     res.status(500).json({ message: err.message });
