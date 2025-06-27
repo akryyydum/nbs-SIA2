@@ -81,6 +81,9 @@ const Navbar = () => {
                     <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
                       About
                     </Link>
+                    <Link to="/orders" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                      Orders
+                    </Link>
                   </>
                 )
               )}
