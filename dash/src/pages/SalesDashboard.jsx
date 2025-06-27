@@ -14,7 +14,7 @@ const SalesDashboard = () => {
   const [modalOrder, setModalOrder] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [users, setUsers] = useState([]);
+  // const [users, setUsers] = useState([]);
   const [books, setBooks] = useState([]);
   const [newOrder, setNewOrder] = useState({
     user: "",
@@ -27,7 +27,12 @@ const SalesDashboard = () => {
     topProducts: [],
     salesByCategory: [],
   });
+  const [logs, setLogs] = useState([]);
   const { user } = useAuth();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5;
 
   API.defaults.headers.common['Authorization'] = `Bearer ${user?.token}`;
 
@@ -102,6 +107,17 @@ const SalesDashboard = () => {
     return true;
   });
 
+  // Pagination logic
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
   // Fetch users and books for the add order form
   useEffect(() => {
     if (showAddModal) {
@@ -131,9 +147,7 @@ const SalesDashboard = () => {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/orders/metrics`, {
-          headers: { Authorization: `Bearer ${user?.token}` }
-        });
+        const res = await API.get('/orders/metrics');
         setMetrics(res.data);
       } catch {
         setMetrics({
@@ -146,6 +160,19 @@ const SalesDashboard = () => {
       }
     };
     if (activeTab === "dashboard") fetchMetrics();
+  }, [activeTab, user]);
+
+  // Fetch logs for sales activity
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await API.get('/orders/logs');
+        setLogs(res.data);
+      } catch (err) {
+        console.error("Failed to fetch logs:", err);
+      }
+    };
+    if (activeTab === "logs") fetchLogs();
   }, [activeTab, user]);
 
   return (
@@ -161,18 +188,6 @@ const SalesDashboard = () => {
           {
             key: "orders",
             label: "Orders"
-          },
-          {
-            key: "customers",
-            label: "Customers"
-          },
-          {
-            key: "logs",
-            label: "Logs"
-          },
-          {
-            key: "reports",
-            label: "Reports"
           }
         ].map((tab) => (
           <button
@@ -226,65 +241,95 @@ const SalesDashboard = () => {
           ) : filteredOrders.length === 0 ? (
             <div className="text-center text-gray-400 py-8">No orders found.</div>
           ) : (
-            <div className="space-y-6">
-              {filteredOrders.map(order => (
-                <div key={order._id} className="border rounded-lg p-4 shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <div>
-                      <span className="font-semibold">Order ID:</span> {order._id}
+            <>
+              <div className="space-y-6">
+                {currentOrders.map(order => (
+                  <div key={order._id} className="border rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <span className="font-semibold">Order ID:</span> {order._id}
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium
+                        ${order.status === "paid" ? "bg-green-100 text-green-700"
+                          : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
+                          : order.status === "accepted" ? "bg-blue-100 text-blue-700"
+                          : order.status === "declined" ? "bg-gray-300 text-gray-700"
+                          : "bg-gray-100 text-gray-700"}`}>
+                        {order.status}
+                      </span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium
-                      ${order.status === "paid" ? "bg-green-100 text-green-700"
-                        : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
-                        : order.status === "accepted" ? "bg-blue-100 text-blue-700"
-                        : order.status === "declined" ? "bg-gray-300 text-gray-700"
-                        : "bg-gray-100 text-gray-700"}`}>
-                      {order.status}
-                    </span>
+                    <div className="mb-2 text-sm text-gray-600">
+                      <span className="font-semibold">Placed:</span> {new Date(order.createdAt).toLocaleString()}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-sm">Items:</span>
+                      <ul className="ml-4 text-sm">
+                        {order.items.map((item, idx) => (
+                          <li key={idx} className="flex items-center gap-2 mb-1">
+                            {item.book?.image && (
+                              <img
+                                src={item.book.image}
+                                alt={item.book?.title || "Book"}
+                                className="h-8 w-6 object-cover rounded shadow"
+                              />
+                            )}
+                            <span>
+                              {item.book?.title || "Book"} x {item.quantity}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="mt-2 font-bold text-right">
+                      Total: ₱{Number(order.totalPrice).toFixed(2)}
+                    </div>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        className="px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300 transition"
+                        onClick={() => setModalOrder(order)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                        onClick={() => handleDeleteOrder(order)}
+                        disabled={actionLoading === order._id}
+                      >
+                        {actionLoading === order._id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="mb-2 text-sm text-gray-600">
-                    <span className="font-semibold">Placed:</span> {new Date(order.createdAt).toLocaleString()}
-                  </div>
-                  <div>
-                    <span className="font-semibold text-sm">Items:</span>
-                    <ul className="ml-4 text-sm">
-                      {order.items.map((item, idx) => (
-                        <li key={idx} className="flex items-center gap-2 mb-1">
-                          {item.book?.image && (
-                            <img
-                              src={item.book.image}
-                              alt={item.book?.title || "Book"}
-                              className="h-8 w-6 object-cover rounded shadow"
-                            />
-                          )}
-                          <span>
-                            {item.book?.title || "Book"} x {item.quantity}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="mt-2 font-bold text-right">
-                    Total: ₱{Number(order.totalPrice).toFixed(2)}
-                  </div>
-                  <div className="mt-3 flex justify-end gap-2">
+                ))}
+              </div>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6 gap-2">
+                  <button
+                    className="px-3 py-1 rounded bg-gray-200"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </button>
+                  {[...Array(totalPages)].map((_, idx) => (
                     <button
-                      className="px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300 transition"
-                      onClick={() => setModalOrder(order)}
+                      key={idx + 1}
+                      className={`px-3 py-1 rounded ${currentPage === idx + 1 ? "bg-red-600 text-white" : "bg-gray-200"}`}
+                      onClick={() => setCurrentPage(idx + 1)}
                     >
-                      View
+                      {idx + 1}
                     </button>
-                    <button
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                      onClick={() => handleDeleteOrder(order)}
-                      disabled={actionLoading === order._id}
-                    >
-                      {actionLoading === order._id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
+                  ))}
+                  <button
+                    className="px-3 py-1 rounded bg-gray-200"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
           {/* Modal for order details */}
           {modalOrder && (
@@ -504,8 +549,29 @@ const SalesDashboard = () => {
         <section>
           <h2 className="text-xl font-bold text-red-700 mb-4">Sales Logs</h2>
           <div className="bg-white rounded-lg shadow p-6">
-            {/* TODO: Implement Logs Table */}
-            <div className="text-gray-500">Sales logs table goes here.</div>
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th>Date/Time</th>
+                  <th>Action</th>
+                  <th>Order ID</th>
+                  <th>Performed By</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Map your logs here */}
+                {logs.map(log => (
+                  <tr key={log._id}>
+                    <td>{new Date(log.timestamp).toLocaleString()}</td>
+                    <td>{log.action}</td>
+                    <td>{log.orderId}</td>
+                    <td>{log.performedBy}</td>
+                    <td>{log.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
