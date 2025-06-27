@@ -263,3 +263,5 @@ const SupplierBooks = () => {
 };
 
 export default SupplierBooks;
+
+// No changes needed in this file for the WebSocket error.
