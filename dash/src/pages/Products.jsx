@@ -171,7 +171,7 @@ const Products = () => {
               <div className="w-full flex-1 flex flex-col items-center">
                 <h3 className="text-lg font-bold text-black mb-1 text-center">{book.title}</h3>
                 <div className="text-sm text-gray-700 mb-2 text-center">{book.author}</div>
-                <div className="text-black font-semibold text-lg mb-2">${Number(book.price).toFixed(2)}</div>
+                <div className="text-black font-semibold text-lg mb-2">₱{Number(book.price).toFixed(2)}</div>
                 <div className="text-xs text-gray-500 mb-2 text-center line-clamp-2">{book.description}</div>
                 {/* Category display */}
                 {book.category && (
