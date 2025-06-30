@@ -119,10 +119,24 @@ const Checkout = () => {
         book: item.book._id,
         quantity: item.quantity
       }));
+      // Map paymentMethod to modeofPayment for backend compatibility
+      let modeofPayment = '';
+      if (paymentMethod === 'bank') {
+        modeofPayment = 'Bank Transfer';
+      } else if (paymentMethod === 'cod') {
+        modeofPayment = 'Cash on Delivery';
+      } else {
+        modeofPayment = paymentMethod;
+      }
+
       // Create order
-      const orderRes = await axios.post(
-        `${API_BASE}/orders`, // <-- fix endpoint here
-        { items, billing, paymentMethod, bankInfo: paymentMethod === 'bank' ? bankInfo : undefined },
+      await axios.post(
+        `${API_BASE}/orders`,
+        {
+          items,
+          modeofPayment // <-- make sure this is included and not undefined
+          // ...do NOT send billing or bankInfo unless backend expects them
+        },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       // Optionally: handle payment intent if paymentMethod === 'bank'

@@ -11,9 +11,10 @@ const orderSchema = new mongoose.Schema({
     }
   ],
   totalPrice: { type: Number, required: true },
+  modeofPayment: {type: String, required: true },
   status: { 
     type: String, 
-    enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled', 'accepted', 'declined'], // added accepted, declined
+    enum: ['out for delivery','pending', 'paid', 'shipped', 'completed', 'cancelled', 'accepted', 'declined'], // added accepted, declined
     default: 'pending' 
   },
   createdAt: { type: Date, default: Date.now }

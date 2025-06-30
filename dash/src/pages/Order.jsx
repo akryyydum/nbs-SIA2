@@ -20,6 +20,9 @@ const Order = () => {
   });
   const [bankVerified, setBankVerified] = useState(false);
   const [bankError, setBankError] = useState('');
+  const [receiving, setReceiving] = useState(null);
+  const [modeofPayment, setModeofPayment] = useState('Cash'); // Add this line for payment mode
+  const [newOrder, setNewOrder] = useState({ items: [{ book: "", quantity: 1 }] }); // or match your structure
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -62,6 +65,7 @@ const Order = () => {
     if (filter === 'pending') return order.status === 'pending';
     if (filter === 'accepted') return order.status === 'accepted';
     if (filter === 'declined') return order.status === 'declined';
+    if (filter === 'shipped') return order.status === 'out for delivery';
     return true;
   });
 
@@ -98,6 +102,45 @@ const Order = () => {
     }
   };
 
+  const handleReceived = async (orderId) => {
+    if (!window.confirm('Confirm you have received this order?')) return;
+    setReceiving(orderId);
+    try {
+      await axios.put(
+        `${API_BASE}/orders/${orderId}/received`,
+        {},
+        { headers: { Authorization: `Bearer ${user?.token}` } }
+      );
+      setOrders(orders =>
+        orders.map(o =>
+          o._id === orderId ? { ...o, status: 'received' } : o
+        )
+      );
+    } catch (err) {
+      alert('Failed to mark as received');
+    }
+    setReceiving(null);
+  };
+
+  // Example order creation handler (ensure modeofPayment is included)
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(
+        `${API_BASE}/orders`,
+        {
+          items: newOrder.items, // or whatever your items state is called
+          modeofPayment,         // <-- make sure this is included
+          // ...other fields if needed
+        },
+        { headers: { Authorization: `Bearer ${user?.token}` } }
+      );
+      // ...success logic...
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to place order");
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
       <h2 className="text-2xl font-bold mb-4 text-black">My Orders</h2>
@@ -115,6 +158,10 @@ const Order = () => {
           className={`px-4 py-2 rounded ${filter === 'accepted' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
           onClick={() => setFilter('accepted')}
         >Accepted</button>
+        <button
+          className={`px-4 py-2 rounded ${filter === 'shipped' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
+          onClick={() => setFilter('shipped')}
+        >Shipped</button>
         <button
           className={`px-4 py-2 rounded ${filter === 'declined' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
           onClick={() => setFilter('declined')}
@@ -136,13 +183,20 @@ const Order = () => {
                   ${order.status === 'paid' ? 'bg-green-100 text-green-700'
                     : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
                     : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
+                    : order.status === 'out for delivery' ? 'bg-blue-100 text-blue-700'
+                    : order.status === 'received' ? 'bg-green-200 text-green-800'
                     : order.status === 'declined' ? 'bg-gray-300 text-gray-700'
                     : 'bg-gray-100 text-gray-700'}`}>
-                  {order.status}
+                  {order.status === 'out for delivery'
+                    ? 'shipped'
+                    : order.status === 'received'
+                      ? 'received'
+                      : order.status}
                 </span>
               </div>
               <div className="mb-2 text-sm text-gray-600">
                 <span className="font-semibold">Placed:</span> {new Date(order.createdAt).toLocaleString()}
+                <span className="ml-4 font-semibold">Payment:</span> {order.modeofPayment}
               </div>
               <div>
                 <span className="font-semibold text-sm">Items:</span>
@@ -181,6 +235,16 @@ const Order = () => {
                     disabled={cancelling === order._id}
                   >
                     {cancelling === order._id ? 'Cancelling...' : 'Cancel Order'}
+                  </button>
+                )}
+                {/* Order Received button for shipped orders */}
+                {order.status === 'out for delivery' && (
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                    onClick={() => handleReceived(order._id)}
+                    disabled={receiving === order._id}
+                  >
+                    {receiving === order._id ? 'Processing...' : 'Order Received'}
                   </button>
                 )}
               </div>

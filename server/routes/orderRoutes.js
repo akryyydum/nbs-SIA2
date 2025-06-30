@@ -8,7 +8,8 @@ const {
   getOrderById,
   deleteOrder,
   acceptOrder,    // add this
-  declineOrder,    // add this
+  declineOrder,  
+  shipOrder,  // add this
   getOrderMetrics
 } = require('../controllers/orderController');
 // User: Create order
@@ -28,6 +29,7 @@ router.delete('/:id', protect, sales, deleteOrder);
 
 // Accept order
 router.put('/:id/accept', protect, sales, acceptOrder);
+router.put('/:id/ship', protect, admin, shipOrder);
 
 // Decline order
 router.put('/:id/decline', protect, sales, declineOrder);
