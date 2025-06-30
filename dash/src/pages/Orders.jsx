@@ -45,11 +45,11 @@ const Orders = () => {
     }
   };
 
-  // Accept order: set status to 'accepted', decrease book stocks
+  // Accept order: set status to 'out for delivery', decrease book stocks
   const handleAccept = async (order) => {
     if (!window.confirm('Accept this order? This will decrease book stocks.')) return;
     try {
-      // Only update order status to 'accepted' (backend will handle stock)
+      // Backend will set status to 'out for delivery'
       await API.put(`/orders/${order._id}/accept`);
       setModalOpen(false); // This will trigger useEffect to refetch orders
     } catch (err) {
@@ -67,6 +67,18 @@ const Orders = () => {
       alert('Failed to decline order');
     }
   };
+
+  // Ship order: set status to 'out for delivery'
+const handleShip = async (order) => {
+  if (!window.confirm('Mark this order as shipped?')) return;
+  try {
+    await API.put(`/orders/${order._id}/ship`); // ✅ Correct route
+    fetchOrders(); // Refetch to update status
+  } catch (err) {
+    alert('Failed to mark as shipped: ' + (err?.response?.data?.message || err.message));
+  }
+};
+
 
   // If you have any bank verification logic in this file, replace simulation with a real API call.
   // For example, add a function like this:
@@ -120,21 +132,33 @@ const Orders = () => {
               </div>
               <div><span className="font-semibold">Created:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
             </div>
-            {/* Accept/Decline buttons for pending orders */}
-            {selectedOrder.status === 'pending' && (
+            {/* Accept/Decline/Ship buttons for pending/accepted orders */}
+            {(selectedOrder.status === 'pending' || selectedOrder.status === 'accepted') && (
               <div className="flex gap-4 mt-6">
-                <button
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                  onClick={() => handleAccept(selectedOrder)}
-                >
-                  Accept
-                </button>
-                <button
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                  onClick={() => handleDecline(selectedOrder)}
-                >
-                  Decline
-                </button>
+                {selectedOrder.status === 'pending' && (
+                  <>
+                    <button
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      onClick={() => handleAccept(selectedOrder)}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                      onClick={() => handleDecline(selectedOrder)}
+                    >
+                      Decline
+                    </button>
+                  </>
+                )}
+                {selectedOrder.status === 'accepted' && (
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    onClick={() => handleShip(selectedOrder)}
+                  >
+                    Ship
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -156,6 +180,7 @@ const Orders = () => {
               <th className="px-6 py-3 border-b">Order ID</th>
               <th className="px-6 py-3 border-b">User</th>
               <th className="px-6 py-3 border-b">Status</th>
+              <th className="px-6 py-3 border-b">Payment</th>
               <th className="px-6 py-3 border-b">Total Price</th>
               <th className="px-6 py-3 border-b">Created</th>
               <th className="px-6 py-3 border-b">Actions</th>
@@ -178,12 +203,19 @@ const Orders = () => {
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium
                     ${order.status === 'paid' ? 'bg-green-100 text-green-700'
                       : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
+                      : order.status === 'out for delivery' ? 'bg-blue-100 text-blue-700'
+                      : order.status === 'received' ? 'bg-green-200 text-green-800'
                       : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
                       : order.status === 'declined' ? 'bg-red-100 text-red-700'
                       : 'bg-gray-100 text-gray-700'}`}>
-                    {order.status}
+                    {order.status === 'out for delivery'
+                      ? 'shipped'
+                      : order.status === 'received'
+                        ? 'received'
+                        : order.status}
                   </span>
                 </td>
+                <td className="border-b px-6 py-3">{order.modeofPayment || 'N/A'}</td>
                 <td className="border-b px-6 py-3">${Number(order.totalPrice).toFixed(2)}</td>
                 <td className="border-b px-6 py-3">{new Date(order.createdAt).toLocaleString()}</td>
                 <td className="border-b px-6 py-3">

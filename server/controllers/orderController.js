@@ -4,9 +4,12 @@ const Book = require('../models/books.model');
 // @desc    Create a new order
 // @route   POST /api/orders
 exports.createOrder = async (req, res) => {
-  const { items } = req.body;
+  const { items, modeofPayment } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: 'No order items' });
+  }
+  if (!modeofPayment) {
+    return res.status(400).json({ message: 'modeofPayment is required' });
   }
 
   try {
@@ -29,6 +32,7 @@ exports.createOrder = async (req, res) => {
       user: req.user._id,
       items: enrichedItems,
       totalPrice,
+      modeofPayment, // <-- ensure this is set
       status: 'pending' // Ensure status is set to 'pending' on creation
     });
 
@@ -98,42 +102,36 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
-// @desc    Accept order (admin only): set status to 'accepted' and decrease book stocks
+// @desc    Accept order (admin only): set status to 'out for delivery' and decrease book stocks
 // @route   PUT /api/orders/:id/accept
 exports.acceptOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+
     if (order.status !== 'pending') {
-      return res.status(400).json({ message: 'Order is not pending' });
+      return res.status(400).json({ message: 'Only pending orders can be accepted' });
     }
+
     // Decrease stock for each book
     for (const item of order.items) {
-      // item.book may be an ObjectId, not populated
-      const bookId = item.book && item.book._id ? item.book._id : item.book;
-      const book = await Book.findById(bookId);
-      if (!book) {
-        console.error(`Book not found for item:`, item);
-        return res.status(400).json({ message: `Book not found for item in order.` });
+      const book = await Book.findById(item.book);
+      if (book) {
+        book.stock = Math.max(0, book.stock - item.quantity);
+        await book.save();
       }
-      if (typeof book.stock !== 'number') {
-        console.error(`Book stock is invalid for book:`, book);
-        return res.status(400).json({ message: `Book stock is invalid for ${book.title}` });
-      }
-      if (book.stock < item.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${book.title}` });
-      }
-      book.stock -= item.quantity;
-      await book.save();
     }
+
     order.status = 'accepted';
     await order.save();
-    res.json({ message: 'Order accepted and stocks updated' });
+
+    res.json({ message: 'Order accepted successfully', order });
   } catch (err) {
     console.error('Error in acceptOrder:', err);
     res.status(500).json({ message: err.message || 'Internal Server Error' });
   }
 };
+
 
 // @desc    Decline order (admin only): set status to 'declined'
 // @route   PUT /api/orders/:id/decline
@@ -147,6 +145,40 @@ exports.declineOrder = async (req, res) => {
     order.status = 'declined';
     await order.save();
     res.json({ message: 'Order declined' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Mark order as received (admin or sales department)
+// @route   PUT /api/orders/:id/received
+exports.markOrderReceived = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (order.status !== 'out for delivery') {
+      return res.status(400).json({ message: 'Order is not out for delivery' });
+    }
+    order.status = 'received';
+    await order.save();
+    res.json({ message: 'Order marked as received' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Mark order as received (admin or sales department)
+// @route   PUT /api/orders/:id/received
+exports.markOrderReceived = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (order.status !== 'out for delivery') {
+      return res.status(400).json({ message: 'Order is not out for delivery' });
+    }
+    order.status = 'received';
+    await order.save();
+    res.json({ message: 'Order marked as received' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -188,5 +220,45 @@ exports.getOrderVisuals = async (req, res) => {
   } catch (err) {
     console.error('Order Visuals Error:', err);
     res.status(500).json({ message: err.message || 'Failed to fetch visuals' });
+  }
+};
+// @desc    Ship order (admin only): set status to 'out for delivery'
+// @route   PUT /api/orders/:id/ship
+exports.shipOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'accepted') {
+      return res.status(400).json({ message: 'Only accepted orders can be shipped' });
+    }
+
+    order.status = 'out for delivery';
+    await order.save();
+
+    res.json({ message: 'Order shipped successfully' });
+  } catch (err) {
+    console.error('Error in shipOrder:', err);
+    res.status(500).json({ message: err.message || 'Internal Server Error' });
+  }
+};
+// @desc    Ship order (admin only): set status to 'out for delivery'
+// @route   PUT /api/orders/:id/ship
+exports.shipOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'accepted') {
+      return res.status(400).json({ message: 'Only accepted orders can be shipped' });
+    }
+
+    order.status = 'out for delivery';
+    await order.save();
+
+    res.json({ message: 'Order shipped successfully' });
+  } catch (err) {
+    console.error('Error in shipOrder:', err);
+    res.status(500).json({ message: err.message || 'Internal Server Error' });
   }
 };
