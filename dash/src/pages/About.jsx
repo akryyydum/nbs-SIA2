@@ -6,8 +6,40 @@ const About = () => {
     <>
       <Navbar />
       <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold mb-12 text-center text-black">75 Years of Endless Discoveries</h2>
+        {/* Background image on top */}
+        <div
+          className="fixed top-0 left-0 w-full h-64 mb-12 z-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80')"
+          }}
+        ></div>
+        <div className="relative max-w-7xl mx-auto pt-72 z-10">
+          {/* Place h2 in front of the background image */}
+          <div className="absolute top-0 left-0 w-full flex justify-center items-center h-64 z-20 pointer-events-none">
+            <h2
+              className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-white to-red-600 animate-gradient-x drop-shadow-lg"
+              style={{
+                backgroundSize: '200% 200%',
+                animation: 'gradient-x 3s ease-in-out infinite'
+              }}
+            >
+              75 Years of Endless Discoveries
+            </h2>
+          </div>
+          {/* Gradient animation keyframes */}
+          <style>
+            {`
+              @keyframes gradient-x {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+              .animate-gradient-x {
+                background-size: 200% 200%;
+                animation: gradient-x 3s ease-in-out infinite;
+              }
+            `}
+          </style>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-12 mb-16">
             <div className="flex flex-col items-center">
               <Book className="h-32 w-32 mb-4 text-gray-700" />
