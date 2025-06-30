@@ -3,7 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.origin.replace(':5173', ':5000')}/api`;
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  `${window.location.origin.includes('localhost')
+    ? 'http://localhost:5000'
+    : window.location.origin.replace(':5173', ':5000')}/api`;
 
 const Checkout = () => {
   const { user } = useAuth();
@@ -124,7 +128,7 @@ const Checkout = () => {
       if (paymentMethod === 'bank') {
         modeofPayment = 'Bank Transfer';
       } else if (paymentMethod === 'cod') {
-        modeofPayment = 'Cash on Delivery';
+        modeofPayment = 'Cash';
       } else {
         modeofPayment = paymentMethod;
       }
@@ -134,8 +138,8 @@ const Checkout = () => {
         `${API_BASE}/orders`,
         {
           items,
-          modeofPayment // <-- make sure this is included and not undefined
-          // ...do NOT send billing or bankInfo unless backend expects them
+          modeofPayment
+          // ...existing code...
         },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
