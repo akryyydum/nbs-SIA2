@@ -9,8 +9,9 @@ const Orders = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // ✅ FIXED: This ensures axios works on both localhost and LAN
   const API = axios.create({
-    baseURL: '/api', // Use relative path for any IP
+    baseURL: `${window.location.origin}/api`,
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 
@@ -27,8 +28,7 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-    // eslint-disable-next-line
-  }, [modalOpen]); // Refetch orders when modalOpen changes
+  }, [modalOpen]);
 
   const handleView = (order) => {
     setSelectedOrder(order);
@@ -45,63 +45,41 @@ const Orders = () => {
     }
   };
 
-  // Accept order: set status to 'out for delivery', decrease book stocks
   const handleAccept = async (order) => {
     if (!window.confirm('Accept this order? This will decrease book stocks.')) return;
     try {
-      // Backend will set status to 'out for delivery'
       await API.put(`/orders/${order._id}/accept`);
-      setModalOpen(false); // This will trigger useEffect to refetch orders
+      setModalOpen(false);
     } catch (err) {
       alert('Failed to accept order: ' + (err?.response?.data?.message || err.message));
     }
   };
 
-  // Decline order: set status to 'declined'
   const handleDecline = async (order) => {
     if (!window.confirm('Decline this order?')) return;
     try {
       await API.put(`/orders/${order._id}/decline`);
-      setModalOpen(false); // This will trigger useEffect to refetch orders
+      setModalOpen(false);
     } catch (err) {
       alert('Failed to decline order');
     }
   };
 
-  // Ship order: set status to 'out for delivery'
-const handleShip = async (order) => {
-  if (!window.confirm('Mark this order as shipped?')) return;
-  try {
-    await API.put(`/orders/${order._id}/ship`); // ✅ Correct route
-    fetchOrders(); // Refetch to update status
-  } catch (err) {
-    alert('Failed to mark as shipped: ' + (err?.response?.data?.message || err.message));
-  }
-};
-
-
-  // If you have any bank verification logic in this file, replace simulation with a real API call.
-  // For example, add a function like this:
-
-  const verifyBank = async (bankSystem, bankInfo) => {
+  // ✅ Fixed: ship endpoint behaves same as accept
+  const handleShip = async (order) => {
+    if (!window.confirm('Mark this order as shipped?')) return;
     try {
-      const res = await API.post('/bank/verify', {
-        bankSystem,
-        ...bankInfo
-      });
-      return res.data; // { verified: true/false, balance, message }
+      await API.put(`/orders/${order._id}/ship`);
+      setModalOpen(false);
     } catch (err) {
-      return { verified: false, message: err.response?.data?.message || 'Bank verification failed.' };
+      alert('Failed to mark as shipped: ' + (err?.response?.data?.message || err.message));
     }
   };
-
-  // Use verifyBank() wherever you need to verify a bank account, and handle the result accordingly.
-  // Remove any simulation or hardcoded logic for bank verification.
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Orders Management</h2>
-      {/* Modal for viewing order details */}
+
       {modalOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
@@ -112,9 +90,7 @@ const handleShip = async (order) => {
             >
               &times;
             </button>
-            <h3 className="text-xl font-bold mb-4 text-red-700">
-              Order Details
-            </h3>
+            <h3 className="text-xl font-bold mb-4 text-red-700">Order Details</h3>
             <div className="space-y-2">
               <div><span className="font-semibold">Order ID:</span> {selectedOrder._id}</div>
               <div><span className="font-semibold">User:</span> {selectedOrder.user?.name} ({selectedOrder.user?.email})</div>
@@ -124,15 +100,13 @@ const handleShip = async (order) => {
                 <span className="font-semibold">Items:</span>
                 <ul className="list-disc ml-6">
                   {selectedOrder.items.map((item, idx) => (
-                    <li key={idx}>
-                      {item.book?.title || 'Book'} x {item.quantity}
-                    </li>
+                    <li key={idx}>{item.book?.title || 'Book'} x {item.quantity}</li>
                   ))}
                 </ul>
               </div>
               <div><span className="font-semibold">Created:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
             </div>
-            {/* Accept/Decline/Ship buttons for pending/accepted orders */}
+
             {(selectedOrder.status === 'pending' || selectedOrder.status === 'accepted') && (
               <div className="flex gap-4 mt-6">
                 {selectedOrder.status === 'pending' && (
@@ -164,6 +138,7 @@ const handleShip = async (order) => {
           </div>
         </div>
       )}
+
       <div
         className="overflow-x-auto rounded-2xl shadow-2xl border border-red-100"
         style={{
