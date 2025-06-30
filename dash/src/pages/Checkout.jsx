@@ -128,7 +128,7 @@ const Checkout = () => {
       if (paymentMethod === 'bank') {
         modeofPayment = 'Bank Transfer';
       } else if (paymentMethod === 'cod') {
-        modeofPayment = 'Cash';
+        modeofPayment = 'Cash on Delivery';
       } else {
         modeofPayment = paymentMethod;
       }
