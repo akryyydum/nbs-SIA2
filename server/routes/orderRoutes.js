@@ -7,9 +7,9 @@ const {
   getAllOrders,
   getOrderById,
   deleteOrder,
-  acceptOrder,    // add this
-  declineOrder,    // add this
-  getOrderMetrics
+  acceptOrder,
+  declineOrder,
+  getOrderVisuals
 } = require('../controllers/orderController');
 // User: Create order
 router.post('/', protect, createOrder);
@@ -32,7 +32,7 @@ router.put('/:id/accept', protect, sales, acceptOrder);
 // Decline order
 router.put('/:id/decline', protect, sales, declineOrder);
 
-// Get order metrics
-router.get('/metrics', protect, sales, getOrderMetrics);
+// Get order visuals
+router.get('/visuals', protect, sales, getOrderVisuals);
 
 module.exports = router;

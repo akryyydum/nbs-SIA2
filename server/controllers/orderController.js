@@ -152,50 +152,41 @@ exports.declineOrder = async (req, res) => {
   }
 };
 
-// @desc    Get order metrics (admin only)
-// @route   GET /api/orders/metrics
-exports.getOrderMetrics = async (req, res) => {
+// @desc    Get order visuals data (admin/sales only)
+// @route   GET /api/orders/visuals
+exports.getOrderVisuals = async (req, res) => {
   try {
-    // Get all accepted or paid orders
     const orders = await Order.find({ status: { $in: ['accepted', 'paid'] } }).populate('items.book');
-    const totalRevenue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-    const totalTransactions = orders.length;
-    const aov = totalTransactions ? (totalRevenue / totalTransactions) : 0;
 
-    // Top products
+    // Top products for bar chart
     const productCount = {};
     orders.forEach(order => {
       order.items.forEach(item => {
-        const title = item.book?.title || 'Unknown';
+        if (!item.book) return;
+        const title = item.book.title || 'Unknown';
         productCount[title] = (productCount[title] || 0) + item.quantity;
       });
     });
-    const topProducts = Object.entries(productCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([title]) => title);
+    const salesByProduct = Object.entries(productCount)
+      .map(([title, sales]) => ({ title, sales }));
 
-    // Sales by category
+    // Sales by category for line chart
     const categorySales = {};
     orders.forEach(order => {
       order.items.forEach(item => {
-        const categories = item.book?.category ? [item.book.category] : ['Uncategorized'];
-        categories.forEach(cat => {
-          categorySales[cat] = (categorySales[cat] || 0) + (item.quantity * (item.book?.price || 0));
-        });
+        if (!item.book) return;
+        const cat = item.book.category || 'Uncategorized';
+        categorySales[cat] = (categorySales[cat] || 0) + (item.quantity * (item.book.price || 0));
       });
     });
     const salesByCategory = Object.entries(categorySales).map(([category, value]) => ({ category, value }));
 
     res.json({
-      totalRevenue,
-      totalTransactions,
-      aov,
-      topProducts,
+      salesByProduct,
       salesByCategory,
     });
   } catch (err) {
-    console.error('Order Metrics Error:', err);
-    res.status(500).json({ message: err.message || 'Failed to fetch metrics' });
+    console.error('Order Visuals Error:', err);
+    res.status(500).json({ message: err.message || 'Failed to fetch visuals' });
   }
 };
