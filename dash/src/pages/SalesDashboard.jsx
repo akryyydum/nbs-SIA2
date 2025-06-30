@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import SalesTrendsChart from "../components/SalesTrendsChart";
-import TopProductsBar from "../components/TopProductsBar";
-import OrdersByCategory from "../components/OrdersByCategory";
+// import TopProductsBar from "../components/TopProductsBar";
+// import OrdersByCategory from "../components/OrdersByCategory";
 
 const API = axios.create({
   baseURL: 'http://192.168.9.16:5000/api',
@@ -23,21 +22,25 @@ const SalesDashboard = () => {
     user: "",
     items: [{ book: "", quantity: 1 }]
   });
-  const [metrics, setMetrics] = useState({
-    totalRevenue: 0,
-    totalTransactions: 0,
-    aov: 0,
-    topProducts: [],
-    salesByCategory: [],
-  });
   const [logs, setLogs] = useState([]);
   const { user } = useAuth();
 
+  // Dashboard visuals state (like Inventory)
+  // Removed TopProductsBar and OrdersByCategory state
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [aov, setAov] = useState(0);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
+  const [dashboardPage, setDashboardPage] = useState(1);
   const ordersPerPage = 5;
 
-  API.defaults.headers.common['Authorization'] = `Bearer ${user?.token}`;
+  // API instance (like Inventory)
+  const API = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL || "http://192.168.9.16:5000/api",
+    headers: { Authorization: `Bearer ${user?.token}` }
+  });
 
   // Fetch all orders for sales department
   const fetchOrders = async () => {
@@ -45,8 +48,25 @@ const SalesDashboard = () => {
     try {
       const res = await API.get('/orders');
       setOrders(res.data);
+
+      // Calculate metrics from orders
+      const acceptedOrPaidOrders = res.data.filter(
+        order => order.status === "accepted" || order.status === "paid"
+      );
+      const revenue = acceptedOrPaidOrders.reduce(
+        (sum, order) => sum + (order.totalPrice || 0), 0
+      );
+      const transactions = acceptedOrPaidOrders.length;
+      const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
+
+      setTotalRevenue(revenue);
+      setTotalTransactions(transactions);
+      setAov(avgOrderValue);
     } catch (err) {
       alert('Failed to fetch orders');
+      setTotalRevenue(0);
+      setTotalTransactions(0);
+      setAov(0);
     }
     setLoading(false);
   };
@@ -145,25 +165,6 @@ const SalesDashboard = () => {
       alert(err.response?.data?.message || "Failed to create order");
     }
   };
-
-  // Fetch metrics for dashboard
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const res = await API.get('/orders/metrics');
-        setMetrics(res.data);
-      } catch {
-        setMetrics({
-          totalRevenue: 0,
-          totalTransactions: 0,
-          aov: 0,
-          topProducts: [],
-          salesByCategory: [],
-        });
-      }
-    };
-    if (activeTab === "dashboard") fetchMetrics();
-  }, [activeTab, user]);
 
   // Fetch logs for sales activity
   useEffect(() => {
@@ -497,88 +498,50 @@ const SalesDashboard = () => {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
               <div className="text-sm text-gray-500">Total Sales Revenue</div>
               <div className="text-2xl font-bold text-red-700">
-                ₱{Number(metrics.totalRevenue).toLocaleString()}
+                ₱{Number(totalRevenue).toLocaleString()}
               </div>
             </div>
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
               <div className="text-sm text-gray-500">Total Transactions</div>
               <div className="text-2xl font-bold text-red-700">
-                {metrics.totalTransactions}
+                {totalTransactions}
               </div>
             </div>
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
               <div className="text-sm text-gray-500">Average Order Value</div>
               <div className="text-2xl font-bold text-red-700">
-                ₱{Number(metrics.aov).toLocaleString()}
+                ₱{Number(aov).toLocaleString()}
               </div>
             </div>
           </div>
 
-          {/* 2. Top-Selling Products & 3. Sales by Category */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-2">Top-Selling Products</div>
-              <ul className="list-disc ml-6">
-                {metrics.topProducts.length === 0 ? (
-                  <li className="text-gray-400">No data</li>
-                ) : (
-                  metrics.topProducts.map((prod, idx) => (
-                    <li key={idx} className="text-red-700 font-semibold">{prod}</li>
-                  ))
-                )}
-              </ul>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500 mb-2">Sales by Category</div>
-              <ul>
-                {metrics.salesByCategory.length === 0 ? (
-                  <li className="text-gray-400">No data</li>
-                ) : (
-                  metrics.salesByCategory.map((cat, idx) => (
-                    <li key={cat.category || idx} className="flex justify-between">
-                      <span>{cat.category}</span>
-                      <span className="font-semibold text-red-700">₱{Number(cat.value).toLocaleString()}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-          </div>
+          {/* 2. Visuals: Bar Chart & Line Chart */}
+          {/* TopProductsBar and OrdersByCategory removed as requested */}
 
-          {/* 4. Sales Trends (Line Chart) */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8 flex flex-col items-center">
-            <div className="text-gray-500 mb-2">Sales Trends</div>
-            <div className="w-full h-40">
-              <SalesTrendsChart data={metrics.salesTrends || []} />
-            </div>
-          </div>
-
-          {/* 5. Recent Orders (Optional) */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="text-gray-500 mb-2 font-semibold">Recent Orders</div>
+          {/* 3. Recent Orders */}
+          <div className="bg-white rounded-lg shadow p-8 mb-8">
+            <div className="text-gray-500 mb-4 font-semibold text-2xl">Recent Orders</div>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs">
+              <table className="min-w-full text-xl">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="py-2 px-2 text-left">Order ID</th>
-                    <th className="py-2 px-2 text-left">Customer</th>
-                    <th className="py-2 px-2 text-left">Total</th>
-                    <th className="py-2 px-2 text-left">Status</th>
-                    <th className="py-2 px-2 text-left">Date</th>
+                    <th className="py-4 px-6 text-left">Order ID</th>
+                    <th className="py-4 px-6 text-left">Customer</th>
+                    <th className="py-4 px-6 text-left">Total</th>
+                    <th className="py-4 px-6 text-left">Status</th>
+                    <th className="py-4 px-6 text-left">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders
-                    .slice()
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                    .slice(0, 5)
+                    .slice((dashboardPage - 1) * 5, dashboardPage * 5)
                     .map(order => (
-                      <tr key={order._id} className="border-b">
-                        <td className="py-1 px-2">{order._id}</td>
-                        <td className="py-1 px-2">{order.user?.name || order.user || "N/A"}</td>
-                        <td className="py-1 px-2">₱{Number(order.totalPrice).toFixed(2)}</td>
-                        <td className="py-1 px-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium
+                      <tr key={order._id} className="border-b text-xl">
+                        <td className="py-3 px-6">{order._id}</td>
+                        <td className="py-3 px-6">{order.user?.name || order.user || "N/A"}</td>
+                        <td className="py-3 px-6">₱{Number(order.totalPrice).toFixed(2)}</td>
+                        <td className="py-3 px-6">
+                          <span className={`px-4 py-2 rounded-full text-xl font-medium
                             ${order.status === "paid" ? "bg-green-100 text-green-700"
                               : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
                               : order.status === "accepted" ? "bg-blue-100 text-blue-700"
@@ -587,31 +550,45 @@ const SalesDashboard = () => {
                             {order.status}
                           </span>
                         </td>
-                        <td className="py-1 px-2">{new Date(order.createdAt).toLocaleString()}</td>
+                        <td className="py-3 px-6">{new Date(order.createdAt).toLocaleString()}</td>
                       </tr>
                     ))}
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {/* 6. Other Visuals (Optional) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <div className="text-gray-500 mb-2">Top Products (Bar Chart)</div>
-              {/* TODO: Replace with a real bar chart */}
-              <TopProductsBar data={metrics.topProductsData || []} />
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <div className="text-gray-500 mb-2">Orders by Category (Pie Chart)</div>
-              {/* TODO: Replace with a real pie chart */}
-              <OrdersByCategory data={metrics.salesByCategory || []} />
-            </div>
+            {/* Pagination Controls */}
+            {Math.ceil(orders.length / 5) > 1 && (
+              <div className="flex justify-center mt-6 gap-2">
+                <button
+                  className="px-4 py-2 rounded bg-gray-200"
+                  onClick={() => setDashboardPage(p => Math.max(1, p - 1))}
+                  disabled={dashboardPage === 1}
+                >
+                  Prev
+                </button>
+                {[...Array(Math.ceil(orders.length / 5))].map((_, idx) => (
+                  <button
+                    key={idx + 1}
+                    className={`px-4 py-2 rounded ${dashboardPage === idx + 1 ? "bg-red-600 text-white" : "bg-gray-200"}`}
+                    onClick={() => setDashboardPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+                <button
+                  className="px-4 py-2 rounded bg-gray-200"
+                  onClick={() => setDashboardPage(p => Math.min(Math.ceil(orders.length / 5), p + 1))}
+                  disabled={dashboardPage === Math.ceil(orders.length / 5)}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}
 
-      {/* 3. Customer Management (Full CRUD) */}
+      {/* Customers Tab */}
       {activeTab === "customers" && (
         <section>
           <h2 className="text-xl font-bold text-red-700 mb-4">Customers</h2>
@@ -622,7 +599,7 @@ const SalesDashboard = () => {
         </section>
       )}
 
-      {/* 4. Sales Logs / History */}
+      {/* Logs Tab */}
       {activeTab === "logs" && (
         <section>
           <h2 className="text-xl font-bold text-red-700 mb-4">Sales Logs</h2>
@@ -638,7 +615,6 @@ const SalesDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Map your logs here */}
                 {logs.map(log => (
                   <tr key={log._id}>
                     <td>{new Date(log.timestamp).toLocaleString()}</td>
@@ -654,27 +630,11 @@ const SalesDashboard = () => {
         </section>
       )}
 
-      {/* 5. Reports & Visuals */}
+      {/* Reports Tab */}
       {activeTab === "reports" && (
         <section>
           <h2 className="text-xl font-bold text-red-700 mb-4">Reports & Visuals</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <div className="text-gray-500 mb-2">Sales Trends</div>
-              {/* TODO: Insert line chart */}
-              <div className="w-full h-40 bg-red-50 rounded flex items-center justify-center text-red-300">[Line Chart]</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <div className="text-gray-500 mb-2">Top Products</div>
-              {/* TODO: Insert bar chart */}
-              <div className="w-full h-40 bg-red-50 rounded flex items-center justify-center text-red-300">[Bar Chart]</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <div className="text-gray-500 mb-2">Orders by Category</div>
-              {/* TODO: Insert pie chart */}
-              <div className="w-full h-40 bg-red-50 rounded flex items-center justify-center text-red-300">[Pie Chart]</div>
-            </div>
-          </div>
+          {/* Visuals removed as requested */}
         </section>
       )}
     </div>

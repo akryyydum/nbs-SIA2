@@ -34,7 +34,7 @@ router.put('/:id/ship', protect, admin, shipOrder);
 // Decline order
 router.put('/:id/decline', protect, sales, declineOrder);
 
-// Get order metrics
-router.get('/metrics', protect, sales, getOrderMetrics);
+// Get order visuals
+router.get('/visuals', protect, sales, getOrderVisuals);
 
 module.exports = router;
