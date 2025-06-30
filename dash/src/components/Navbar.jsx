@@ -66,7 +66,7 @@ const Navbar = () => {
                   Control Panel
                 </Link>
               ) : (
-                // Only show these links if NOT on sales dashboard
+                // Only show these links if NOT on sales dashboar
                 !isSalesDashboard && (
                   <>
                     <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
