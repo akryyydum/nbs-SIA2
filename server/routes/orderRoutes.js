@@ -35,6 +35,6 @@ router.put('/:id/ship', protect, admin, shipOrder);
 router.put('/:id/decline', protect, sales, declineOrder);
 
 // Get order visuals
-router.get('/visuals', protect, sales, getOrderVisuals);
+// router.get('/visuals', protect, sales, getOrderVisuals);
 
 module.exports = router;

@@ -186,42 +186,42 @@ exports.markOrderReceived = async (req, res) => {
 
 // @desc    Get order visuals data (admin/sales only)
 // @route   GET /api/orders/visuals
-exports.getOrderVisuals = async (req, res) => {
-  try {
-    const orders = await Order.find({ status: { $in: ['accepted', 'paid'] } }).populate('items.book');
+// exports.getOrderVisuals = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ status: { $in: ['accepted', 'paid'] } }).populate('items.book');
 
-    // Top products for bar chart
-    const productCount = {};
-    orders.forEach(order => {
-      order.items.forEach(item => {
-        if (!item.book) return;
-        const title = item.book.title || 'Unknown';
-        productCount[title] = (productCount[title] || 0) + item.quantity;
-      });
-    });
-    const salesByProduct = Object.entries(productCount)
-      .map(([title, sales]) => ({ title, sales }));
+//     // Top products for bar chart
+//     const productCount = {};
+//     orders.forEach(order => {
+//       order.items.forEach(item => {
+//         if (!item.book) return;
+//         const title = item.book.title || 'Unknown';
+//         productCount[title] = (productCount[title] || 0) + item.quantity;
+//       });
+//     });
+//     const salesByProduct = Object.entries(productCount)
+//       .map(([title, sales]) => ({ title, sales }));
 
-    // Sales by category for line chart
-    const categorySales = {};
-    orders.forEach(order => {
-      order.items.forEach(item => {
-        if (!item.book) return;
-        const cat = item.book.category || 'Uncategorized';
-        categorySales[cat] = (categorySales[cat] || 0) + (item.quantity * (item.book.price || 0));
-      });
-    });
-    const salesByCategory = Object.entries(categorySales).map(([category, value]) => ({ category, value }));
+//     // Sales by category for line chart
+//     const categorySales = {};
+//     orders.forEach(order => {
+//       order.items.forEach(item => {
+//         if (!item.book) return;
+//         const cat = item.book.category || 'Uncategorized';
+//         categorySales[cat] = (categorySales[cat] || 0) + (item.quantity * (item.book.price || 0));
+//       });
+//     });
+//     const salesByCategory = Object.entries(categorySales).map(([category, value]) => ({ category, value }));
 
-    res.json({
-      salesByProduct,
-      salesByCategory,
-    });
-  } catch (err) {
-    console.error('Order Visuals Error:', err);
-    res.status(500).json({ message: err.message || 'Failed to fetch visuals' });
-  }
-};
+//     res.json({
+//       salesByProduct,
+//       salesByCategory,
+//     });
+//   } catch (err) {
+//     console.error('Order Visuals Error:', err);
+//     res.status(500).json({ message: err.message || 'Failed to fetch visuals' });
+//   }
+// };
 // @desc    Ship order (admin only): set status to 'out for delivery'
 // @route   PUT /api/orders/:id/ship
 exports.shipOrder = async (req, res) => {
