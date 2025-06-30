@@ -166,41 +166,40 @@ const SupplierDashboard = () => {
           <h2 className="text-xl font-bold">Suppliers</h2>
           <button onClick={handleAdd} className="bg-red-600 text-white px-4 py-2 rounded">Add New</button>
         </div>
-        <table className="min-w-full table-auto">
+        <table className="min-w-full table-auto border-collapse border border-gray-300">
           <thead>
-            <tr className="bg-red-100">
-              <th>ID</th>
-              <th>Company</th>
-              <th>Contact</th>
-              <th>Email/Phone</th>
-              <th>Address</th>
-              <th>Categories</th>
-              <th>Status</th>
-              <th>Type</th>
-              <th>Actions</th>
+            <tr className="bg-red-100 text-left">
+              <th className="px-4 py-2 border border-gray-300">ID</th>
+              <th className="px-4 py-2 border border-gray-300">Company</th>
+              <th className="px-4 py-2 border border-gray-300">Contact</th>
+              <th className="px-4 py-2 border border-gray-300">Email/Phone</th>
+              <th className="px-4 py-2 border border-gray-300">Address</th>
+              <th className="px-4 py-2 border border-gray-300">Categories</th>
+              <th className="px-4 py-2 border border-gray-300">Status</th>
+              <th className="px-4 py-2 border border-gray-300">Type</th>
+              <th className="px-4 py-2 border border-gray-300">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {allSuppliers.map(supplier => (
-              <tr key={supplier._id}>
-                <td>{supplier._id}</td>
-                <td>{supplier.companyName}</td>
-                <td>{supplier.contactPerson}</td>
-                <td>{supplier.email} / {supplier.phone}</td>
-                <td>{supplier.address}</td>
-                <td>{supplier.productCategories?.join(', ')}</td>
-                <td>{supplier.status}</td>
-                <td>
-                  {supplier._type}
-                </td>
-                <td>
-                  {/* Only allow edit/delete for Supplier documents, not for users */}
+            {allSuppliers.map((supplier, index) => (
+              <tr
+                key={supplier._id}
+                className={`$ {index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-gray-100 transition-colors`}
+              >
+                <td className="px-4 py-2 border border-gray-300">{supplier._id}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier.companyName}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier.contactPerson}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier.email} / {supplier.phone}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier.address}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier.productCategories?.join(', ')}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier.status}</td>
+                <td className="px-4 py-2 border border-gray-300">{supplier._type}</td>
+                <td className="px-4 py-2 border border-gray-300">
                   {supplier._type === 'Supplier' ? (
                     <>
                       <button onClick={() => handleEdit(supplier)} className="text-blue-600 mr-2">Edit</button>
                       <button onClick={() => handleDelete(supplier._id)} className="text-red-600 mr-2">Delete</button>
                       <button onClick={() => handleViewBooks(supplier)} className="text-green-600 mr-2">View Books</button>
-                      {/* Show Add Book button only for inventory role or admin */}
                       {(user?.role === 'inventory department' || user?.role === 'admin' || user?.role === 'supplier department') && (
                         <button
                           onClick={() => handleAddBook(supplier)}
@@ -211,53 +210,9 @@ const SupplierDashboard = () => {
                       )}
                     </>
                   ) : (
-                    <>
-                      {/* For users, only allow View Books */}
-                      <button onClick={() => handleViewBooks(supplier)} className="text-green-600">View Books</button>
-                    </>
+                    <button onClick={() => handleViewBooks(supplier)} className="text-green-600">View Books</button>
                   )}
                 </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {/* Linked Products (Read-only) */}
-      <div className="bg-white shadow rounded p-4 mb-8">
-        <h2 className="text-xl font-bold mb-2">Linked Products</h2>
-        <table className="min-w-full table-auto">
-          <thead>
-            <tr className="bg-red-100">
-              <th>SKU</th><th>Name</th><th>Last Order Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(product => (
-              <tr key={product.sku}>
-                <td>{product.sku}</td>
-                <td>{product.name}</td>
-                <td>{product.lastOrderDate}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {/* Performance & History Logs */}
-      <div className="bg-white shadow rounded p-4">
-        <h2 className="text-xl font-bold mb-2">Performance & History Logs</h2>
-        <table className="min-w-full table-auto">
-          <thead>
-            <tr className="bg-red-100">
-              <th>Timestamp</th><th>Action</th><th>By</th><th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map(log => (
-              <tr key={log._id}>
-                <td>{log.timestamp}</td>
-                <td>{log.action}</td>
-                <td>{log.by}</td>
-                <td>{log.notes}</td>
               </tr>
             ))}
           </tbody>
