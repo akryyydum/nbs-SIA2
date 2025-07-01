@@ -21,6 +21,7 @@ import SupplierBooks from './pages/Supplier'; // <-- import SupplierBooks
 import About from './pages/About'; // <-- import About
 import Contact from './pages/Contact'; // <-- import Contact
 import Profile from './components/Profile'; // <-- import Profile
+import OtherBusinesses from './pages/OtherBusinesses'; // <-- add this import
 
 
 function AdminLayout() {
@@ -34,6 +35,7 @@ function AdminLayout() {
           <Route path="books" element={<Books />} />
           <Route path="orders" element={<Orders />} />
           <Route path="suppliers" element={<SupplierDashboard />} />
+          <Route path="others" element={<OtherBusinesses />} /> {/* Add this line */}
           {/* Add more admin routes here */}
         </Routes>
       </div>

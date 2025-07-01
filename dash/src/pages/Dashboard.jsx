@@ -65,7 +65,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Carousel Section */}
-      <div className="flex items-center justify-center w-full h-[32vh] sm:h-[36vh] md:h-[40vh] lg:h-[30vh] xl:h-[35vh]">
+      <div className="flex items-center justify-center w-full h-[44vh] sm:h-[50vh] md:h-[56vh] lg:h-[44vh] xl:h-[52vh]">
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
           {images.map((img, idx) => (
             <img
@@ -175,6 +175,96 @@ const DashboardPage = () => {
             ))}
           </div>
         )}
+      </div>
+      {/* Other Businesses Section */}
+      <div className="w-full bg-gray-50 py-10 border-t border-gray-200 mt-8 flex flex-col items-center">
+        <div className="text-2xl font-bold mb-8 text-gray-700">Other Businesses</div>
+        <div className="w-full flex flex-wrap justify-center gap-12 px-4 max-w-7xl">
+          {/* Blended */}
+          <a
+            href="http://192.168.9.7:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center group"
+          >
+            <img
+              src="/blended.jpg"
+              alt="Blended"
+              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
+            />
+            <span className="text-xl font-semibold text-gray-700">Blended</span>
+          </a>
+          {/* Tara laba */}
+          <a
+            href="http://192.168.9.27:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center group"
+          >
+            <img
+              src="/tl.jpg"
+              alt="Tara laba"
+              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
+            />
+            <span className="text-xl font-semibold text-gray-700">Tara laba</span>
+          </a>
+          {/* Dental Clinic */}
+          <a
+            href="http://192.168.9.35:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center group"
+          >
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2965/2965567.png"
+              alt="Dental Clinic"
+              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
+            />
+            <span className="text-xl font-semibold text-gray-700">Dental Clinic</span>
+          </a>
+          {/* Jollibee */}
+          <a
+            href="http://192.168.9.37:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center group"
+          >
+            <img
+              src="https://1000logos.net/wp-content/uploads/2021/05/Jollibee-logo.png"
+              alt="Jollibee"
+              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition bg-white"
+            />
+            <span className="text-xl font-semibold text-gray-700">Jollibee</span>
+          </a>
+          {/* PNB */}
+          <a
+            href="http://192.168.9.23:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center group"
+          >
+            <img
+              src="https://www.pds.com.ph/wp-content/uploads/2018/12/PNB-Logo-Short-YouFirst-011117-FC-HQ-1024x676.png"
+              alt="PNB"
+              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition bg-white"
+            />
+            <span className="text-xl font-semibold text-gray-700">PNB</span>
+          </a>
+          {/* ITBYTES */}
+          <a
+            href="http://192.168.9.4:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center group"
+          >
+            <img
+              src="/it.jpg"
+              alt="ITBYTES"
+              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
+            />
+            <span className="text-xl font-semibold text-gray-700">ITBYTES</span>
+          </a>
+        </div>
       </div>
     </div>
   );
