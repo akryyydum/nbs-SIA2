@@ -10,7 +10,8 @@ const {
   acceptOrder,    // add this
   declineOrder,  
   shipOrder,  // add this
-  getOrderMetrics
+  getOrderMetrics,
+  markOrderReceived // add this
 } = require('../controllers/orderController');
 // User: Create order
 router.post('/', protect, createOrder);
@@ -29,10 +30,13 @@ router.delete('/:id', protect, sales, deleteOrder);
 
 // Accept order
 router.put('/:id/accept', protect, sales, acceptOrder);
-router.put('/:id/ship', protect, admin, shipOrder);
+router.put('/:id/ship', protect, sales, shipOrder);
 
 // Decline order
 router.put('/:id/decline', protect, sales, declineOrder);
+
+// Mark order as received
+router.put('/:id/received', protect, sales, markOrderReceived);
 
 // Get order visuals
 // router.get('/visuals', protect, sales, getOrderVisuals);

@@ -122,7 +122,12 @@ exports.acceptOrder = async (req, res) => {
       }
     }
 
-    order.status = 'accepted';
+    // If cash, set to delivered, else accepted
+    if (order.modeofPayment === "Cash") {
+      order.status = "received"; // <-- should be "received"
+    } else {
+      order.status = "accepted";
+    }
     await order.save();
 
     res.json({ message: 'Order accepted successfully', order });
@@ -156,25 +161,8 @@ exports.markOrderReceived = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
-    if (order.status !== 'out for delivery') {
-      return res.status(400).json({ message: 'Order is not out for delivery' });
-    }
-    order.status = 'received';
-    await order.save();
-    res.json({ message: 'Order marked as received' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// @desc    Mark order as received (admin or sales department)
-// @route   PUT /api/orders/:id/received
-exports.markOrderReceived = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
-    if (order.status !== 'out for delivery') {
-      return res.status(400).json({ message: 'Order is not out for delivery' });
+    if (order.status !== 'out for delivery' && order.status !== 'accepted') {
+      return res.status(400).json({ message: 'Order is not out for delivery or accepted' });
     }
     order.status = 'received';
     await order.save();

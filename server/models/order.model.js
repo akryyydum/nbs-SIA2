@@ -14,7 +14,17 @@ const orderSchema = new mongoose.Schema({
   modeofPayment: {type: String, required: true },
   status: { 
     type: String, 
-    enum: ['out for delivery','pending', 'paid', 'shipped', 'completed', 'cancelled', 'accepted', 'declined'], // added accepted, declined
+    enum: [
+      'out for delivery',
+      'pending',
+      'paid',
+      'shipped',
+      'completed',
+      'cancelled',
+      'accepted',
+      'declined',
+      'received' // <-- add this!
+    ],
     default: 'pending' 
   },
   createdAt: { type: Date, default: Date.now }
