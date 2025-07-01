@@ -161,8 +161,8 @@ exports.markOrderReceived = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
-    if (order.status !== 'out for delivery' && order.status !== 'accepted') {
-      return res.status(400).json({ message: 'Order is not out for delivery or accepted' });
+    if (order.status !== 'out for delivery') {
+      return res.status(400).json({ message: 'Order is not out for delivery' });
     }
     order.status = 'received';
     await order.save();
@@ -210,26 +210,6 @@ exports.markOrderReceived = async (req, res) => {
 //     res.status(500).json({ message: err.message || 'Failed to fetch visuals' });
 //   }
 // };
-// @desc    Ship order (admin only): set status to 'out for delivery'
-// @route   PUT /api/orders/:id/ship
-exports.shipOrder = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
-
-    if (order.status !== 'accepted') {
-      return res.status(400).json({ message: 'Only accepted orders can be shipped' });
-    }
-
-    order.status = 'out for delivery';
-    await order.save();
-
-    res.json({ message: 'Order shipped successfully' });
-  } catch (err) {
-    console.error('Error in shipOrder:', err);
-    res.status(500).json({ message: err.message || 'Internal Server Error' });
-  }
-};
 // @desc    Ship order (admin only): set status to 'out for delivery'
 // @route   PUT /api/orders/:id/ship
 exports.shipOrder = async (req, res) => {

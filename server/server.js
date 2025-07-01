@@ -26,7 +26,8 @@ app.use(cors({
   origin: '*', // For development, allow all origins. For production, use: origin: 'http://192.168.0.110:5173'
   credentials: true,
 }));
-app.use(express.json()); // Parse incoming JSON
+app.use(express.json({ limit: '10mb' })); // Parse incoming JSON, allow up to 10mb
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // For form data, allow up to 10mb
 
 // Serve static files from the uploads directory for any IP address
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

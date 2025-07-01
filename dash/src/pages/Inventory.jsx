@@ -501,7 +501,7 @@ const Inventory = () => {
               <tr key={b._id}>
                 <td style={cellStyles}>{b.title}</td>
                 <td style={cellStyles}>{b.author}</td>
-                <td style={cellStyles}>${Number(b.price).toFixed(2)}</td>
+                <td style={cellStyles}>₱{Number(b.price).toFixed(2)}</td>
                 <td style={cellStyles}>{b.stock}</td>
                 <td style={cellStyles}>
                   {b.image ? (

@@ -95,7 +95,7 @@ const Orders = () => {
               <div><span className="font-semibold">Order ID:</span> {selectedOrder._id}</div>
               <div><span className="font-semibold">User:</span> {selectedOrder.user?.name} ({selectedOrder.user?.email})</div>
               <div><span className="font-semibold">Status:</span> {selectedOrder.status}</div>
-              <div><span className="font-semibold">Total Price:</span> ${Number(selectedOrder.totalPrice).toFixed(2)}</div>
+              <div><span className="font-semibold">Total Price:</span> ₱{Number(selectedOrder.totalPrice).toFixed(2)}</div>
               <div>
                 <span className="font-semibold">Items:</span>
                 <ul className="list-disc ml-6">
@@ -191,7 +191,7 @@ const Orders = () => {
                   </span>
                 </td>
                 <td className="border-b px-6 py-3">{order.modeofPayment || 'N/A'}</td>
-                <td className="border-b px-6 py-3">${Number(order.totalPrice).toFixed(2)}</td>
+                <td className="border-b px-6 py-3">₱{Number(order.totalPrice).toFixed(2)}</td>
                 <td className="border-b px-6 py-3">{new Date(order.createdAt).toLocaleString()}</td>
                 <td className="border-b px-6 py-3">
                   <button

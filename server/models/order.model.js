@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema({
       'cancelled',
       'accepted',
       'declined',
-      'received' // <-- add this!
+      'received' // <-- add this
     ],
     default: 'pending' 
   },

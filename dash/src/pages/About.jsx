@@ -6,8 +6,41 @@ const About = () => {
     <>
       <Navbar />
       <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold mb-12 text-center text-black">75 Years of Endless Discoveries</h2>
+        {/* Background image behind h2 only */}
+        <div className="relative max-w-7xl mx-auto">
+          <div className="relative w-full h-64 mb-12">
+            <div
+              className="absolute inset-0 w-full h-full rounded-2xl shadow-lg bg-cover bg-center"
+              style={{
+                backgroundImage: "url('https://images.pexels.com/photos/15426307/pexels-photo-15426307.jpeg')"
+              }}
+            ></div>
+            <div className="absolute inset-0 w-full h-full flex justify-center items-center z-10 pointer-events-none">
+              <h2
+                className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-white to-red-600 animate-gradient-x drop-shadow-lg"
+                style={{
+                  backgroundSize: '200% 200%',
+                  animation: 'gradient-x 3s ease-in-out infinite'
+                }}
+              >
+                75 Years of Endless Discoveries
+              </h2>
+            </div>
+          </div>
+          {/* Gradient animation keyframes */}
+          <style>
+            {`
+              @keyframes gradient-x {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+              .animate-gradient-x {
+                background-size: 200% 200%;
+                animation: gradient-x 3s ease-in-out infinite;
+              }
+            `}
+          </style>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-12 mb-16">
             <div className="flex flex-col items-center">
               <Book className="h-32 w-32 mb-4 text-gray-700" />

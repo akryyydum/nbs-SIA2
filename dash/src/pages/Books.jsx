@@ -690,7 +690,7 @@ const Books = () => {
               <tr key={b._id} className="hover:bg-red-50 transition">
                 <td className="border-b px-6 py-3">{b.title}</td>
                 <td className="border-b px-6 py-3">{b.author}</td>
-                <td className="border-b px-6 py-3">${Number(b.price).toFixed(2)}</td>
+                <td className="border-b px-6 py-3">₱{Number(b.price).toFixed(2)}</td>
                 <td className="border-b px-6 py-3">{b.stock}</td>
                 <td className="border-b px-6 py-3">
                   {b.image && (

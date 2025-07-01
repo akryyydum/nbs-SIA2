@@ -36,6 +36,19 @@ const Navbar = () => {
     }
   };
 
+  // Expose fetchCart globally for cross-component updates
+  useEffect(() => {
+    window.__nbsFetchCart = fetchCart;
+    // Listen for custom cart-updated event
+    const handler = () => fetchCart();
+    window.addEventListener('cart-updated', handler);
+    return () => {
+      window.removeEventListener('cart-updated', handler);
+      // Optionally clean up global
+      if (window.__nbsFetchCart === fetchCart) delete window.__nbsFetchCart;
+    };
+  }, [user]);
+
   // Fetch cart from backend for the logged-in user
   useEffect(() => {
     fetchCart();
@@ -148,7 +161,7 @@ const Navbar = () => {
                           <div className="flex-1">
                             <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
                             <div className="text-xs text-gray-500">{item.book?.author}</div>
-                            <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
+                            <div className="text-xs text-red-600">₱{Number(item.book?.price).toFixed(2)}</div>
                             <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                           </div>
                           {/* Delete button */}
@@ -212,9 +225,6 @@ const Navbar = () => {
                 <div className="absolute right-0 mt-2 w-40 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
                   <Link to="/profile" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900 flex items-center gap-2">
                     <FaUserCircle /> Profile
-                  </Link>
-                  <Link to="/settings" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900 flex items-center gap-2">
-                    <FaUserCircle /> Settings
                   </Link>
                   <button
                     onClick={() => {
@@ -385,7 +395,7 @@ const Navbar = () => {
                       <div className="flex-1">
                         <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
                         <div className="text-xs text-gray-500">{item.book?.author}</div>
-                        <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
+                        <div className="text-xs text-red-600">₱{Number(item.book?.price).toFixed(2)}</div>
                         <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                       </div>
                     </div>
@@ -439,7 +449,6 @@ const Navbar = () => {
           {accountOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
               <Link to="/profile" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900" onClick={() => setAccountOpen(false)}>Profile</Link>
-              <Link to="/settings" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900" onClick={() => setAccountOpen(false)}>Settings</Link>
               <button
                 onClick={() => {
                   setAccountOpen(false);

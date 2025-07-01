@@ -142,7 +142,7 @@ const DashboardPage = () => {
                       </div>
                       <div className="text-xs text-gray-700 mb-1">{book.author}</div>
                       <div className="text-black font-semibold text-xs sm:text-sm mb-1">
-                        ${Number(book.price).toFixed(2)}
+                        ₱{Number(book.price).toFixed(2)}
                       </div>
                     </div>
                   </div>
