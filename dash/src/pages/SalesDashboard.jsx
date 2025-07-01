@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-// import TopProductsBar from "../components/TopProductsBar";
-// import OrdersByCategory from "../components/OrdersByCategory";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
 
 const API = axios.create({
   baseURL: 'http://192.168.9.16:5000/api',
@@ -20,16 +19,19 @@ const SalesDashboard = () => {
   const [books, setBooks] = useState([]);
   const [newOrder, setNewOrder] = useState({
     user: "",
-    items: [{ book: "", quantity: 1 }]
+    items: [{ book: "", quantity: 1 }],
+    modeofPayment: "Cash"
   });
   const [logs, setLogs] = useState([]);
   const { user } = useAuth();
 
   // Dashboard visuals state (like Inventory)
   // Removed TopProductsBar and OrdersByCategory state
-  const [totalRevenue, setTotalRevenue] = useState(0);
+   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [aov, setAov] = useState(0);
+  const [topBooksData, setTopBooksData] = useState([]);
+  const [categoryChartData, setCategoryChartData] = useState([]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,19 +51,55 @@ const SalesDashboard = () => {
       const res = await API.get('/orders');
       setOrders(res.data);
 
-      // Calculate metrics from orders
-      const acceptedOrPaidOrders = res.data.filter(
-        order => order.status === "accepted" || order.status === "paid"
-      );
-      const revenue = acceptedOrPaidOrders.reduce(
-        (sum, order) => sum + (order.totalPrice || 0), 0
-      );
+      // Revenue/transactions logic:
+      // - Bank: status is "paid"
+      // - Cash: always include (regardless of status)
+      // - COD: status is "received"
+      const acceptedOrPaidOrders = res.data.filter(order => {
+        if (order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
+          return order.status === "paid";
+        }
+        if (order.modeofPayment === "Cash") {
+          return true; // Always count cash orders
+        }
+        if (
+          order.modeofPayment === "Cash on Delivery" ||
+          order.modeofPayment === "cod"
+        ) {
+          return order.status === "received";
+        }
+        return false;
+      });
+
+      const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
       const transactions = acceptedOrPaidOrders.length;
       const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
-
       setTotalRevenue(revenue);
       setTotalTransactions(transactions);
       setAov(avgOrderValue);
+
+      // Top books and category chart: use all orders for stats
+      const bookSalesMap = {};
+      const categorySalesMap = {};
+      acceptedOrPaidOrders.forEach(order => {
+        order.items.forEach(item => {
+          const bookTitle = item.book?.title || 'Unknown';
+          bookSalesMap[bookTitle] = (bookSalesMap[bookTitle] || 0) + item.quantity;
+
+          const category = item.book?.category || 'Uncategorized';
+          categorySalesMap[category] = (categorySalesMap[category] || 0) + item.quantity;
+        });
+      });
+
+      const topBooks = Object.entries(bookSalesMap)
+        .map(([title, quantity]) => ({ title, quantity }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5);
+
+      const categoryData = Object.entries(categorySalesMap).map(([category, quantity]) => ({ category, quantity }));
+
+      setTopBooksData(topBooks);
+      setCategoryChartData(categoryData);
     } catch (err) {
       alert('Failed to fetch orders');
       setTotalRevenue(0);
@@ -78,6 +116,7 @@ const SalesDashboard = () => {
 
   // Accept order
   const handleAccept = async (orderId) => {
+    const order = orders.find(o => o._id === orderId);
     if (!window.confirm("Accept this order? This will decrease book stocks.")) return;
     setActionLoading(orderId);
     try {
@@ -127,6 +166,8 @@ const SalesDashboard = () => {
     if (filter === "pending") return order.status === "pending";
     if (filter === "accepted") return order.status === "accepted";
     if (filter === "declined") return order.status === "declined";
+    if (filter === "shipped") return order.status === "out for delivery" || order.status === "shipped";
+    if (filter === "delivered") return order.status === "delivered" || order.status === "received";
     return true;
   });
 
@@ -153,12 +194,15 @@ const SalesDashboard = () => {
   const handleAddOrder = async (e) => {
     e.preventDefault();
     try {
-      await API.post('/orders', {
+      // Always set modeofPayment to "Cash" for new orders
+      const orderData = {
         user: newOrder.user,
-        items: newOrder.items.map(i => ({ book: i.book, quantity: Number(i.quantity) }))
-      });
+        items: newOrder.items.map(i => ({ book: i.book, quantity: Number(i.quantity) })),
+        modeofPayment: "Cash"
+      };
+      await API.post('/orders', orderData);
       setShowAddModal(false);
-      setNewOrder({ user: "", items: [{ book: "", quantity: 1 }] });
+      setNewOrder({ user: "", items: [{ book: "", quantity: 1 }], modeofPayment: "Cash" });
       fetchOrders();
       alert("Order created!");
     } catch (err) {
@@ -185,14 +229,8 @@ const SalesDashboard = () => {
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-8">
         {[
-          {
-            key: "dashboard",
-            label: "Dashboard"
-          },
-          {
-            key: "orders",
-            label: "Orders"
-          }
+          { key: "dashboard", label: "Dashboard" },
+          { key: "orders", label: "Orders" }
         ].map((tab) => (
           <button
             key={tab.key}
@@ -207,6 +245,128 @@ const SalesDashboard = () => {
           </button>
         ))}
       </div>
+
+      {/* Dashboard Tab */}
+      {activeTab === "dashboard" && (
+        <section>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+              <div className="text-sm text-gray-500">Total Sales Revenue</div>
+              <div className="text-2xl font-bold text-red-700">
+                ₱{Number(totalRevenue).toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+              <div className="text-sm text-gray-500">Total Transactions</div>
+              <div className="text-2xl font-bold text-red-700">
+                {totalTransactions}
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+              <div className="text-sm text-gray-500">Average Order Value</div>
+              <div className="text-2xl font-bold text-red-700">
+                ₱{Number(aov).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Top Selling Books</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topBooksData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+                  <XAxis dataKey="title" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="quantity" fill="#dc2626" barSize={35} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Orders by Category</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={categoryChartData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="quantity" stroke="#dc2626" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Recent Orders - Only in Dashboard */}
+          <div className="bg-white rounded-lg shadow p-4 mb-4">
+            <div className="text-gray-500 mb-2 font-semibold text-lg">Recent Orders</div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-base">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-4 text-left">Order ID</th>
+                    <th className="py-2 px-4 text-left">Customer</th>
+                    <th className="py-2 px-4 text-left">Total</th>
+                    <th className="py-2 px-4 text-left">Status</th>
+                    <th className="py-2 px-4 text-left">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders
+                    .slice((dashboardPage - 1) * 5, dashboardPage * 5)
+                    .map(order => (
+                      <tr key={order._id} className="border-b text-base">
+                        <td className="py-2 px-4">{order._id}</td>
+                        <td className="py-2 px-4">{order.user?.name || order.user || "N/A"}</td>
+                        <td className="py-2 px-4">₱{Number(order.totalPrice).toFixed(2)}</td>
+                        <td className="py-2 px-4">
+                          <span className={`px-3 py-1 rounded-full text-base font-medium
+                            ${order.status === "paid" ? "bg-green-100 text-green-700"
+                              : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
+                              : order.status === "accepted" ? "bg-blue-100 text-blue-700"
+                              : order.status === "declined" ? "bg-gray-300 text-gray-700"
+                              : "bg-gray-100 text-gray-700"}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="py-2 px-4">{new Date(order.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination Controls */}
+            {Math.ceil(orders.length / 5) > 1 && (
+              <div className="flex justify-center mt-4 gap-2">
+                <button
+                  className="px-3 py-1 rounded bg-gray-200"
+                  onClick={() => setDashboardPage(p => Math.max(1, p - 1))}
+                  disabled={dashboardPage === 1}
+                >
+                  Prev
+                </button>
+                {[...Array(Math.ceil(orders.length / 5))].map((_, idx) => (
+                  <button
+                    key={idx + 1}
+                    className={`px-3 py-1 rounded ${dashboardPage === idx + 1 ? "bg-red-600 text-white" : "bg-gray-200"}`}
+                    onClick={() => setDashboardPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+                <button
+                  className="px-3 py-1 rounded bg-gray-200"
+                  onClick={() => setDashboardPage(p => Math.min(Math.ceil(orders.length / 5), p + 1))}
+                  disabled={dashboardPage === Math.ceil(orders.length / 5)}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Orders Tab */}
       {activeTab === "orders" && (
@@ -236,6 +396,14 @@ const SalesDashboard = () => {
               onClick={() => setFilter("accepted")}
             >Accepted</button>
             <button
+              className={`px-4 py-2 rounded ${filter === "shipped" ? "bg-black text-white" : "bg-gray-200 text-black"}`}
+              onClick={() => setFilter("shipped")}
+            >Shipped</button>
+            <button
+              className={`px-4 py-2 rounded ${filter === "delivered" ? "bg-black text-white" : "bg-gray-200 text-black"}`}
+              onClick={() => setFilter("delivered")}
+            >Delivered</button>
+            <button
               className={`px-4 py-2 rounded ${filter === "declined" ? "bg-black text-white" : "bg-gray-200 text-black"}`}
               onClick={() => setFilter("declined")}
             >Declined</button>
@@ -257,9 +425,18 @@ const SalesDashboard = () => {
                         ${order.status === "paid" ? "bg-green-100 text-green-700"
                           : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
                           : order.status === "accepted" ? "bg-blue-100 text-blue-700"
+                          : order.status === "out for delivery" ? "bg-blue-100 text-blue-700"
+                          : order.status === "received" ? "bg-green-200 text-green-800"
+                          : order.status === "delivered" ? "bg-green-300 text-green-900"
                           : order.status === "declined" ? "bg-gray-300 text-gray-700"
                           : "bg-gray-100 text-gray-700"}`}>
-                        {order.status}
+                        {order.status === "out for delivery"
+                          ? "shipped"
+                          : order.status === "received"
+                            ? "received"
+                            : order.status === "delivered"
+                              ? "delivered"
+                              : order.status}
                       </span>
                     </div>
                     <div className="mb-2 text-sm text-gray-600">
@@ -301,6 +478,47 @@ const SalesDashboard = () => {
                       >
                         {actionLoading === order._id ? "Deleting..." : "Delete"}
                       </button>
+                      {/* Ship button for accepted orders */}
+                      {order.status === "accepted" && (
+                        <button
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                          onClick={async () => {
+                            if (!window.confirm('Mark this order as shipped?')) return;
+                            setActionLoading(order._id);
+                            try {
+                              await API.put(`/orders/${order._id}/ship`, {});
+                              fetchOrders();
+                            } catch (err) {
+                              alert('Failed to mark as shipped: ' + (err?.response?.data?.message || err.message));
+                            }
+                            setActionLoading(false);
+                          }}
+                          disabled={actionLoading === order._id}
+                        >
+                          {actionLoading === order._id ? "Shipping..." : "Ship"}
+                        </button>
+                      )}
+                      {/* Delivered button for orders not yet received or delivered */}
+                      {(order.status !== "received" && order.status !== "delivered") && (
+                        <button
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                          onClick={async () => {
+                            if (!window.confirm('Mark this order as delivered/received?')) return;
+                            setActionLoading(order._id);
+                            try {
+                              // Use the correct endpoint for marking as received
+                              await API.put(`/orders/${order._id}/received`, {});
+                              fetchOrders();
+                            } catch (err) {
+                              alert('Failed to mark as delivered: ' + (err?.response?.data?.message || err.message));
+                            }
+                            setActionLoading(false);
+                          }}
+                          disabled={actionLoading === order._id}
+                        >
+                          {actionLoading === order._id ? "Delivering..." : "Delivered"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -351,7 +569,12 @@ const SalesDashboard = () => {
                 </h3>
                 <div className="space-y-2">
                   <div><span className="font-semibold">Order ID:</span> {modalOrder._id}</div>
+                  <div>
+                    <span className="font-semibold">Customer:</span>{" "}
+                    {modalOrder.user?.name || modalOrder.user?.email || modalOrder.user || "N/A"}
+                  </div>
                   <div><span className="font-semibold">Status:</span> {modalOrder.status}</div>
+                  <div><span className="font-semibold">Mode of Payment:</span> {modalOrder.modeofPayment}</div>
                   <div><span className="font-semibold">Total Price:</span> ₱{Number(modalOrder.totalPrice).toFixed(2)}</div>
                   <div>
                     <span className="font-semibold">Items:</span>
@@ -424,6 +647,16 @@ const SalesDashboard = () => {
                     onChange={e => setNewOrder(o => ({ ...o, user: e.target.value }))}
                   />
                 </div>
+                {/* Mode of Payment - fixed as Cash */}
+                <div>
+                  <label className="font-semibold">Mode of Payment:</label>
+                  <input
+                    type="text"
+                    className="ml-2 border px-2 py-1 rounded w-full bg-gray-100"
+                    value="Cash"
+                    disabled
+                  />
+                </div>
                 {/* Items */}
                 <div>
                   <label className="font-semibold">Items:</label>
@@ -487,154 +720,6 @@ const SalesDashboard = () => {
               </form>
             </div>
           )}
-        </section>
-      )}
-
-      {/* Dashboard Tab */}
-      {activeTab === "dashboard" && (
-        <section>
-          {/* 1. Key Sales Metrics / KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Total Sales Revenue</div>
-              <div className="text-2xl font-bold text-red-700">
-                ₱{Number(totalRevenue).toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Total Transactions</div>
-              <div className="text-2xl font-bold text-red-700">
-                {totalTransactions}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-              <div className="text-sm text-gray-500">Average Order Value</div>
-              <div className="text-2xl font-bold text-red-700">
-                ₱{Number(aov).toLocaleString()}
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Visuals: Bar Chart & Line Chart */}
-          {/* TopProductsBar and OrdersByCategory removed as requested */}
-
-          {/* 3. Recent Orders */}
-          <div className="bg-white rounded-lg shadow p-8 mb-8">
-            <div className="text-gray-500 mb-4 font-semibold text-2xl">Recent Orders</div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-xl">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="py-4 px-6 text-left">Order ID</th>
-                    <th className="py-4 px-6 text-left">Customer</th>
-                    <th className="py-4 px-6 text-left">Total</th>
-                    <th className="py-4 px-6 text-left">Status</th>
-                    <th className="py-4 px-6 text-left">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders
-                    .slice((dashboardPage - 1) * 5, dashboardPage * 5)
-                    .map(order => (
-                      <tr key={order._id} className="border-b text-xl">
-                        <td className="py-3 px-6">{order._id}</td>
-                        <td className="py-3 px-6">{order.user?.name || order.user || "N/A"}</td>
-                        <td className="py-3 px-6">₱{Number(order.totalPrice).toFixed(2)}</td>
-                        <td className="py-3 px-6">
-                          <span className={`px-4 py-2 rounded-full text-xl font-medium
-                            ${order.status === "paid" ? "bg-green-100 text-green-700"
-                              : order.status === "pending" ? "bg-yellow-100 text-yellow-700"
-                              : order.status === "accepted" ? "bg-blue-100 text-blue-700"
-                              : order.status === "declined" ? "bg-gray-300 text-gray-700"
-                              : "bg-gray-100 text-gray-700"}`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-6">{new Date(order.createdAt).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Pagination Controls */}
-            {Math.ceil(orders.length / 5) > 1 && (
-              <div className="flex justify-center mt-6 gap-2">
-                <button
-                  className="px-4 py-2 rounded bg-gray-200"
-                  onClick={() => setDashboardPage(p => Math.max(1, p - 1))}
-                  disabled={dashboardPage === 1}
-                >
-                  Prev
-                </button>
-                {[...Array(Math.ceil(orders.length / 5))].map((_, idx) => (
-                  <button
-                    key={idx + 1}
-                    className={`px-4 py-2 rounded ${dashboardPage === idx + 1 ? "bg-red-600 text-white" : "bg-gray-200"}`}
-                    onClick={() => setDashboardPage(idx + 1)}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-                <button
-                  className="px-4 py-2 rounded bg-gray-200"
-                  onClick={() => setDashboardPage(p => Math.min(Math.ceil(orders.length / 5), p + 1))}
-                  disabled={dashboardPage === Math.ceil(orders.length / 5)}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Customers Tab */}
-      {activeTab === "customers" && (
-        <section>
-          <h2 className="text-xl font-bold text-red-700 mb-4">Customers</h2>
-          <div className="bg-white rounded-lg shadow p-6">
-            {/* TODO: Implement CRUD Table for Customers */}
-            <div className="text-gray-500">Customer management goes here.</div>
-          </div>
-        </section>
-      )}
-
-      {/* Logs Tab */}
-      {activeTab === "logs" && (
-        <section>
-          <h2 className="text-xl font-bold text-red-700 mb-4">Sales Logs</h2>
-          <div className="bg-white rounded-lg shadow p-6">
-            <table className="min-w-full">
-              <thead>
-                <tr>
-                  <th>Date/Time</th>
-                  <th>Action</th>
-                  <th>Order ID</th>
-                  <th>Performed By</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map(log => (
-                  <tr key={log._id}>
-                    <td>{new Date(log.timestamp).toLocaleString()}</td>
-                    <td>{log.action}</td>
-                    <td>{log.orderId}</td>
-                    <td>{log.performedBy}</td>
-                    <td>{log.details}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {/* Reports Tab */}
-      {activeTab === "reports" && (
-        <section>
-          <h2 className="text-xl font-bold text-red-700 mb-4">Reports & Visuals</h2>
-          {/* Visuals removed as requested */}
         </section>
       )}
     </div>

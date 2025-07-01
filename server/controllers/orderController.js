@@ -122,7 +122,12 @@ exports.acceptOrder = async (req, res) => {
       }
     }
 
-    order.status = 'accepted';
+    // If cash, set to delivered, else accepted
+    if (order.modeofPayment === "Cash") {
+      order.status = "received"; // <-- should be "received"
+    } else {
+      order.status = "accepted";
+    }
     await order.save();
 
     res.json({ message: 'Order accepted successfully', order });
