@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
@@ -23,6 +23,8 @@ const Order = () => {
   const [receiving, setReceiving] = useState(null);
   const [modeofPayment, setModeofPayment] = useState('Cash'); // Add this line for payment mode
   const [newOrder, setNewOrder] = useState({ items: [{ book: "", quantity: 1 }] }); // or match your structure
+  const [receiptOrder, setReceiptOrder] = useState(null); // Add this line
+  const receiptRef = useRef(); // For printing
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -66,6 +68,7 @@ const Order = () => {
     if (filter === 'accepted') return order.status === 'accepted';
     if (filter === 'declined') return order.status === 'declined';
     if (filter === 'shipped') return order.status === 'out for delivery';
+    if (filter === 'received') return order.status === 'received'; // add this line
     return true;
   });
 
@@ -116,10 +119,42 @@ const Order = () => {
           o._id === orderId ? { ...o, status: 'received' } : o
         )
       );
+      // Find the order and set for receipt
+      const order = orders.find(o => o._id === orderId);
+      if (order) setReceiptOrder({ ...order, status: 'received' });
     } catch (err) {
       alert('Failed to mark as received');
     }
     setReceiving(null);
+  };
+
+  // Print handler
+  const handlePrint = () => {
+    if (!receiptRef.current) return;
+    const printContents = receiptRef.current.innerHTML;
+    const win = window.open('', '', 'width=700,height=900');
+    win.document.write(`
+      <html>
+        <head>
+          <title>Receipt</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .receipt-title { font-size: 1.5em; font-weight: bold; margin-bottom: 16px; }
+            .receipt-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+            .receipt-table th, .receipt-table td { border: 1px solid #ccc; padding: 8px; }
+            .receipt-table th { background: #f5f5f5; }
+            .total { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          ${printContents}
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+    win.close();
   };
 
   // Example order creation handler (ensure modeofPayment is included)
@@ -166,6 +201,10 @@ const Order = () => {
           className={`px-4 py-2 rounded ${filter === 'declined' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
           onClick={() => setFilter('declined')}
         >Declined</button>
+        <button
+          className={`px-4 py-2 rounded ${filter === 'received' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
+          onClick={() => setFilter('received')}
+        >Received</button>
       </div>
       {loading ? (
         <div className="text-center text-gray-500 py-8">Loading orders...</div>
@@ -245,6 +284,15 @@ const Order = () => {
                     disabled={receiving === order._id}
                   >
                     {receiving === order._id ? 'Processing...' : 'Order Received'}
+                  </button>
+                )}
+                {/* Print Receipt button for received orders */}
+                {order.status === 'received' && (
+                  <button
+                    className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
+                    onClick={() => setReceiptOrder(order)}
+                  >
+                    Print Receipt
                   </button>
                 )}
               </div>
@@ -345,6 +393,62 @@ const Order = () => {
                 <div className="text-red-600 text-sm mt-2">{bankError}</div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Printable Receipt Modal */}
+      {receiptOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold"
+              onClick={() => setReceiptOrder(null)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <div ref={receiptRef}>
+              <div className="receipt-title text-center mb-4">Order Receipt</div>
+              <div><b>Order ID:</b> {receiptOrder._id}</div>
+              <div><b>Date:</b> {new Date(receiptOrder.createdAt).toLocaleString()}</div>
+              <div><b>Status:</b> {receiptOrder.status}</div>
+              <div><b>Payment:</b> {receiptOrder.modeofPayment}</div>
+              <table className="receipt-table mt-4">
+                <thead>
+                  <tr>
+                    <th>Book</th>
+                    <th>Qty</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {receiptOrder.items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{item.book?.title || 'Book'}</td>
+                      <td>{item.quantity}</td>
+                      <td>
+                        ₱{item.book?.price
+                          ? (item.book.price * item.quantity).toFixed(2)
+                          : '0.00'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={2} className="total text-right">Total</td>
+                    <td className="total">₱{Number(receiptOrder.totalPrice).toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <button
+              className="mt-6 w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+              onClick={handlePrint}
+            >
+              Print Receipt
+            </button>
           </div>
         </div>
       )}
