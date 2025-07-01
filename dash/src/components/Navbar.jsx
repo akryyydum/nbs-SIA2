@@ -36,6 +36,19 @@ const Navbar = () => {
     }
   };
 
+  // Expose fetchCart globally for cross-component updates
+  useEffect(() => {
+    window.__nbsFetchCart = fetchCart;
+    // Listen for custom cart-updated event
+    const handler = () => fetchCart();
+    window.addEventListener('cart-updated', handler);
+    return () => {
+      window.removeEventListener('cart-updated', handler);
+      // Optionally clean up global
+      if (window.__nbsFetchCart === fetchCart) delete window.__nbsFetchCart;
+    };
+  }, [user]);
+
   // Fetch cart from backend for the logged-in user
   useEffect(() => {
     fetchCart();

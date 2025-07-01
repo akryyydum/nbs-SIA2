@@ -80,6 +80,8 @@ const Products = () => {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       alert(`Added "${book.title}" to cart!`);
+      // Notify Navbar to update cart
+      window.dispatchEvent(new Event('cart-updated'));
     } catch (err) {
       alert('Failed to add to cart');
     }
