@@ -9,6 +9,8 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState(emptyForm); // for modal
+  const [showModal, setShowModal] = useState(false); // modal state
   const [loading, setLoading] = useState(false);
 
   const fetchUsers = async () => {
@@ -30,13 +32,8 @@ const Users = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editing) {
-        await updateUser(editing, form, user.token);
-      } else {
-        await createUser({ ...form, status: 'pending' }, user.token);
-      }
+      await createUser({ ...form, status: 'pending' }, user.token);
       setForm(emptyForm);
-      setEditing(null);
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || 'Error');
@@ -45,7 +42,21 @@ const Users = () => {
 
   const handleEdit = (u) => {
     setEditing(u._id);
-    setForm({ name: u.name, email: u.email, password: '', role: u.role, status: u.status });
+    setEditForm({ name: u.name, email: u.email, password: '', role: u.role, status: u.status });
+    setShowModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await updateUser(editing, editForm, user.token);
+      setEditing(null);
+      setShowModal(false);
+      setEditForm(emptyForm);
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -78,16 +89,14 @@ const Users = () => {
           required
           className="border px-3 py-2 rounded"
         />
-        {!editing && (
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-            required
-            className="border px-3 py-2 rounded"
-          />
-        )}
+        <input
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+          required
+          className="border px-3 py-2 rounded"
+        />
         <select
           value={form.role}
           onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
@@ -108,14 +117,92 @@ const Users = () => {
           <option value="active">Active</option>
         </select>
         <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">
-          {editing ? 'Update' : 'Create'}
+          Create
         </button>
-        {editing && (
-          <button type="button" className="ml-2 px-4 py-2 rounded border" onClick={() => { setEditing(null); setForm(emptyForm); }}>
-            Cancel
-          </button>
-        )}
       </form>
+
+      {/* Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl shadow-xl p-8 min-w-[350px] relative">
+            <h3 className="text-xl font-bold mb-4 text-red-700">Edit User</h3>
+            <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+              <input
+                type="text"
+                placeholder="Name"
+                value={editForm.name}
+                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                required
+                className="border px-3 py-2 rounded"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={editForm.email}
+                onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
+                required
+                className="border px-3 py-2 rounded"
+              />
+              <input
+                type="password"
+                placeholder="Password (leave blank to keep unchanged)"
+                value={editForm.password}
+                onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))}
+                className="border px-3 py-2 rounded"
+              />
+              <select
+                value={editForm.role}
+                onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
+                className="border px-3 py-2 rounded"
+              >
+                <option value="customer">Customer</option>
+                <option value="admin">Admin</option>
+                <option value="inventory department">Inventory Department</option>
+                <option value="sales department">Sales Department</option>
+                <option value="supplier department">Supplier Department</option>
+              </select>
+              <select
+                value={editForm.status}
+                onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                className="border px-3 py-2 rounded"
+              >
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                
+          <option value="decline">Decline</option>
+              </select>
+              <div className="flex gap-2 mt-2">
+                <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded">
+                  Update
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded border"
+                  onClick={() => {
+                    setEditing(null);
+                    setShowModal(false);
+                    setEditForm(emptyForm);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-red-600 text-2xl"
+              onClick={() => {
+                setEditing(null);
+                setShowModal(false);
+                setEditForm(emptyForm);
+              }}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         className="overflow-x-auto rounded-2xl shadow-2xl border border-red-100"
         style={{

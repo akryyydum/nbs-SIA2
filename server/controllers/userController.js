@@ -48,16 +48,26 @@ exports.createUser = async (req, res) => {
 // @desc    Update a user (admin only)
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, role, status } = req.body;
+  const { name, email, password, role, status } = req.body;
   try {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Only admin can update role and status
+    if (req.user.role === 'admin') {
+      user.role = role ?? user.role;
+      user.status = status ?? user.status;
+    }
+    // Any user can update their own name, email, and password
     user.name = name ?? user.name;
     user.email = email ?? user.email;
-    user.role = role ?? user.role;
-    user.status = status ?? user.status;
+    if (password) user.password = password;
+
     await user.save();
-    res.json({ _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status });
+    // If password was updated, return '***' as a placeholder
+    const response = { _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status };
+    if (password) response.password = '********';
+    res.json(response);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

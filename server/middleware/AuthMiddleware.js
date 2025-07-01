@@ -63,3 +63,16 @@ exports.adminOrSupplier = (req, res, next) => {
   }
   return res.status(403).json({ message: 'Forbidden: Admin or Supplier Department only' });
 };
+
+// Allow user to update their own profile, or admin can update anyone
+exports.canEditProfile = (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+  // Admin can edit anyone, any user (including customer) can edit their own profile
+  if (
+    req.user.role === 'admin' ||
+    req.user._id.toString() === req.params.id
+  ) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Forbidden: You can only edit your own profile.' });
+};
