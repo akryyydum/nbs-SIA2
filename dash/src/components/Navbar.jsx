@@ -213,9 +213,6 @@ const Navbar = () => {
                   <Link to="/profile" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900 flex items-center gap-2">
                     <FaUserCircle /> Profile
                   </Link>
-                  <Link to="/settings" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900 flex items-center gap-2">
-                    <FaUserCircle /> Settings
-                  </Link>
                   <button
                     onClick={() => {
                       setAccountOpen(false);
@@ -439,7 +436,6 @@ const Navbar = () => {
           {accountOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
               <Link to="/profile" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900" onClick={() => setAccountOpen(false)}>Profile</Link>
-              <Link to="/settings" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900" onClick={() => setAccountOpen(false)}>Settings</Link>
               <button
                 onClick={() => {
                   setAccountOpen(false);
