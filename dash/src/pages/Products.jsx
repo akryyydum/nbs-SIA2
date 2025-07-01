@@ -430,7 +430,7 @@ const Products = () => {
               )}
               <h3 className="text-2xl font-bold text-black mb-2 text-center">{modalBook.title}</h3>
               <div className="text-md text-gray-700 mb-2 text-center">{modalBook.author}</div>
-              <div className="text-black font-semibold text-xl mb-2 text-center">${Number(modalBook.price).toFixed(2)}</div>
+              <div className="text-black font-semibold text-xl mb-2 text-center">₱{Number(modalBook.price).toFixed(2)}</div>
               <div className="text-sm text-gray-500 mb-4 text-center">{modalBook.description}</div>
               {modalBook.category && (
                 <div className="text-xs text-gray-400 mb-2 text-center">Category: {modalBook.category}</div>

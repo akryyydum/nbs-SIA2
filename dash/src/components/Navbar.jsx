@@ -148,7 +148,7 @@ const Navbar = () => {
                           <div className="flex-1">
                             <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
                             <div className="text-xs text-gray-500">{item.book?.author}</div>
-                            <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
+                            <div className="text-xs text-red-600">₱{Number(item.book?.price).toFixed(2)}</div>
                             <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                           </div>
                           {/* Delete button */}
@@ -382,7 +382,7 @@ const Navbar = () => {
                       <div className="flex-1">
                         <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
                         <div className="text-xs text-gray-500">{item.book?.author}</div>
-                        <div className="text-xs text-red-600">${Number(item.book?.price).toFixed(2)}</div>
+                        <div className="text-xs text-red-600">₱{Number(item.book?.price).toFixed(2)}</div>
                         <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
                       </div>
                     </div>
