@@ -6,9 +6,9 @@ const Contact = () => {
       <Navbar />
       <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold mb-12 text-center text-black">Contact Us</h2>
+          <h2 className="text-4xl font-bold mb-12 text-center text-black animate-fade-in-down">Contact Us</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-            <div>
+            <div className="animate-fade-in-left">
               <h3 className="text-xl font-semibold text-black mb-4">Get in Touch</h3>
               <p className="text-lg text-gray-700 leading-relaxed mb-6">
                 We are here to assist you with any inquiries or concerns. Feel free to reach out to us through the following channels:
@@ -19,7 +19,7 @@ const Contact = () => {
                 <li className="mb-4">📍 Address: 123 National Book Store Street, Manila, Philippines</li>
               </ul>
             </div>
-            <div>
+            <div className="animate-fade-in-right">
               <h3 className="text-xl font-semibold text-black mb-4">Send Us a Message</h3>
               <form className="space-y-6">
                 <div>
@@ -59,6 +59,31 @@ const Contact = () => {
             </div>
           </div>
         </div>
+        <style>
+          {`
+            .animate-fade-in-down {
+              animation: fadeInDown 0.7s ease;
+            }
+            .animate-fade-in-left {
+              animation: fadeInLeft 0.7s ease;
+            }
+            .animate-fade-in-right {
+              animation: fadeInRight 0.7s ease;
+            }
+            @keyframes fadeInDown {
+              from { opacity: 0; transform: translateY(-30px);}
+              to { opacity: 1; transform: translateY(0);}
+            }
+            @keyframes fadeInLeft {
+              from { opacity: 0; transform: translateX(-30px);}
+              to { opacity: 1; transform: translateX(0);}
+            }
+            @keyframes fadeInRight {
+              from { opacity: 0; transform: translateX(30px);}
+              to { opacity: 1; transform: translateX(0);}
+            }
+          `}
+        </style>
       </div>
     </>
   );

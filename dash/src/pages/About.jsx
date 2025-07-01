@@ -6,25 +6,26 @@ const About = () => {
     <>
       <Navbar />
       <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        {/* Background image on top */}
-        <div
-          className="fixed top-0 left-0 w-full h-64 mb-12 z-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80')"
-          }}
-        ></div>
-        <div className="relative max-w-7xl mx-auto pt-72 z-10">
-          {/* Place h2 in front of the background image */}
-          <div className="absolute top-0 left-0 w-full flex justify-center items-center h-64 z-20 pointer-events-none">
-            <h2
-              className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-white to-red-600 animate-gradient-x drop-shadow-lg"
+        {/* Background image behind h2 only */}
+        <div className="relative max-w-7xl mx-auto">
+          <div className="relative w-full h-64 mb-12">
+            <div
+              className="absolute inset-0 w-full h-full rounded-2xl shadow-lg bg-cover bg-center"
               style={{
-                backgroundSize: '200% 200%',
-                animation: 'gradient-x 3s ease-in-out infinite'
+                backgroundImage: "url('https://images.pexels.com/photos/15426307/pexels-photo-15426307.jpeg')"
               }}
-            >
-              75 Years of Endless Discoveries
-            </h2>
+            ></div>
+            <div className="absolute inset-0 w-full h-full flex justify-center items-center z-10 pointer-events-none">
+              <h2
+                className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-white to-red-600 animate-gradient-x drop-shadow-lg"
+                style={{
+                  backgroundSize: '200% 200%',
+                  animation: 'gradient-x 3s ease-in-out infinite'
+                }}
+              >
+                75 Years of Endless Discoveries
+              </h2>
+            </div>
           </div>
           {/* Gradient animation keyframes */}
           <style>
