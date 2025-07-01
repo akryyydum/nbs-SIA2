@@ -1,25 +1,204 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { FaEnvelope, FaLock } from 'react-icons/fa';
+import { updateUser } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
+
+const BG_IMAGE = "https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg";
+
+// Helper to get a unique key for each user (using email as unique id)
+const getUserKey = (user) => user?.email ? `profileData_${user.email}` : 'profileData_guest';
 
 const Profile = ({ user }) => {
+  const { login } = useAuth();
+  // Load from localStorage or fallback to user/defaults
+  const getInitialProfile = (userObj) => {
+    const key = getUserKey(userObj);
+    const saved = localStorage.getItem(key);
+    if (saved) return JSON.parse(saved);
+    return {
+      name: userObj?.name || '',
+      email: userObj?.email || '',
+      password: '********',
+      avatar: userObj?.avatar || BG_IMAGE,
+    };
+  };
+
+  const [profile, setProfile] = useState(getInitialProfile(user));
+  const [avatar, setAvatar] = useState(profile.avatar);
+  const [editing, setEditing] = useState(false);
+  const [editFields, setEditFields] = useState({ name: profile.name, email: profile.email, password: profile.password });
+  const fileInputRef = useRef();
+
+  // When user changes (login/logout), load their profile from localStorage or fallback
+  useEffect(() => {
+    const newProfile = getInitialProfile(user);
+    setProfile(newProfile);
+    setAvatar(newProfile.avatar);
+    setEditFields({ name: newProfile.name, email: newProfile.email, password: newProfile.password });
+    setEditing(false);
+  }, [user]);
+
+  // Save to localStorage on profile or avatar change (per user)
+  useEffect(() => {
+    const key = getUserKey(profile);
+    localStorage.setItem(key, JSON.stringify({ ...profile, avatar }));
+  }, [profile, avatar]);
+
+  // Handle image upload
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setAvatar(ev.target.result);
+        setProfile((prev) => ({ ...prev, avatar: ev.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle edit field changes
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target;
+    setEditFields((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Start editing
+  const handleEdit = () => {
+    setEditFields({ name: profile.name, email: profile.email, password: profile.password });
+    setEditing(true);
+  };
+
+  // Save edits
+  const handleSave = async () => {
+    try {
+      // Prepare update payload
+      const payload = {
+        name: editFields.name,
+        email: editFields.email,
+        password: editFields.password !== '********' ? editFields.password : undefined,
+        avatar: avatar,
+      };
+      // Remove undefined fields (e.g., if password not changed)
+      Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+      // Call backend to update user
+      const res = await updateUser(user._id, payload, user.token);
+      // Update local profile and AuthContext (login info)
+      const updatedUser = {
+        ...user,
+        ...res.data,
+        avatar: avatar,
+        token: user.token, // keep token unless backend returns new one
+      };
+      setProfile(updatedUser);
+      setEditFields({ name: updatedUser.name, email: updatedUser.email, password: '********' });
+      setEditing(false);
+      // Save to localStorage for persistence
+      const key = getUserKey(updatedUser);
+      localStorage.setItem(key, JSON.stringify({ ...updatedUser, avatar }));
+      // Update AuthContext (so login uses new info)
+      login(updatedUser);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update profile');
+    }
+  };
+
+  // Cancel edits
+  const handleCancel = () => {
+    setEditFields({ name: profile.name, email: profile.email, password: profile.password });
+    setEditing(false);
+  };
+
   return (
-    <div className="max-w-md mx-auto bg-gradient-to-r from-gray-100 to-gray-200 shadow-xl rounded-lg p-8">
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">User Profile</h2>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b pb-3">
-          <label className="text-lg font-semibold text-gray-700">Name:</label>
-          <span className="text-lg text-gray-900">{user.name}</span>
-        </div>
-        <div className="flex items-center justify-between border-b pb-3">
-          <label className="text-lg font-semibold text-gray-700">Email:</label>
-          <span className="text-lg text-gray-900">{user.email}</span>
-        </div>
-        <div className="flex items-center justify-between border-b pb-3">
-          <label className="text-lg font-semibold text-gray-700">Role:</label>
-          <span className="text-lg text-gray-900">{user.role}</span>
-        </div>
-        <div className="flex items-center justify-between border-b pb-3">
-          <label className="text-lg font-semibold text-gray-700">Password:</label>
-          <span className="text-lg text-gray-900">********</span>
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-white">
+      {/* Background image at top 40% */}
+      <div
+        className="absolute top-0 left-0 w-full"
+        style={{
+          height: '40vh',
+          background: `url(${BG_IMAGE}) center/cover no-repeat`,
+          zIndex: 0,
+        }}
+      ></div>
+      <div className="relative z-10 w-full flex items-center justify-center min-h-screen">
+        <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up relative min-h-[420px] mx-4 mt-[10vh]">
+          {/* Profile Image Section */}
+          <div className="md:w-1/3 flex items-center justify-center p-12 bg-white">
+            <label htmlFor="profile-upload" className="cursor-pointer group relative z-10 block">
+              <img
+                src={avatar}
+                alt="Profile"
+                className="w-56 h-56 rounded-xl object-cover border-4 border-white shadow-md group-hover:opacity-80 transition bg-gray-100"
+              />
+              <input
+                id="profile-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+              />
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">Upload Photo</span>
+            </label>
+          </div>
+          {/* Profile Info */}
+          <div className="md:w-2/3 p-12 flex flex-col justify-center bg-white">
+            <div className="grid grid-cols-1 gap-y-6 text-base mb-6">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-700">NAME:</span>
+                {editing ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFields.name}
+                    onChange={handleFieldChange}
+                    className="ml-2 border rounded px-2 py-1 focus:outline-none focus:ring w-full max-w-xs"
+                  />
+                ) : (
+                  <span className="ml-2">{profile.name}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <FaEnvelope className="text-gray-400" />
+                <span className="font-semibold text-gray-700">EMAIL:</span>
+                {editing ? (
+                  <input
+                    type="email"
+                    name="email"
+                    value={editFields.email}
+                    onChange={handleFieldChange}
+                    className="ml-2 border rounded px-2 py-1 focus:outline-none focus:ring w-full max-w-xs"
+                  />
+                ) : (
+                  <span className="ml-2">{profile.email}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <FaLock className="text-gray-400" />
+                <span className="font-semibold text-gray-700">PASSWORD:</span>
+                {editing ? (
+                  <input
+                    type="password"
+                    name="password"
+                    value={editFields.password}
+                    onChange={handleFieldChange}
+                    className="ml-2 border rounded px-2 py-1 focus:outline-none focus:ring w-full max-w-xs"
+                  />
+                ) : (
+                  <span className="ml-2">********</span> 
+                )}
+              </div>
+            </div>
+            {editing ? (
+              <div className="flex gap-4 mt-4">
+                <button onClick={handleSave} className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition">Save</button>
+                <button onClick={handleCancel} className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold shadow hover:bg-gray-400 transition">Cancel</button>
+              </div>
+            ) : (
+              <button onClick={handleEdit} className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg font-semibold shadow hover:bg-red-700 transition self-start">Edit</button>
+            )}
+          </div>
         </div>
       </div>
     </div>
