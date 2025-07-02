@@ -12,6 +12,7 @@ const Sidebar = () => {
     { to: '/admin/orders', label: 'Sales' },
     { to: '/admin/users', label: 'Users' },
     { to: '/admin/suppliers', label: 'Suppliers' },
+    { to: '/admin/others', label: 'Other Businesses' }, // already present
   ];
 
   return (

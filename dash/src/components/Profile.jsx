@@ -111,25 +111,43 @@ const Profile = ({ user }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-white">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-white overflow-x-hidden"
+      style={{ overflow: 'hidden', height: '100vh' }}
+    >
+      {/* Animated gradient overlay */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-200 opacity-30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-pink-200 opacity-30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-yellow-100 opacity-20 rounded-full blur-2xl animate-pulse-fast -translate-x-1/2 -translate-y-1/2"></div>
+      </div>
       {/* Background image at top 40% */}
       <div
-        className="absolute top-0 left-0 w-full"
+        className="fixed top-0 left-0 w-full"
         style={{
           height: '40vh',
           background: `url(${BG_IMAGE}) center/cover no-repeat`,
-          zIndex: 0,
+          zIndex: 1,
         }}
       ></div>
       <div className="relative z-10 w-full flex items-center justify-center min-h-screen">
-        <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up relative min-h-[420px] mx-4 mt-[10vh]">
+        <div
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-4xl w-full bg-white/60 backdrop-blur-lg shadow-2xl rounded-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up min-h-[420px] mx-4 border border-gray-200"
+          style={{
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+            animation: 'fadeInProfile 0.8s cubic-bezier(.4,0,.2,1)',
+            zIndex: 10,
+          }}
+        >
           {/* Profile Image Section */}
-          <div className="md:w-1/3 flex items-center justify-center p-12 bg-white">
+          <div className="md:w-1/3 flex items-center justify-center p-12 bg-white/30 relative">
             <label htmlFor="profile-upload" className="cursor-pointer group relative z-10 block">
               <img
                 src={avatar}
                 alt="Profile"
-                className="w-56 h-56 rounded-xl object-cover border-4 border-white shadow-md group-hover:opacity-80 transition bg-gray-100"
+                className="w-56 h-56 rounded-2xl object-cover border-4 border-white shadow-xl group-hover:opacity-80 transition bg-gray-100 ring-2 ring-blue-200"
+                style={{
+                  boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12), 0 1.5px 8px 0 rgba(0,0,0,0.10)'
+                }}
               />
               <input
                 id="profile-upload"
@@ -141,66 +159,109 @@ const Profile = ({ user }) => {
               />
               <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">Upload Photo</span>
             </label>
+            {/* Decorative ring */}
+            <div className="absolute top-8 left-8 w-44 h-44 rounded-full border-4 border-blue-100 opacity-40 pointer-events-none"></div>
           </div>
+          {/* Divider for desktop */}
+          <div className="hidden md:block w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent my-12"></div>
           {/* Profile Info */}
-          <div className="md:w-2/3 p-12 flex flex-col justify-center bg-white">
+          <div className="md:w-2/3 p-12 flex flex-col justify-center bg-white/30">
             <div className="grid grid-cols-1 gap-y-6 text-base mb-6">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-700">NAME:</span>
+                <span className="font-semibold text-gray-700 tracking-wide">NAME:</span>
                 {editing ? (
                   <input
                     type="text"
                     name="name"
                     value={editFields.name}
                     onChange={handleFieldChange}
-                    className="ml-2 border rounded px-2 py-1 focus:outline-none focus:ring w-full max-w-xs"
+                    className="ml-2 border border-blue-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full max-w-xs bg-white/80 shadow-sm"
                   />
                 ) : (
-                  <span className="ml-2">{profile.name}</span>
+                  <span className="ml-2 text-gray-900 font-medium">{profile.name}</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <FaEnvelope className="text-gray-400" />
-                <span className="font-semibold text-gray-700">EMAIL:</span>
+                <FaEnvelope className="text-blue-400" />
+                <span className="font-semibold text-gray-700 tracking-wide">EMAIL:</span>
                 {editing ? (
                   <input
                     type="email"
                     name="email"
                     value={editFields.email}
                     onChange={handleFieldChange}
-                    className="ml-2 border rounded px-2 py-1 focus:outline-none focus:ring w-full max-w-xs"
+                    className="ml-2 border border-blue-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full max-w-xs bg-white/80 shadow-sm"
                   />
                 ) : (
-                  <span className="ml-2">{profile.email}</span>
+                  <span className="ml-2 text-gray-900 font-medium">{profile.email}</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <FaLock className="text-gray-400" />
-                <span className="font-semibold text-gray-700">PASSWORD:</span>
+                <FaLock className="text-pink-400" />
+                <span className="font-semibold text-gray-700 tracking-wide">PASSWORD:</span>
                 {editing ? (
                   <input
                     type="password"
                     name="password"
                     value={editFields.password}
                     onChange={handleFieldChange}
-                    className="ml-2 border rounded px-2 py-1 focus:outline-none focus:ring w-full max-w-xs"
+                    className="ml-2 border border-blue-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full max-w-xs bg-white/80 shadow-sm"
                   />
                 ) : (
-                  <span className="ml-2">********</span> 
+                  <span className="ml-2 text-gray-900 font-medium">********</span> 
                 )}
               </div>
             </div>
             {editing ? (
               <div className="flex gap-4 mt-4">
-                <button onClick={handleSave} className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition">Save</button>
-                <button onClick={handleCancel} className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold shadow hover:bg-gray-400 transition">Cancel</button>
+                <button
+                  onClick={handleSave}
+                  className="px-6 py-2 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-lg font-semibold shadow hover:from-green-500 hover:to-green-700 transition active:scale-95"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-6 py-2 bg-gradient-to-r from-gray-200 to-gray-400 text-gray-800 rounded-lg font-semibold shadow hover:from-gray-300 hover:to-gray-500 transition active:scale-95"
+                >
+                  Cancel
+                </button>
               </div>
             ) : (
-              <button onClick={handleEdit} className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg font-semibold shadow hover:bg-red-700 transition self-start">Edit</button>
+              <button
+                onClick={handleEdit}
+                className="mt-4 px-6 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-semibold shadow hover:from-red-600 hover:to-pink-600 transition self-start active:scale-95"
+              >
+                Edit
+              </button>
             )}
           </div>
         </div>
       </div>
+      {/* Fade-in animation keyframes */}
+      <style>{`
+        @keyframes fadeInProfile {
+          from { opacity: 0; transform: translateY(40px);}
+          to { opacity: 1; transform: translateY(0);}
+        }
+        .animate-fade-in-up {
+          animation: fadeInProfile 0.8s cubic-bezier(.4,0,.2,1);
+        }
+        .animate-pulse-slow {
+          animation: pulseSlow 6s infinite alternate;
+        }
+        .animate-pulse-fast {
+          animation: pulseFast 3s infinite alternate;
+        }
+        @keyframes pulseSlow {
+          0% { opacity: 0.2; }
+          100% { opacity: 0.4; }
+        }
+        @keyframes pulseFast {
+          0% { opacity: 0.15; }
+          100% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 };

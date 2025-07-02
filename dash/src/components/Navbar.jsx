@@ -218,13 +218,32 @@ const Navbar = () => {
                 onClick={() => setAccountOpen((v) => !v)}
                 className="ml-4 flex items-center text-black hover:text-red-900 focus:outline-none transition-colors duration-200"
               >
-                <FaUserCircle className="h-8 w-8" />
+                {/* Show profile image if available, else fallback to icon */}
+                {user?.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt="Profile"
+                    className="h-8 w-8 rounded-full object-cover border border-gray-300"
+                  />
+                ) : (
+                  <FaUserCircle className="h-8 w-8" />
+                )}
               </button>
               {/* Dropdown */}
               {accountOpen && (
                 <div className="absolute right-0 mt-2 w-40 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
                   <Link to="/profile" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900 flex items-center gap-2">
-                    <FaUserCircle /> Profile
+                    {/* Show profile image in dropdown if available */}
+                    {user?.profileImage ? (
+                      <img
+                        src={user.profileImage}
+                        alt="Profile"
+                        className="h-5 w-5 rounded-full object-cover border border-gray-300"
+                      />
+                    ) : (
+                      <FaUserCircle />
+                    )}
+                    Profile
                   </Link>
                   <button
                     onClick={() => {
