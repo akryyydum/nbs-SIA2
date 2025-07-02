@@ -65,7 +65,8 @@ const DashboardPage = () => {
       </div>
 
       {/* Carousel Section */}
-      <div className="flex items-center justify-center w-full h-[44vh] sm:h-[50vh] md:h-[56vh] lg:h-[44vh] xl:h-[52vh]">
+   <div className="flex items-center justify-center w-full h-[60vh] sm:h-[65vh] md:h-[70vh] lg:h-[65vh] xl:h-[75vh]">
+
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
           {images.map((img, idx) => (
             <img
