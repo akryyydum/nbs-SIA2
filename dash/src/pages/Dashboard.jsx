@@ -15,6 +15,10 @@ const DashboardPage = () => {
   const [arrivalsPage, setArrivalsPage] = useState(0);
   const [arrivalsDirection, setArrivalsDirection] = useState(0); // -1 for left, 1 for right
 
+  // Animation state for arrivals carousel
+  const [animating, setAnimating] = useState(false);
+  const [prevArrivalsPage, setPrevArrivalsPage] = useState(arrivalsPage);
+
   // Auto-slide every 5s
   useEffect(() => {
     const interval = setInterval(() => {
@@ -40,15 +44,32 @@ const DashboardPage = () => {
   const ARRIVALS_PER_PAGE = 5;
   const arrivalsTotalPages = Math.ceil(newArrivals.length / ARRIVALS_PER_PAGE);
 
+  // Track previous page to determine direction for animation
+  useEffect(() => {
+    setPrevArrivalsPage(arrivalsPage);
+  }, [arrivalsPage]);
+
+  // Animate on arrow click
   const handleArrivalsPrev = () => {
+    if (arrivalsTotalPages <= 1 || animating) return;
     setArrivalsDirection(-1);
+    setAnimating(true);
     setArrivalsPage((prev) => (prev === 0 ? arrivalsTotalPages - 1 : prev - 1));
   };
 
   const handleArrivalsNext = () => {
+    if (arrivalsTotalPages <= 1 || animating) return;
     setArrivalsDirection(1);
+    setAnimating(true);
     setArrivalsPage((prev) => (prev === arrivalsTotalPages - 1 ? 0 : prev + 1));
   };
+
+  // For fluid animation, keep both old and new arrivals visible during transition
+  const getArrivalsForPage = (page) =>
+    newArrivals.slice(
+      page * ARRIVALS_PER_PAGE,
+      page * ARRIVALS_PER_PAGE + ARRIVALS_PER_PAGE
+    );
 
   const arrivalsToShow = newArrivals.slice(
     arrivalsPage * ARRIVALS_PER_PAGE,
@@ -56,7 +77,7 @@ const DashboardPage = () => {
   );
 
   return (
-    <div className="min-h-screen w-screen h-screen flex flex-col bg-white font-poppins relative overflow-hidden">
+   <div className="min-h-screen w-full flex flex-col bg-white font-poppins relative overflow-hidden">
       {/* Animated blobs background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-200 opacity-40 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -64,38 +85,101 @@ const DashboardPage = () => {
         <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-pink-200 opacity-30 rounded-full blur-2xl animate-pulse-fast -translate-x-1/2 -translate-y-1/2"></div>
       </div>
 
-      {/* Carousel Section */}
-   <div className="flex items-center justify-center w-full h-[60vh] sm:h-[65vh] md:h-[70vh] lg:h-[65vh] xl:h-[75vh]">
-
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-          {images.map((img, idx) => (
+      {/* Hero Banner Section */}
+      <div className="w-full flex justify-center items-center py-8 px-2 sm:px-8 animate-fade-in">
+        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg flex flex-col md:flex-row items-center justify-between px-6 md:px-12 py-8 gap-6 md:gap-0 relative overflow-hidden">
+          {/* Left: Text */}
+          <div className="flex-1 flex flex-col items-start z-10">
+            <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-black leading-tight mb-2">
+              <div>LET'S</div>
+              <div>EXPLORE <span className="relative inline-block">
+                <span className="bg-red-300 px-1 pb-1 rounded-sm text-black">UNIQUE</span>
+              </span></div>
+              <div>BOOKS.</div>
+            </div>
+            <div className="text-gray-600 text-base sm:text-lg mb-5 mt-2">
+              Discover influential and innovative reads for every book lover!
+            </div>
+            <button
+              className="mt-2 px-6 py-2 bg-black text-white rounded-lg font-semibold shadow hover:bg-red-400 hover:text-black transition"
+              onClick={() => window.location.href = '/products'}
+            >
+              Shop Now
+            </button>
+          </div>
+          {/* Right: Book Image */}
+          <div className="flex-1 flex justify-center items-center z-10">
             <img
-              key={img}
-              src={img}
-              alt={`carousel-${idx}`}
-              className={`w-full h-full object-cover absolute top-0 left-0 transition-transform duration-700 ease-in-out
-                ${idx === current ? 'z-10 translate-x-0 opacity-100' : idx < current ? '-translate-x-full opacity-0' : 'translate-x-full opacity-0'}
-              `}
-              style={{
-                transitionProperty: 'transform, opacity',
-              }}
+              src="/books1.png"
+              alt="Books Banner"
+              className="w-80 h-80 md:w-[28rem] md:h-[28rem] object-contain"
+              style={{ background: "transparent", boxShadow: "none", border: "none" }}
             />
-          ))}
+          </div>
+          {/* Decorative stars */}
+          <div className="absolute top-6 left-6 text-gray-200 text-3xl select-none pointer-events-none">★</div>
+          <div className="absolute bottom-8 right-12 text-gray-200 text-2xl select-none pointer-events-none">★</div>
+          <div className="absolute top-1/2 left-1/2 text-gray-100 text-4xl select-none pointer-events-none" style={{transform: "translate(-50%, -50%)"}}>★</div>
+        </div>
+      </div>
+
+      {/* Features Bar Section */}
+      <div className="w-full bg-white py-6 border-b border-gray-200 flex justify-center animate-fade-in">
+        <div className="max-w-5xl w-full flex flex-col sm:flex-row items-center justify-between gap-30 px-4">
+          {/* Free Shipping */}
+          <div className="flex flex-col items-center flex-1 min-w-[120px]">
+            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <path d="M3 17V6a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M16 17h2a2 2 0 0 0 2-2v-3.5a1 1 0 0 0-.293-.707l-2.5-2.5A1 1 0 0 0 16 8.5V17z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="7.5" cy="17.5" r="1.5" fill="currentColor"/>
+              <circle cx="17.5" cy="17.5" r="1.5" fill="currentColor"/>
+            </svg>
+            <div className="font-bold text-gray-900 text-lg">Free Shipping</div>
+            <div className="text-gray-500 text-sm">Order Over ₱1000</div>
+          </div>
+          {/* Secure Payment */}
+          <div className="flex flex-col items-center flex-1 min-w-[120px]">
+            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+            <div className="font-bold text-gray-900 text-lg">Secure Payment</div>
+            <div className="text-gray-500 text-sm">100% Secure Payment</div>
+          </div>
+          {/* Easy Returns */}
+          <div className="flex flex-col items-center flex-1 min-w-[120px]">
+            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <path d="M3 12a9 9 0 1 0 9-9" stroke="currentColor" strokeWidth="2"/>
+              <polyline points="3 7 3 12 8 12" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+            <div className="font-bold text-gray-900 text-lg">Easy Returns</div>
+            <div className="text-gray-500 text-sm">10 Days Returns</div>
+          </div>
+          {/* 24/7 Support */}
+          <div className="flex flex-col items-center flex-1 min-w-[120px]">
+            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              <path d="M8 15v-1a4 4 0 0 1 8 0v1" stroke="currentColor" strokeWidth="2"/>
+              <circle cx="12" cy="9" r="2" fill="currentColor"/>
+            </svg>
+            <div className="font-bold text-gray-900 text-lg">24/7 Support</div>
+            <div className="text-gray-500 text-sm">Call Us Anytime</div>
+          </div>
         </div>
       </div>
 
       {/* New Arrivals Section */}
-      <div className="flex-1 flex flex-col items-center justify-center w-full px-2 sm:px-4">
-        <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-black text-center drop-shadow mb-4 sm:mb-6 animate-fade-in">
+      <div className="flex-1 flex flex-col items-center justify-center w-full px-2 sm:px-4 animate-fade-in mt-10">
+        <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-black text-center drop-shadow mb-4 sm:mb-6">
           New Arrivals
         </div>
-        <div className="relative w-full max-w-5xl flex items-center">
+        <div className="relative w-full max-w-5xl flex items-center" style={{ minHeight: 240 }}>
           {/* Left arrow */}
           <button
             className="absolute left-0 z-10 bg-white/80 hover:bg-white text-black rounded-full shadow p-2 transition disabled:opacity-30"
             style={{ top: '50%', transform: 'translateY(-50%)' }}
             onClick={handleArrivalsPrev}
-            disabled={arrivalsTotalPages <= 1}
+            disabled={arrivalsTotalPages <= 1 || animating}
             aria-label="Previous"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -103,51 +187,91 @@ const DashboardPage = () => {
             </svg>
           </button>
           {/* Carousel */}
-          <div className="w-full flex overflow-hidden justify-center">
+          <div className="w-full flex overflow-hidden justify-center relative" style={{ minHeight: 300 }}>
             {arrivalsToShow.length === 0 ? (
-              <div className="w-full text-center text-gray-400 py-8 animate-fade-in">
+              <div className="w-full text-center text-gray-400 py-8">
                 No new arrivals
               </div>
             ) : (
-              <div
-                className="flex w-full gap-4 sm:gap-6 justify-center transition-transform duration-500"
-                style={{
-                  transform: `translateX(${arrivalsDirection === 0 ? 0 : arrivalsDirection === 1 ? '100%' : '-100%'})`,
-                  animation: arrivalsDirection !== 0 ? `slideArrivals${arrivalsDirection === 1 ? 'Left' : 'Right'} 0.5s forwards` : undefined
-                }}
-                onAnimationEnd={() => setArrivalsDirection(0)}
-              >
-                {arrivalsToShow.map((book, idx) => (
+              <div className="relative w-full h-full">
+                {/* Outgoing books */}
+                {animating && (
                   <div
-                    key={book._id || idx}
-                    className="bg-white/70 rounded-xl shadow border border-gray-800 flex flex-col items-center p-3 sm:p-4 opacity-100 animate-fade-in-up min-w-[140px] max-w-[180px] flex-1"
+                    className={`absolute top-0 left-0 w-full flex gap-4 sm:gap-6 justify-center transition-transform duration-500`}
                     style={{
-                      animationDelay: `${idx * 0.1 + 0.2}s`,
-                      animationFillMode: 'forwards'
+                      zIndex: 1,
+                      transform: `translateX(0)`,
+                      animation: arrivalsDirection === 1
+                        ? 'slideArrivalsOutLeft 0.5s forwards'
+                        : 'slideArrivalsOutRight 0.5s forwards'
                     }}
                   >
-                    {book.image && (
-                      <img
-                        src={book.image}
-                        alt={book.title}
-                        className="h-28 w-20 sm:h-32 sm:w-24 object-cover rounded mb-2 shadow opacity-100 animate-zoom-in"
-                        style={{
-                          animationDelay: `${idx * 0.1 + 0.3}s`,
-                          animationFillMode: 'forwards'
-                        }}
-                      />
-                    )}
-                    <div className="w-full flex-1 flex flex-col items-center text-center">
-                      <div className="text-sm sm:text-base font-bold text-black mb-1 line-clamp-2">
-                        {book.title}
+                    {getArrivalsForPage(
+                      arrivalsDirection === 1
+                        ? (arrivalsPage === 0 ? arrivalsTotalPages - 1 : arrivalsPage - 1)
+                        : (arrivalsPage === arrivalsTotalPages - 1 ? 0 : arrivalsPage + 1)
+                    ).map((book, idx) => (
+                      <div
+                        key={'out-' + (book._id || idx)}
+                        className="bg-white/70 rounded-xl shadow border border-gray-800 flex flex-col items-center p-3 sm:p-4 opacity-100 min-w-[140px] max-w-[180px] flex-1"
+                      >
+                        {book.image && (
+                          <img
+                            src={book.image}
+                            alt={book.title}
+                            className="h-28 w-20 sm:h-32 sm:w-24 object-cover rounded mb-2 shadow opacity-100"
+                          />
+                        )}
+                        <div className="w-full flex-1 flex flex-col items-center text-center">
+                          <div className="text-sm sm:text-base font-bold text-black mb-1 line-clamp-2">
+                            {book.title}
+                          </div>
+                          <div className="text-xs text-gray-700 mb-1">{book.author}</div>
+                          <div className="text-black font-semibold text-xs sm:text-sm mb-1">
+                            ₱{Number(book.price).toFixed(2)}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-700 mb-1">{book.author}</div>
-                      <div className="text-black font-semibold text-xs sm:text-sm mb-1">
-                        ₱{Number(book.price).toFixed(2)}
+                    ))}
+                  </div>
+                )}
+                {/* Incoming books */}
+                <div
+                  className={`absolute top-0 left-0 w-full flex gap-4 sm:gap-6 justify-center transition-transform duration-500`}
+                  style={{
+                    zIndex: 2,
+                    animation: animating
+                      ? (arrivalsDirection === 1
+                        ? 'slideArrivalsInRight 0.5s forwards'
+                        : 'slideArrivalsInLeft 0.5s forwards')
+                      : undefined
+                  }}
+                  onAnimationEnd={() => setAnimating(false)}
+                >
+                  {arrivalsToShow.map((book, idx) => (
+                    <div
+                      key={'in-' + (book._id || idx)}
+                      className="bg-white/70 rounded-xl shadow border border-gray-800 flex flex-col items-center p-3 sm:p-4 opacity-100 min-w-[140px] max-w-[180px] flex-1"
+                    >
+                      {book.image && (
+                        <img
+                          src={book.image}
+                          alt={book.title}
+                          className="h-28 w-20 sm:h-32 sm:w-24 object-cover rounded mb-2 shadow opacity-100"
+                        />
+                      )}
+                      <div className="w-full flex-1 flex flex-col items-center text-center">
+                        <div className="text-sm sm:text-base font-bold text-black mb-1 line-clamp-2">
+                          {book.title}
+                        </div>
+                        <div className="text-xs text-gray-700 mb-1">{book.author}</div>
+                        <div className="text-black font-semibold text-xs sm:text-sm mb-1">
+                          ₱{Number(book.price).toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -156,7 +280,7 @@ const DashboardPage = () => {
             className="absolute right-0 z-10 bg-white/80 hover:bg-white text-black rounded-full shadow p-2 transition disabled:opacity-30"
             style={{ top: '50%', transform: 'translateY(-50%)' }}
             onClick={handleArrivalsNext}
-            disabled={arrivalsTotalPages <= 1}
+            disabled={arrivalsTotalPages <= 1 || animating}
             aria-label="Next"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -170,7 +294,9 @@ const DashboardPage = () => {
               <button
                 key={idx}
                 className={`w-2.5 h-2.5 rounded-full ${idx === arrivalsPage ? 'bg-red-600' : 'bg-gray-300'} transition`}
-                onClick={() => setArrivalsPage(idx)}
+                onClick={() => {
+                  if (!animating) setArrivalsPage(idx);
+                }}
                 aria-label={`Go to page ${idx + 1}`}
               />
             ))}
@@ -178,7 +304,7 @@ const DashboardPage = () => {
         )}
       </div>
       {/* Other Businesses Section */}
-      <div className="w-full bg-gray-50 py-10 border-t border-gray-200 mt-8 flex flex-col items-center">
+      <div className="w-full bg-gray-50 py-10 border-t border-gray-200 mt-8 flex flex-col items-center flex-shrink-0 animate-fade-in">
         <div className="text-2xl font-bold mb-8 text-gray-700">Other Businesses</div>
         <div className="w-full flex flex-wrap justify-center gap-12 px-4 max-w-7xl">
           {/* Blended */}
@@ -267,6 +393,32 @@ const DashboardPage = () => {
           </a>
         </div>
       </div>
+      {/* Fade-in and sliding animation keyframes */}
+      <style>{`
+        .animate-fade-in {
+          animation: fadeIn 0.8s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(40px);}
+          to { opacity: 1; transform: translateY(0);}
+        }
+        @keyframes slideArrivalsInRight {
+          from { transform: translateX(100%); opacity: 0.7; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideArrivalsInLeft {
+          from { transform: translateX(-100%); opacity: 0.7; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideArrivalsOutLeft {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(-100%); opacity: 0.7; }
+        }
+        @keyframes slideArrivalsOutRight {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0.7; }
+        }
+      `}</style>
     </div>
   );
 };
