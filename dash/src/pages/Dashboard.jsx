@@ -93,7 +93,7 @@ const DashboardPage = () => {
             <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-black leading-tight mb-2">
               <div>LET'S</div>
               <div>EXPLORE <span className="relative inline-block">
-                <span className="bg-red-300 px-1 pb-1 rounded-sm text-black">UNIQUE</span>
+                <span className="bg-red-300 px-1 pb-1 rounded-sm text-black animate-unique-hero">UNIQUE</span>
               </span></div>
               <div>BOOKS.</div>
             </div>
@@ -127,8 +127,8 @@ const DashboardPage = () => {
       <div className="w-full bg-white py-6 border-b border-gray-200 flex justify-center animate-fade-in">
         <div className="max-w-5xl w-full flex flex-col sm:flex-row items-center justify-between gap-30 px-4">
           {/* Free Shipping */}
-          <div className="flex flex-col items-center flex-1 min-w-[120px]">
-            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+          <div className="flex flex-col items-center flex-1 min-w-[120px] feature-animate feature-hover-group">
+            <svg className="w-10 h-10 text-red-600 mb-2 feature-icon-animate" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path d="M3 17V6a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M16 17h2a2 2 0 0 0 2-2v-3.5a1 1 0 0 0-.293-.707l-2.5-2.5A1 1 0 0 0 16 8.5V17z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <circle cx="7.5" cy="17.5" r="1.5" fill="currentColor"/>
@@ -138,8 +138,8 @@ const DashboardPage = () => {
             <div className="text-gray-500 text-sm">Order Over ₱1000</div>
           </div>
           {/* Secure Payment */}
-          <div className="flex flex-col items-center flex-1 min-w-[120px]">
-            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+          <div className="flex flex-col items-center flex-1 min-w-[120px] feature-animate feature-hover-group" style={{ animationDelay: '0.1s' }}>
+            <svg className="w-10 h-10 text-red-600 mb-2 feature-icon-animate" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <rect x="3" y="11" width="18" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2"/>
             </svg>
@@ -147,8 +147,8 @@ const DashboardPage = () => {
             <div className="text-gray-500 text-sm">100% Secure Payment</div>
           </div>
           {/* Easy Returns */}
-          <div className="flex flex-col items-center flex-1 min-w-[120px]">
-            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+          <div className="flex flex-col items-center flex-1 min-w-[120px] feature-animate feature-hover-group" style={{ animationDelay: '0.2s' }}>
+            <svg className="w-10 h-10 text-red-600 mb-2 feature-icon-animate" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path d="M3 12a9 9 0 1 0 9-9" stroke="currentColor" strokeWidth="2"/>
               <polyline points="3 7 3 12 8 12" stroke="currentColor" strokeWidth="2"/>
             </svg>
@@ -156,8 +156,8 @@ const DashboardPage = () => {
             <div className="text-gray-500 text-sm">10 Days Returns</div>
           </div>
           {/* 24/7 Support */}
-          <div className="flex flex-col items-center flex-1 min-w-[120px]">
-            <svg className="w-10 h-10 text-red-600 mb-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+          <div className="flex flex-col items-center flex-1 min-w-[120px] feature-animate feature-hover-group" style={{ animationDelay: '0.3s' }}>
+            <svg className="w-10 h-10 text-red-600 mb-2 feature-icon-animate" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
               <path d="M8 15v-1a4 4 0 0 1 8 0v1" stroke="currentColor" strokeWidth="2"/>
               <circle cx="12" cy="9" r="2" fill="currentColor"/>
@@ -402,6 +402,36 @@ const DashboardPage = () => {
           from { opacity: 0; transform: translateY(40px);}
           to { opacity: 1; transform: translateY(0);}
         }
+        /* Features Bar Animations */
+        .feature-animate {
+          animation: featureFadeUp 0.8s cubic-bezier(.4,0,.2,1) both;
+        }
+        @keyframes featureFadeUp {
+          from { opacity: 0; transform: translateY(32px) scale(0.96);}
+          to { opacity: 1; transform: translateY(0) scale(1);}
+        }
+        .feature-icon-animate {
+          animation: featureIconPop 1.2s cubic-bezier(.4,0,.2,1) infinite alternate;
+        }
+        @keyframes featureIconPop {
+          0% { transform: scale(1) rotate(-2deg);}
+          60% { transform: scale(1.08) rotate(2deg);}
+          100% { transform: scale(1) rotate(-2deg);}
+        }
+        /* Hover animation for features */
+        .feature-hover-group {
+          transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s cubic-bezier(.4,0,.2,1);
+          cursor: pointer;
+        }
+        .feature-hover-group:hover {
+          transform: translateY(-10px) scale(1.06);
+          box-shadow: 0 8px 32px 0 rgba(239,68,68,0.10), 0 2px 8px 0 rgba(0,0,0,0.06);
+          background: #fff7f7;
+        }
+        .feature-hover-group:hover .feature-icon-animate {
+          animation-play-state: paused;
+          filter: drop-shadow(0 0 8px #fca5a5);
+        }
         @keyframes slideArrivalsInRight {
           from { transform: translateX(100%); opacity: 0.7; }
           to { transform: translateX(0); opacity: 1; }
@@ -418,7 +448,51 @@ const DashboardPage = () => {
           from { transform: translateX(0); opacity: 1; }
           to { transform: translateX(100%); opacity: 0.7; }
         }
+        /* Animation for UNIQUE */
+        .animate-unique-hero {
+          animation: uniqueColorPop 2.2s infinite cubic-bezier(.4,0,.2,1);
+          will-change: color, background, transform, text-shadow;
+        }
+        @keyframes uniqueColorPop {
+          0% {
+            background: #fca5a5;
+            color: #111;
+            transform: scale(1) rotate(-2deg);
+            text-shadow: 0 2px 8px #fca5a5, 0 0px 0 #fff;
+          }
+          20% {
+            background: #fcd34d;
+            color: #b91c1c;
+            transform: scale(1.08) rotate(2deg);
+            text-shadow: 0 4px 16px #fcd34d, 0 0px 0 #fff;
+          }
+          40% {
+            background: #a5b4fc;
+            color: #be185d;
+            transform: scale(1.12) rotate(-3deg);
+            text-shadow: 0 2px 12px #a5b4fc, 0 0px 0 #fff;
+          }
+          60% {
+            background: #f9a8d4;
+            color: #1e293b;
+            transform: scale(1.09) rotate(3deg);
+            text-shadow: 0 4px 16px #f9a8d4, 0 0px 0 #fff;
+          }
+          80% {
+            background: #fca5a5;
+            color: #111;
+            transform: scale(1.04) rotate(-2deg);
+            text-shadow: 0 2px 8px #fca5a5, 0 0px 0 #fff;
+          }
+          100% {
+            background: #fca5a5;
+            color: #111;
+            transform: scale(1) rotate(-2deg);
+            text-shadow: 0 2px 8px #fca5a5, 0 0px 0 #fff;
+          }
+        }
       `}</style>
+      {/* ...existing code... */}
     </div>
   );
 };
