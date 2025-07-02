@@ -20,65 +20,76 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-lora">
+    <div className="min-h-screen flex bg-white font-poppins relative">
+      {/* Logo at top left */}
+      <div className="absolute top-8 left-8 z-10">
+        <img src="/nbs.svg" alt="NBS Logo" className="h-20 w-30" />
+      </div>
       {/* Left: Register Form */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8 border border-red-200">
-          {/* Logo */}
-          <div className="flex justify-center mb-4">
-            <img src="/nbs.svg" alt="NBS Logo" className="h-30 w-30" />
-          </div>
-          <h2 className="text-2xl font-bold text-red-700 mb-6 font-Poppins tracking-wide">
-            Register
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Name"
-              required
-              className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-red-900"
-            />
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="Email"
-              required
-              className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-red-900"
-            />
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Password"
-              required
-              className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-red-900"
-            />
-            <select
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-red-900"
-            >
-              <option value="customer">Customer</option>
-              <option value="admin">Admin</option>
-              <option value="inventory department">Inventory Department</option>
-              <option value="sales department">Sales Department</option>
-              <option value="supplier department">Supplier Department</option>
-            </select>
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-bold mb-2 text-black">Create an account</h2>
+          <p className="mb-8 text-gray-500">Please enter your details</p>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Name</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Full name"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Email address</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="Email address"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Password</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Password"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Role</label>
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+              >
+                <option value="customer">Customer</option>
+                <option value="admin">Admin</option>
+                <option value="inventory department">Inventory Department</option>
+                <option value="sales department">Sales Department</option>
+                <option value="supplier department">Supplier Department</option>
+              </select>
+            </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"
+              className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
             >
               Register
             </button>
           </form>
-          <div className="mt-6 text-center">
-            <span className="text-red-700">Already have an account?</span>
+          <div className="mt-8 text-center text-sm text-gray-600">
+            Already have an account?
             <a
               href="/"
-              className="ml-2 text-red-600 hover:underline font-semibold"
+              className="ml-1 text-red-700 hover:underline font-semibold"
             >
               Login
             </a>
