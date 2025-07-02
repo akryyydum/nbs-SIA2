@@ -314,7 +314,9 @@ const SalesDashboard = () => {
                 </thead>
                 <tbody>
                   {orders
-                    .slice((dashboardPage - 1) * 5, dashboardPage * 5)
+                    .slice()
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 5)
                     .map(order => (
                       <tr key={order._id} className="border-b text-base">
                         <td className="py-2 px-4">{order._id}</td>
@@ -336,34 +338,7 @@ const SalesDashboard = () => {
                 </tbody>
               </table>
             </div>
-            {/* Pagination Controls */}
-            {Math.ceil(orders.length / 5) > 1 && (
-              <div className="flex justify-center mt-4 gap-2">
-                <button
-                  className="px-3 py-1 rounded bg-gray-200"
-                  onClick={() => setDashboardPage(p => Math.max(1, p - 1))}
-                  disabled={dashboardPage === 1}
-                >
-                  Prev
-                </button>
-                {[...Array(Math.ceil(orders.length / 5))].map((_, idx) => (
-                  <button
-                    key={idx + 1}
-                    className={`px-3 py-1 rounded ${dashboardPage === idx + 1 ? "bg-red-600 text-white" : "bg-gray-200"}`}
-                    onClick={() => setDashboardPage(idx + 1)}
-                  >
-                    {idx + 1}
-                  </button>
-                ))}
-                <button
-                  className="px-3 py-1 rounded bg-gray-200"
-                  onClick={() => setDashboardPage(p => Math.min(Math.ceil(orders.length / 5), p + 1))}
-                  disabled={dashboardPage === Math.ceil(orders.length / 5)}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            {/* Pagination Controls removed for recent orders */}
           </div>
         </section>
       )}
@@ -496,27 +471,6 @@ const SalesDashboard = () => {
                           disabled={actionLoading === order._id}
                         >
                           {actionLoading === order._id ? "Shipping..." : "Ship"}
-                        </button>
-                      )}
-                      {/* Delivered button for orders not yet received or delivered */}
-                      {(order.status !== "received" && order.status !== "delivered") && (
-                        <button
-                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                          onClick={async () => {
-                            if (!window.confirm('Mark this order as delivered/received?')) return;
-                            setActionLoading(order._id);
-                            try {
-                              // Use the correct endpoint for marking as received
-                              await API.put(`/orders/${order._id}/received`, {});
-                              fetchOrders();
-                            } catch (err) {
-                              alert('Failed to mark as delivered: ' + (err?.response?.data?.message || err.message));
-                            }
-                            setActionLoading(false);
-                          }}
-                          disabled={actionLoading === order._id}
-                        >
-                          {actionLoading === order._id ? "Delivering..." : "Delivered"}
                         </button>
                       )}
                     </div>
