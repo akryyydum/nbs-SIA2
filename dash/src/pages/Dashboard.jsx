@@ -86,8 +86,8 @@ const DashboardPage = () => {
       </div>
 
       {/* Hero Banner Section */}
-      <div className="w-full flex justify-center items-center py-8 px-2 sm:px-8 animate-fade-in">
-        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg flex flex-col md:flex-row items-center justify-between px-6 md:px-12 py-8 gap-6 md:gap-0 relative overflow-hidden">
+      <div className="w-full flex justify-center items-center py-16 px-2 sm:px-16 animate-fade-in">
+        <div className="w-full max-w-7xl bg-white rounded-3xl shadow-lg flex flex-col md:flex-row items-center justify-between px-10 md:px-20 py-16 gap-10 md:gap-0 relative overflow-hidden">
           {/* Left: Text */}
           <div className="flex-1 flex flex-col items-start z-10">
             <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-black leading-tight mb-2">
