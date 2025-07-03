@@ -115,19 +115,20 @@ const Navbar = () => {
                     >
                       Home
                     </Link>
-                    <Link
-                      to="/contact"
-                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
-                      onClick={handleLinkClick}
-                    >
-                      Contact
-                    </Link>
+                    
                     <Link
                       to="/products"
                       className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
                       onClick={handleLinkClick}
                     >
                       Products
+                    </Link>
+                    <Link
+                      to="/contact"
+                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      onClick={handleLinkClick}
+                    >
+                      Contact
                     </Link>
                     <Link
                       to="/about"

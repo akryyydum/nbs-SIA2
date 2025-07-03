@@ -43,12 +43,40 @@ const AdminDashboard = () => {
     totalSuppliers: 0,
     totalOrders: 0,
     totalSales: 0,
-    supplierLogins: [],
+    customerLogins: [], // changed from supplierLogins
     stockByCategory: {},
     salesTrends: [],
     topBooks: [],
+    orders: [],
   });
   const [loading, setLoading] = useState(true);
+
+  // Export data as CSV
+  const handleExportData = () => {
+    // Prepare CSV rows
+    const rows = [
+      ['Order ID', 'Customer', 'Total', 'Status', 'Date'],
+      ...(stats.orders || []).map(order => [
+        order._id,
+        order.user?.name || order.user || "N/A",
+        Number(order.totalPrice).toFixed(2),
+        order.status,
+        new Date(order.createdAt).toLocaleString()
+      ])
+    ];
+    // Convert to CSV string
+    const csvContent = rows.map(r => r.map(String).map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n');
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders_export_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -60,13 +88,13 @@ const AdminDashboard = () => {
           axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/logs/supplier-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })),
+          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })), // changed endpoint
         ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
         const suppliers = suppliersRes.data || [];
         const orders = ordersRes.data || [];
-        const supplierLogins = logsRes.data || [];
+        const customerLogins = logsRes.data || []; // changed variable name
 
         // Calculate statistics
         const totalSales = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
@@ -108,13 +136,13 @@ const AdminDashboard = () => {
           totalSuppliers: suppliers.length,
           totalOrders: orders.length,
           totalSales,
-          supplierLogins,
+          customerLogins, // changed from supplierLogins
           stockByCategory,
           salesTrends,
           topBooks,
+          orders,
         });
       } catch (err) {
-        // fallback to empty stats
         setStats((s) => ({ ...s }));
       }
       setLoading(false);
@@ -179,19 +207,19 @@ const AdminDashboard = () => {
     ],
   };
 
-  // Supplier logins per day (if available)
-  const supplierLoginCounts = {};
-  (stats.supplierLogins || []).forEach((log) => {
+  // Customer logins per day (if available)
+  const customerLoginCounts = {};
+  (stats.customerLogins || []).forEach((log) => {
     const date = log.timestamp ? log.timestamp.slice(0, 10) : "Unknown";
-    supplierLoginCounts[date] = (supplierLoginCounts[date] || 0) + 1;
+    customerLoginCounts[date] = (customerLoginCounts[date] || 0) + 1;
   });
-  const supplierLoginDates = Object.keys(supplierLoginCounts).sort();
-  const supplierLoginsData = {
-    labels: supplierLoginDates,
+  const customerLoginDates = Object.keys(customerLoginCounts).sort();
+  const customerLoginsData = {
+    labels: customerLoginDates,
     datasets: [
       {
-        label: "Supplier Logins",
-        data: supplierLoginDates.map((d) => supplierLoginCounts[d]),
+        label: "Customer Logins",
+        data: customerLoginDates.map((d) => customerLoginCounts[d]),
         backgroundColor: "#FBBF24",
         borderColor: "#F59E42",
         fill: true,
@@ -204,6 +232,15 @@ const AdminDashboard = () => {
       <h1 className="text-3xl font-bold text-red-700 mb-8 flex items-center gap-3 animate-fade-in-down">
         <FaChartPie className="text-red-500" /> Admin Dashboard
       </h1>
+      {/* Export Data Button */}
+      <div className="mb-6 flex justify-end">
+        <button
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold shadow transition"
+          onClick={handleExportData}
+        >
+          Export Orders CSV
+        </button>
+      </div>
       {loading ? (
         <div className="text-center text-gray-500 py-8 animate-pulse">Loading statistics...</div>
       ) : (
@@ -227,9 +264,9 @@ const AdminDashboard = () => {
               <Bar data={topBooksData} className="animate-fade-in" />
             </ChartCard>
           </div>
-          {/* Supplier Logins */}
-          <ChartCard title="Supplier Logins (per day)" icon={<FaUserClock className="text-xl text-green-400" />} className="mb-8">
-            <Line data={supplierLoginsData} className="animate-fade-in" />
+          {/* Customer Logins */}
+          <ChartCard title="Customer Logins (per day)" icon={<FaUserClock className="text-xl text-green-400" />} className="mb-8">
+            <Line data={customerLoginsData} className="animate-fade-in" />
           </ChartCard>
           {/* Total Sales */}
           <ChartCard title="Total Sales" icon={<FaMoneyBillWave className="text-xl text-green-600" />} className="mb-8">
@@ -273,8 +310,8 @@ function ChartCard({ title, icon, children, className = "" }) {
   .animate-fade-in-up { animation: fadeInUp 0.7s ease; }
   .animate-fade-in-down { animation: fadeInDown 0.7s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
-  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px);} to { opacity: 1; transform: translateY(0);} }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1, transform: translateY(0);} }
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px);} to { opacity: 1, transform: translateY(0);} }
 }
 */
 
