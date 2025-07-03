@@ -14,6 +14,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Create a new supplier
+router.post('/', async (req, res) => {
+  try {
+    const supplier = new Supplier(req.body);
+    await supplier.save();
+    res.status(201).json(supplier);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Get all books for a supplier
 router.get('/:id/books', async (req, res) => {
   try {
@@ -34,12 +45,22 @@ router.get('/:id/supplierBook', async (req, res) => {
   }
 });
 
-// Get supplier KPIs for dashboard
+// Get supplier KPIs for dashboard (updated to count both Supplier collection and users with supplier roles)
 router.get('/kpis', async (req, res) => {
   try {
-    const totalSuppliers = await Supplier.countDocuments();
-    const activeSuppliers = await Supplier.countDocuments({ status: 'active' });
-    const inactiveSuppliers = await Supplier.countDocuments({ status: 'inactive' });
+    const SupplierModel = require('../models/supplier.model');
+    const UserModel = require('../models/user.model');
+    const Book = require('../models/books.model');
+
+    // Count suppliers in Supplier collection
+    const supplierCount = await SupplierModel.countDocuments();
+    // Count users with role 'supplier department' or 'supplier' (if you use that role)
+    const userSupplierCount = await UserModel.countDocuments({ role: { $in: ['supplier department', 'supplier'] } });
+    const totalSuppliers = supplierCount + userSupplierCount;
+
+    // Active/inactive from Supplier collection only (for now)
+    const activeSuppliers = await SupplierModel.countDocuments({ status: 'active' });
+    const inactiveSuppliers = await SupplierModel.countDocuments({ status: 'inactive' });
 
     // Most used supplier: the one with the most books
     const agg = await Book.aggregate([
@@ -49,15 +70,15 @@ router.get('/kpis', async (req, res) => {
     ]);
     let mostUsedSupplier = null;
     if (agg.length && agg[0]._id) {
-      const sup = await Supplier.findById(agg[0]._id);
+      const sup = await SupplierModel.findById(agg[0]._id);
       mostUsedSupplier = sup ? sup.companyName : String(agg[0]._id);
     }
 
-    // New suppliers this month
+    // New suppliers this month (from Supplier collection only)
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0,0,0,0);
-    const newSuppliersThisMonth = await Supplier.countDocuments({ createdAt: { $gte: startOfMonth } });
+    const newSuppliersThisMonth = await SupplierModel.countDocuments({ createdAt: { $gte: startOfMonth } });
 
     res.json({
       totalSuppliers,
@@ -213,6 +234,28 @@ router.put('/:supplierId/supplierBook/:bookId/increase-stock', async (req, res) 
     res.json({ message: 'Book added to inventory and stock updated', book });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Update a supplier
+router.put('/:id', async (req, res) => {
+  try {
+    const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
+    res.json(supplier);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Delete a supplier
+router.delete('/:id', async (req, res) => {
+  try {
+    const supplier = await Supplier.findByIdAndDelete(req.params.id);
+    if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
+    res.json({ message: 'Supplier deleted' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 

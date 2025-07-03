@@ -1,5 +1,6 @@
 const Order = require('../models/order.model');
 const Book = require('../models/books.model');
+const SupplierBook = require('../models/supplierBook.model');
 
 // @desc    Create a new order
 // @route   POST /api/orders
@@ -26,6 +27,15 @@ exports.createOrder = async (req, res) => {
         category: book.category,
         supplier: book.supplier
       });
+      // Reduce supplier book stock if this is a supplier book
+      if (book.supplier) {
+        const SupplierBook = require('../models/supplierBook.model');
+        let supplierBook = await SupplierBook.findOne({ _id: item.book, supplier: book.supplier });
+        if (supplierBook) {
+          supplierBook.stock = Math.max(0, supplierBook.stock - item.quantity);
+          await supplierBook.save();
+        }
+      }
     }
 
     const order = new Order({
@@ -115,10 +125,18 @@ exports.acceptOrder = async (req, res) => {
 
     // Decrease stock for each book
     for (const item of order.items) {
-      const book = await Book.findById(item.book);
+      // Try to update in Book model
+      let book = await Book.findById(item.book);
       if (book) {
         book.stock = Math.max(0, book.stock - item.quantity);
         await book.save();
+      } else if (item.supplier) {
+        // If not found in Book, try SupplierBook
+        let supplierBook = await SupplierBook.findOne({ _id: item.book, supplier: item.supplier });
+        if (supplierBook) {
+          supplierBook.stock = Math.max(0, supplierBook.stock - item.quantity);
+          await supplierBook.save();
+        }
       }
     }
 

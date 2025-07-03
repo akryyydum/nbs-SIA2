@@ -35,11 +35,26 @@ const SupplierDashboard = () => {
 
   const { user } = useAuth();
 
+  // Helper to fetch KPIs
+  const fetchKpis = async (config) => {
+    const res = await getSupplierKPIs(config);
+    setKpis(res.data);
+  };
+
+  // Helper to fetch suppliers and KPIs together
+  const fetchSuppliersAndKpis = async (config) => {
+    const [suppliersRes, kpisRes] = await Promise.all([
+      getSuppliers(config),
+      getSupplierKPIs(config)
+    ]);
+    setSuppliers(suppliersRes.data);
+    setKpis(kpisRes.data);
+  };
+
   // Fetch data (with auth)
   useEffect(() => {
     const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
-    getSuppliers(config).then(res => setSuppliers(res.data));
-    getSupplierKPIs(config).then(res => setKpis(res.data));
+    fetchSuppliersAndKpis(config);
     // Fetch users with role 'supplier department'
     axios.get('/api/users', config)
       .then(res => {
@@ -65,7 +80,7 @@ const SupplierDashboard = () => {
     const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
     if (window.confirm('Are you sure you want to delete this supplier?')) {
       await deleteSupplier(id, config);
-      setSuppliers(suppliers.filter(s => s._id !== id));
+      fetchSuppliersAndKpis(config); // Refresh suppliers and KPIs after delete
     }
   };
 
@@ -116,6 +131,7 @@ const SupplierDashboard = () => {
         const res = await getBooksBySupplier(selectedSupplier._id, config);
         setBooksModal(bm => ({ ...bm, books: res.data }));
       }
+      fetchKpis(config); // Refresh KPIs after adding a book
     } catch (err) {
       alert('Failed to add book: ' + (err.response?.data?.message || err.message));
     }
@@ -233,8 +249,9 @@ const SupplierDashboard = () => {
               {selectedSupplier ? 'Edit Supplier' : 'Add Supplier'}
             </h3>
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
+                const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
                 const supplierData = {
                   companyName: e.target.companyName.value,
                   contactPerson: e.target.contactPerson.value,
@@ -244,16 +261,16 @@ const SupplierDashboard = () => {
                   productCategories: e.target.productCategories.value.split(',').map(cat => cat.trim()),
                   status: e.target.status.value,
                 };
-                if (selectedSupplier) {
-                  updateSupplier(selectedSupplier._id, supplierData).then(() => {
-                    setShowModal(false);
-                    getSuppliers().then(res => setSuppliers(res.data));
-                  });
-                } else {
-                  createSupplier(supplierData).then(() => {
-                    setShowModal(false);
-                    getSuppliers().then(res => setSuppliers(res.data));
-                  });
+                try {
+                  if (selectedSupplier) {
+                    await updateSupplier(selectedSupplier._id, supplierData, config);
+                  } else {
+                    await createSupplier(supplierData, config);
+                  }
+                  setShowModal(false);
+                  fetchSuppliersAndKpis(config);
+                } catch (err) {
+                  alert('Failed to save supplier: ' + (err.response?.data?.message || err.message));
                 }
               }}
               className="space-y-4"
