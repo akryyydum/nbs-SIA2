@@ -5,7 +5,7 @@ const About = () => {
   return (
     <>
       <Navbar />
-      <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 animate-fade-in">
         {/* Background image behind h2 only */}
         <div className="relative max-w-7xl mx-auto">
           <div className="relative w-full h-64 mb-12">
@@ -38,6 +38,13 @@ const About = () => {
               .animate-gradient-x {
                 background-size: 200% 200%;
                 animation: gradient-x 3s ease-in-out infinite;
+              }
+              .animate-fade-in {
+                animation: fadeInAbout 0.8s cubic-bezier(.4,0,.2,1);
+              }
+              @keyframes fadeInAbout {
+                from { opacity: 0; transform: translateY(40px);}
+                to { opacity: 1; transform: translateY(0);}
               }
             `}
           </style>

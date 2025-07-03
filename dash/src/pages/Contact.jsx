@@ -5,7 +5,7 @@ const Contact = () => {
   return (
     <>
       <Navbar />
-      <div className="relative min-h-screen bg-white flex flex-col justify-center items-center font-poppins">
+      <div className="relative min-h-screen bg-white flex flex-col justify-center items-center font-poppins animate-fade-in">
         {/* Social icons vertical bar */}
         <div className="fixed left-0 top-1/2 -translate-y-1/2 flex flex-col items-center z-20">
           <div className="mb-4 text-xs text-gray-400 tracking-widest" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
@@ -98,6 +98,16 @@ const Contact = () => {
         {/* FontAwesome CDN for icons */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
       </div>
+      {/* Fade-in animation style */}
+      <style>{`
+        .animate-fade-in {
+          animation: fadeInContact 0.8s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes fadeInContact {
+          from { opacity: 0; transform: translateY(40px);}
+          to { opacity: 1; transform: translateY(0);}
+        }
+      `}</style>
     </>
   );
 };
