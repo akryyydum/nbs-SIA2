@@ -81,9 +81,44 @@ const Users = () => {
     return matchesRole && matchesSearch;
   });
 
+  // Count users by role
+  const roleCounts = {
+    admin: 0,
+    customer: 0,
+    "inventory department": 0,
+    "sales department": 0,
+    "supplier department": 0,
+  };
+  users.forEach(u => {
+    if (roleCounts[u.role] !== undefined) roleCounts[u.role]++;
+  });
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">User Management</h2>
+      {/* Role Visual Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Admins</div>
+          <div className="text-2xl font-bold text-blue-700">{roleCounts.admin}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Customers</div>
+          <div className="text-2xl font-bold text-green-700">{roleCounts.customer}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Inventory Dept</div>
+          <div className="text-2xl font-bold text-yellow-700">{roleCounts["inventory department"]}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Sales Dept</div>
+          <div className="text-2xl font-bold text-red-700">{roleCounts["sales department"]}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Supplier Dept</div>
+          <div className="text-2xl font-bold text-purple-700">{roleCounts["supplier department"]}</div>
+        </div>
+      </div>
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
