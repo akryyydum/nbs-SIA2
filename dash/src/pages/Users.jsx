@@ -287,14 +287,14 @@ const Users = () => {
           boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)'
         }}
       >
-        <table className="min-w-full rounded-2xl overflow-hidden">
+        <table className="min-w-full rounded-2xl overflow-hidden border-collapse">
           <thead>
             <tr className="bg-white/70 text-red-700 font-semibold text-lg">
-              <th className="px-6 py-3 border-b">Name</th>
-              <th className="px-6 py-3 border-b">Email</th>
-              <th className="px-6 py-3 border-b">Role</th>
-              <th className="px-6 py-3 border-b">Status</th>
-              <th className="px-6 py-3 border-b">Actions</th>
+              <th className="px-6 py-3 border-b text-left">Name</th>
+              <th className="px-6 py-3 border-b text-left">Email</th>
+              <th className="px-6 py-3 border-b text-left">Role</th>
+              <th className="px-6 py-3 border-b text-left">Status</th>
+              <th className="px-6 py-3 border-b text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -308,16 +308,16 @@ const Users = () => {
               </tr>
             ) : filteredUsers.map(u => (
               <tr key={u._id} className="hover:bg-red-50 transition">
-                <td className="border-b px-6 py-3">{u.name}</td>
-                <td className="border-b px-6 py-3">{u.email}</td>
-                <td className="border-b px-6 py-3 capitalize">{u.role}</td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3 text-left">{u.name}</td>
+                <td className="border-b px-6 py-3 text-left">{u.email}</td>
+                <td className="border-b px-6 py-3 text-left capitalize">{u.role}</td>
+                <td className="border-b px-6 py-3 text-left">
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium
                     ${u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                     {u.status}
                   </span>
                 </td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3 text-left">
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
                     onClick={() => handleEdit(u)}
