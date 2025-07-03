@@ -8,6 +8,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true); // default to true
   const { login } = useAuth();
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,6 +57,66 @@ const LoginPage = () => {
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
     }
+  };
+
+  // Simulate backend API for OTP (replace with your real API)
+  const sendOtp = async (email) => {
+    setOtpLoading(true);
+    try {
+      // First, check if email exists in the system
+      const checkRes = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/check-email`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        }
+      );
+      // Fix: If your VITE_API_BASE_URL is not set, window.location.origin will be :5173 (frontend), not backend!
+      // Make sure VITE_API_BASE_URL is set to your backend (e.g. http://localhost:5000/api)
+      if (!checkRes.ok) {
+        const errMsg = await checkRes.json();
+        alert(errMsg.message || 'Email not found in the system.');
+        setOtpLoading(false);
+        return;
+      }
+      // If exists, send OTP
+      await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/send-otp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        }
+      );
+      setOtpSent(true);
+      alert('OTP sent to your email.');
+    } catch {
+      alert('Failed to send OTP. Please check your email.');
+    }
+    setOtpLoading(false);
+  };
+
+  const resetPassword = async () => {
+    setOtpLoading(true);
+    try {
+      // Replace with your API call
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail, otp, newPassword })
+      });
+      if (!res.ok) throw new Error();
+      alert('Password reset successful. You can now log in.');
+      setShowForgot(false);
+      setForgotEmail('');
+      setOtp('');
+      setNewPassword('');
+      setOtpSent(false);
+    } catch {
+      alert('Failed to reset password. Please check your OTP and try again.');
+    }
+    setOtpLoading(false);
   };
 
   return (
@@ -98,12 +164,13 @@ const LoginPage = () => {
                 />
                 <label htmlFor="remember" className="text-sm text-gray-700 select-none">Remember for 30 days</label>
               </div>
-              <a
-                href="/forgot-password"
+              <button
+                type="button"
                 className="text-sm text-red-700 hover:underline font-medium"
+                onClick={() => setShowForgot(true)}
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
             <button
               type="submit"
@@ -146,6 +213,75 @@ const LoginPage = () => {
           </svg>
         </div>
       </div>
+      {/* Forgot Password Modal */}
+      {showForgot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl shadow-xl p-8 min-w-[350px] relative">
+            <h3 className="text-xl font-bold mb-4 text-red-700">Forgot Password</h3>
+            {!otpSent ? (
+              <>
+                <label className="block mb-2 text-sm font-medium text-gray-700">Enter your email address</label>
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  placeholder="Email address"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+                />
+                <button
+                  className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
+                  onClick={() => sendOtp(forgotEmail)}
+                  disabled={otpLoading || !forgotEmail}
+                >
+                  {otpLoading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+              </>
+            ) : (
+              <>
+                <label className="block mb-2 text-sm font-medium text-gray-700">Enter OTP sent to your email</label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  placeholder="OTP"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+                />
+                <label className="block mb-2 text-sm font-medium text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="New Password"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+                />
+                <button
+                  className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
+                  onClick={resetPassword}
+                  disabled={otpLoading || !otp || !newPassword}
+                >
+                  {otpLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </>
+            )}
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-red-600 text-2xl"
+              onClick={() => {
+                setShowForgot(false);
+                setForgotEmail('');
+                setOtp('');
+                setNewPassword('');
+                setOtpSent(false);
+              }}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

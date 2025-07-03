@@ -20,6 +20,9 @@ const supplierBookModel = require('./models/supplierBook.model'); // Ensure mode
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
+// server.js or app.js
+const otpRoutes = require('./routes/otpRoutes');
+app.use('/api/auth', otpRoutes);
 
 // Middleware
 app.use(cors({

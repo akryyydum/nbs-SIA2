@@ -22,7 +22,14 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before save
 userSchema.pre('save', async function(next) {
+  // Only hash if password is modified and not already hashed
   if (!this.isModified('password')) return next();
+
+  // Prevent double-hashing if already hashed (bcrypt hashes are 60 chars and start with $2)
+  if (typeof this.password === 'string' && this.password.startsWith('$2') && this.password.length === 60) {
+    return next();
+  }
+
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
