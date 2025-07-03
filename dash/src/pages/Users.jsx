@@ -12,6 +12,8 @@ const Users = () => {
   const [editForm, setEditForm] = useState(emptyForm); // for modal
   const [showModal, setShowModal] = useState(false); // modal state
   const [loading, setLoading] = useState(false);
+  const [roleFilter, setRoleFilter] = useState(''); // <-- add role filter state
+  const [search, setSearch] = useState(''); // <-- add search state
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -69,9 +71,46 @@ const Users = () => {
     }
   };
 
+  // Filter users by role and search
+  const filteredUsers = users.filter(u => {
+    const matchesRole = !roleFilter || u.role === roleFilter;
+    const matchesSearch =
+      !search ||
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase());
+    return matchesRole && matchesSearch;
+  });
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">User Management</h2>
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <label htmlFor="role-filter" className="text-sm font-medium text-gray-700">Filter by Role:</label>
+          <select
+            id="role-filter"
+            value={roleFilter}
+            onChange={e => setRoleFilter(e.target.value)}
+            className="border px-3 py-2 rounded"
+          >
+            <option value="">All</option>
+            <option value="customer">Customer</option>
+            <option value="admin">Admin</option>
+            <option value="inventory department">Inventory Department</option>
+            <option value="sales department">Sales Department</option>
+            <option value="supplier department">Supplier Department</option>
+          </select>
+        </div>
+        <input
+          type="text"
+          placeholder="Search by name or email"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="border px-3 py-2 rounded"
+          style={{ minWidth: 220 }}
+        />
+      </div>
       <form onSubmit={handleSubmit} className="mb-8 flex flex-wrap gap-4 items-end bg-white/60 backdrop-blur-md rounded-xl shadow-md p-6 border border-red-100">
         <input
           type="text"
@@ -228,11 +267,11 @@ const Users = () => {
               <tr>
                 <td colSpan={5} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center py-8 text-gray-400">No users found</td>
               </tr>
-            ) : users.map(u => (
+            ) : filteredUsers.map(u => (
               <tr key={u._id} className="hover:bg-red-50 transition">
                 <td className="border-b px-6 py-3">{u.name}</td>
                 <td className="border-b px-6 py-3">{u.email}</td>
