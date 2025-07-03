@@ -177,7 +177,7 @@ const Order = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8 animate-fade-in-order">
       <h2 className="text-2xl font-bold mb-4 text-black">My Orders</h2>
       {/* Filter choices */}
       <div className="mb-6 flex gap-4">
@@ -206,100 +206,103 @@ const Order = () => {
           onClick={() => setFilter('received')}
         >Received</button>
       </div>
-      {loading ? (
-        <div className="text-center text-gray-500 py-8">Loading orders...</div>
-      ) : filteredOrders.length === 0 ? (
-        <div className="text-center text-gray-400 py-8">No orders found.</div>
-      ) : (
-        <div className="space-y-6">
-          {filteredOrders.map(order => (
-            <div key={order._id} className="border rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <span className="font-semibold">Order ID:</span> {order._id}
+      {/* Fade-in for tab content */}
+      <div key={filter} className="animate-fade-in-order">
+        {loading ? (
+          <div className="text-center text-gray-500 py-8">Loading orders...</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center text-gray-400 py-8">No orders found.</div>
+        ) : (
+          <div className="space-y-6">
+            {filteredOrders.map(order => (
+              <div key={order._id} className="border rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <span className="font-semibold">Order ID:</span> {order._id}
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium
+                    ${order.status === 'paid' ? 'bg-green-100 text-green-700'
+                      : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
+                      : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
+                      : order.status === 'out for delivery' ? 'bg-blue-100 text-blue-700'
+                      : order.status === 'received' ? 'bg-green-200 text-green-800'
+                      : order.status === 'declined' ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-100 text-gray-700'}`}>
+                    {order.status === 'out for delivery'
+                      ? 'shipped'
+                      : order.status === 'received'
+                        ? 'received'
+                        : order.status}
+                  </span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium
-                  ${order.status === 'paid' ? 'bg-green-100 text-green-700'
-                    : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
-                    : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
-                    : order.status === 'out for delivery' ? 'bg-blue-100 text-blue-700'
-                    : order.status === 'received' ? 'bg-green-200 text-green-800'
-                    : order.status === 'declined' ? 'bg-gray-300 text-gray-700'
-                    : 'bg-gray-100 text-gray-700'}`}>
-                  {order.status === 'out for delivery'
-                    ? 'shipped'
-                    : order.status === 'received'
-                      ? 'received'
-                      : order.status}
-                </span>
-              </div>
-              <div className="mb-2 text-sm text-gray-600">
-                <span className="font-semibold">Placed:</span> {new Date(order.createdAt).toLocaleString()}
-                <span className="ml-4 font-semibold">Payment:</span> {order.modeofPayment}
-              </div>
-              <div>
-                <span className="font-semibold text-sm">Items:</span>
-                <ul className="ml-4 text-sm">
-                  {order.items.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2 mb-1">
-                      {item.book?.image && (
-                        <img
-                          src={item.book.image}
-                          alt={item.book?.title || 'Book'}
-                          className="h-8 w-6 object-cover rounded shadow"
-                        />
-                      )}
-                      <span>
-                        {item.book?.title || 'Book'} x {item.quantity}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-2 font-bold text-right">
-                Total: ₱{Number(order.totalPrice).toFixed(2)}
-              </div>
-              <div className="mt-3 flex justify-end gap-2">
-                <button
-                  className="px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300 transition"
-                  onClick={() => setModalOrder(order)}
-                >
-                  View
-                </button>
-                {/* Cancel button for pending orders */}
-                {order.status === 'pending' && (
+                <div className="mb-2 text-sm text-gray-600">
+                  <span className="font-semibold">Placed:</span> {new Date(order.createdAt).toLocaleString()}
+                  <span className="ml-4 font-semibold">Payment:</span> {order.modeofPayment}
+                </div>
+                <div>
+                  <span className="font-semibold text-sm">Items:</span>
+                  <ul className="ml-4 text-sm">
+                    {order.items.map((item, idx) => (
+                      <li key={idx} className="flex items-center gap-2 mb-1">
+                        {item.book?.image && (
+                          <img
+                            src={item.book.image}
+                            alt={item.book?.title || 'Book'}
+                            className="h-8 w-6 object-cover rounded shadow"
+                          />
+                        )}
+                        <span>
+                          {item.book?.title || 'Book'} x {item.quantity}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-2 font-bold text-right">
+                  Total: ₱{Number(order.totalPrice).toFixed(2)}
+                </div>
+                <div className="mt-3 flex justify-end gap-2">
                   <button
-                    className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
-                    onClick={() => handleCancel(order._id)}
-                    disabled={cancelling === order._id}
+                    className="px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300 transition"
+                    onClick={() => setModalOrder(order)}
                   >
-                    {cancelling === order._id ? 'Cancelling...' : 'Cancel Order'}
+                    View
                   </button>
-                )}
-                {/* Order Received button for shipped orders */}
-                {order.status === 'out for delivery' && (
-                  <button
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                    onClick={() => handleReceived(order._id)}
-                    disabled={receiving === order._id}
-                  >
-                    {receiving === order._id ? 'Processing...' : 'Order Received'}
-                  </button>
-                )}
-                {/* Print Receipt button for received orders */}
-                {order.status === 'received' && (
-                  <button
-                    className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
-                    onClick={() => setReceiptOrder(order)}
-                  >
-                    Print Receipt
-                  </button>
-                )}
+                  {/* Cancel button for pending orders */}
+                  {order.status === 'pending' && (
+                    <button
+                      className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
+                      onClick={() => handleCancel(order._id)}
+                      disabled={cancelling === order._id}
+                    >
+                      {cancelling === order._id ? 'Cancelling...' : 'Cancel Order'}
+                    </button>
+                  )}
+                  {/* Order Received button for shipped orders */}
+                  {order.status === 'out for delivery' && (
+                    <button
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                      onClick={() => handleReceived(order._id)}
+                      disabled={receiving === order._id}
+                    >
+                      {receiving === order._id ? 'Processing...' : 'Order Received'}
+                    </button>
+                  )}
+                  {/* Print Receipt button for received orders */}
+                  {order.status === 'received' && (
+                    <button
+                      className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
+                      onClick={() => setReceiptOrder(order)}
+                    >
+                      Print Receipt
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
       {/* Modal for order details */}
       {modalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -452,6 +455,15 @@ const Order = () => {
           </div>
         </div>
       )}
+      <style>{`
+        .animate-fade-in-order {
+          animation: fadeInOrder 0.7s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes fadeInOrder {
+          from { opacity: 0; transform: translateY(40px);}
+          to { opacity: 1; transform: translateY(0);}
+        }
+      `}</style>
     </div>
   );
 };

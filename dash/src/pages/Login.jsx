@@ -215,59 +215,74 @@ const LoginPage = () => {
       </div>
       {/* Forgot Password Modal */}
       {showForgot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-xl shadow-xl p-8 min-w-[350px] relative">
-            <h3 className="text-xl font-bold mb-4 text-red-700">Forgot Password</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-modal-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 min-w-[350px] w-full max-w-xs relative border border-red-200 animate-modal-fade-in">
+            <h2 className="text-2xl font-bold text-center text-red-700 mb-2">Forgot password?</h2>
+            <div className="text-center text-gray-500 text-sm mb-6">
+              Remember your password?{' '}
+              <span
+                className="text-red-600 hover:underline cursor-pointer"
+                onClick={() => {
+                  setShowForgot(false);
+                  setForgotEmail('');
+                  setOtp('');
+                  setNewPassword('');
+                  setOtpSent(false);
+                }}
+              >
+                Login here
+              </span>
+            </div>
             {!otpSent ? (
               <>
-                <label className="block mb-2 text-sm font-medium text-gray-700">Enter your email address</label>
+                <label className="block mb-2 text-sm font-semibold text-gray-700">Email address</label>
                 <input
                   type="email"
                   value={forgotEmail}
                   onChange={e => setForgotEmail(e.target.value)}
                   placeholder="Email address"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+                  className="w-full px-4 py-2 border border-red-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
                 />
                 <button
-                  className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
+                  className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors text-base"
                   onClick={() => sendOtp(forgotEmail)}
                   disabled={otpLoading || !forgotEmail}
                 >
-                  {otpLoading ? 'Sending OTP...' : 'Send OTP'}
+                  {otpLoading ? 'Sending OTP...' : 'Reset password'}
                 </button>
               </>
             ) : (
               <>
-                <label className="block mb-2 text-sm font-medium text-gray-700">Enter OTP sent to your email</label>
+                <label className="block mb-2 text-sm font-semibold text-gray-700">Enter OTP sent to your email</label>
                 <input
                   type="text"
                   value={otp}
                   onChange={e => setOtp(e.target.value)}
                   placeholder="OTP"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+                  className="w-full px-4 py-2 border border-red-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
                 />
-                <label className="block mb-2 text-sm font-medium text-gray-700">New Password</label>
+                <label className="block mb-2 text-sm font-semibold text-gray-700">New Password</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="New Password"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+                  className="w-full px-4 py-2 border border-red-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
                 />
                 <button
-                  className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
+                  className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors text-base"
                   onClick={resetPassword}
                   disabled={otpLoading || !otp || !newPassword}
                 >
-                  {otpLoading ? 'Resetting...' : 'Reset Password'}
+                  {otpLoading ? 'Resetting...' : 'Reset password'}
                 </button>
               </>
             )}
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-red-600 text-2xl"
+              className="absolute top-2 right-3 text-gray-400 hover:text-red-600 text-2xl"
               onClick={() => {
                 setShowForgot(false);
                 setForgotEmail('');
@@ -276,10 +291,20 @@ const LoginPage = () => {
                 setOtpSent(false);
               }}
               aria-label="Close"
+              type="button"
             >
               &times;
             </button>
           </div>
+          <style>{`
+            .animate-modal-fade-in {
+              animation: modalFadeIn 0.35s cubic-bezier(.4,0,.2,1);
+            }
+            @keyframes modalFadeIn {
+              from { opacity: 0; transform: scale(0.96) translateY(24px);}
+              to { opacity: 1; transform: scale(1) translateY(0);}
+            }
+          `}</style>
         </div>
       )}
     </div>

@@ -19,6 +19,7 @@ const Navbar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation(); // <-- get current location
+  const lastClickedLinkRef = useRef(null);
 
   // Define fetchCart so it can be reused
   const fetchCart = async () => {
@@ -63,6 +64,27 @@ const Navbar = () => {
     }
   };
 
+  // Animation handler for link clicks
+  const handleLinkClick = (e) => {
+    const el = e.currentTarget;
+    el.classList.remove('link-pop-animate'); // reset if needed
+    // Force reflow to restart animation
+    void el.offsetWidth;
+    el.classList.add('link-pop-animate');
+    lastClickedLinkRef.current = el;
+  };
+
+  // Remove animation class after animation ends
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.animationName === 'link-pop') {
+        e.target.classList.remove('link-pop-animate');
+      }
+    };
+    document.addEventListener('animationend', handler, true);
+    return () => document.removeEventListener('animationend', handler, true);
+  }, []);
+
   // Determine if we are on the sales dashboard
   const isSalesDashboard = location.pathname === '/sales-dashboard';
 
@@ -75,26 +97,50 @@ const Navbar = () => {
             {/* Nav Links (desktop only) */}
             <div className="hidden md:flex space-x-6 items-center flex-shrink-0">
               {user?.role === 'admin' ? (
-                <Link to="/admin" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                <Link
+                  to="/admin"
+                  className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                  onClick={handleLinkClick}
+                >
                   Control Panel
                 </Link>
               ) : (
                 // Only show these links if NOT on sales dashboar
                 !isSalesDashboard && (
                   <>
-                    <Link to="/dashboard" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    <Link
+                      to="/dashboard"
+                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      onClick={handleLinkClick}
+                    >
                       Home
                     </Link>
-                    <Link to="/contact" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    <Link
+                      to="/contact"
+                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      onClick={handleLinkClick}
+                    >
                       Contact
                     </Link>
-                    <Link to="/products" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    <Link
+                      to="/products"
+                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      onClick={handleLinkClick}
+                    >
                       Products
                     </Link>
-                    <Link to="/about" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    <Link
+                      to="/about"
+                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      onClick={handleLinkClick}
+                    >
                       About
                     </Link>
-                    <Link to="/orders" className="text-black hover:text-red-900 transition-colors duration-200 font-semibold">
+                    <Link
+                      to="/orders"
+                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      onClick={handleLinkClick}
+                    >
                       Orders
                     </Link>
                   </>
@@ -109,7 +155,7 @@ const Navbar = () => {
           {/* Right Section (Cart, Account, Admin, Search) */}
           <div className="hidden md:flex space-x-8 items-center flex-shrink-0">
             {/* Admin Control Panel Link */}
-           
+            
             {/* Cart Icon with Dropdown */}
             <div className="relative">
               <button
@@ -322,14 +368,14 @@ const Navbar = () => {
             <Link
               to="/dashboard"
               className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-              onClick={() => setOpen(false)}
+              onClick={e => { setOpen(false); handleLinkClick(e); }}
             >
               Home
             </Link>
             <Link
               to="/contact"
               className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-              onClick={() => setOpen(false)}
+              onClick={e => { setOpen(false); handleLinkClick(e); }}
             >
               Contact
             </Link>
@@ -338,14 +384,14 @@ const Navbar = () => {
         <Link
           to="/products"
           className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-          onClick={() => setOpen(false)}
+          onClick={e => { setOpen(false); handleLinkClick(e); }}
         >
           Products
         </Link>
         <Link
           to="/about"
           className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-          onClick={() => setOpen(false)}
+          onClick={e => { setOpen(false); handleLinkClick(e); }}
         >
           About
         </Link>
@@ -354,7 +400,7 @@ const Navbar = () => {
           <Link
             to="/admin"
             className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-            onClick={() => setOpen(false)}
+            onClick={e => { setOpen(false); handleLinkClick(e); }}
           >
             Control Panel
           </Link>

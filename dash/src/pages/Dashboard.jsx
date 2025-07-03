@@ -76,6 +76,16 @@ const DashboardPage = () => {
     arrivalsPage * ARRIVALS_PER_PAGE + ARRIVALS_PER_PAGE
   );
 
+  // Compute number 1 selling book from newArrivals
+  const numberOneSelling = (() => {
+    if (!newArrivals.length) return null;
+    // Find the book with the highest sales (assuming 'sold' field exists)
+    // If not, just pick the first as a fallback
+    return newArrivals.reduce((top, book) =>
+      (book.sold || 0) > (top.sold || 0) ? book : top, newArrivals[0]
+    );
+  })();
+
   return (
    <div className="min-h-screen w-full flex flex-col bg-white font-poppins relative overflow-hidden">
       {/* Animated blobs background */}
@@ -87,7 +97,7 @@ const DashboardPage = () => {
 
       {/* Hero Banner Section */}
       <div className="w-full flex justify-center items-center py-8 px-2 sm:px-8 animate-fade-in">
-        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg flex flex-col md:flex-row items-center justify-between px-6 md:px-12 py-8 gap-6 md:gap-0 relative overflow-hidden">
+        <div className="w-full max-w-7xl bg-white flex flex-col md:flex-row items-center justify-between px-6 md:px-12 py-8 gap-6 md:gap-0 relative overflow-hidden">
           {/* Left: Text */}
           <div className="flex-1 flex flex-col items-start z-10">
             <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-black leading-tight mb-2">
@@ -167,6 +177,58 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Number 1 Selling Section */}
+      {numberOneSelling && (
+        <div className="w-full flex justify-center mt-8 animate-fade-in">
+          <div className="max-w-5xl w-full rounded-3xl shadow-lg flex flex-col md:flex-row-reverse items-center px-8 py-8 gap-8">
+            {/* Book image on the right */}
+            <div className="flex-shrink-0 flex items-center justify-center w-full md:w-auto">
+              {numberOneSelling.image && (
+                <img
+                  src={numberOneSelling.image}
+                  alt={numberOneSelling.title}
+                  className="h-100 w-75 object-cover shadow-lg  bg-white"
+                />
+              )}
+            </div>
+            {/* Info on the left */}
+            <div className="flex-1 flex flex-col items-start justify-center">
+              <div className="uppercase bg-red-600 text-white px-4 py-1 rounded font-bold text-xs mb-3 tracking-widest shadow">
+                #1 Best Seller
+              </div>
+              <div className="text-3xl md:text-4xl font-extrabold text-red-700 mb-2 flex items-center gap-2">
+                <span className="text-3xl">🏆</span>
+                {numberOneSelling.title}
+              </div>
+              <div className="text-lg text-red-800 font-semibold mb-1">{numberOneSelling.author}</div>
+              <div className="text-base text-red-700 mb-3 line-clamp-2">{numberOneSelling.description || "This book is our top seller!"}</div>
+              <div className="flex items-center gap-6 mt-2">
+                <span className="text-2xl font-bold text-red-900">₱{Number(numberOneSelling.price).toFixed(2)}</span>
+                {typeof numberOneSelling.sold === 'number' && (
+                  <span className="text-red-700 text-base font-medium bg-red-200 px-3 py-1 rounded-full">
+                    Sold: {numberOneSelling.sold}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-3 mt-6">
+                <a
+                  href={`/products/${numberOneSelling._id}`}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold shadow hover:bg-red-700 transition"
+                >
+                  DETAILS
+                </a>
+                <a
+                  href="/products"
+                  className="px-6 py-2 bg-white text-red-700 border border-red-400 rounded-lg font-semibold shadow hover:bg-red-50 transition"
+                >
+                  SHOP NOW
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Arrivals Section */}
       <div className="flex-1 flex flex-col items-center justify-center w-full px-2 sm:px-4 animate-fade-in mt-10">
