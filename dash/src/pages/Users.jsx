@@ -81,9 +81,44 @@ const Users = () => {
     return matchesRole && matchesSearch;
   });
 
+  // Count users by role
+  const roleCounts = {
+    admin: 0,
+    customer: 0,
+    "inventory department": 0,
+    "sales department": 0,
+    "supplier department": 0,
+  };
+  users.forEach(u => {
+    if (roleCounts[u.role] !== undefined) roleCounts[u.role]++;
+  });
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">User Management</h2>
+      {/* Role Visual Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Admins</div>
+          <div className="text-2xl font-bold text-blue-700">{roleCounts.admin}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Customers</div>
+          <div className="text-2xl font-bold text-green-700">{roleCounts.customer}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Inventory Dept</div>
+          <div className="text-2xl font-bold text-yellow-700">{roleCounts["inventory department"]}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Sales Dept</div>
+          <div className="text-2xl font-bold text-red-700">{roleCounts["sales department"]}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500 flex flex-col items-center">
+          <div className="text-sm text-gray-500">Supplier Dept</div>
+          <div className="text-2xl font-bold text-purple-700">{roleCounts["supplier department"]}</div>
+        </div>
+      </div>
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
@@ -252,14 +287,14 @@ const Users = () => {
           boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)'
         }}
       >
-        <table className="min-w-full rounded-2xl overflow-hidden">
+        <table className="min-w-full rounded-2xl overflow-hidden border-collapse">
           <thead>
             <tr className="bg-white/70 text-red-700 font-semibold text-lg">
-              <th className="px-6 py-3 border-b">Name</th>
-              <th className="px-6 py-3 border-b">Email</th>
-              <th className="px-6 py-3 border-b">Role</th>
-              <th className="px-6 py-3 border-b">Status</th>
-              <th className="px-6 py-3 border-b">Actions</th>
+              <th className="px-6 py-3 border-b text-left">Name</th>
+              <th className="px-6 py-3 border-b text-left">Email</th>
+              <th className="px-6 py-3 border-b text-left">Role</th>
+              <th className="px-6 py-3 border-b text-left">Status</th>
+              <th className="px-6 py-3 border-b text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -273,16 +308,16 @@ const Users = () => {
               </tr>
             ) : filteredUsers.map(u => (
               <tr key={u._id} className="hover:bg-red-50 transition">
-                <td className="border-b px-6 py-3">{u.name}</td>
-                <td className="border-b px-6 py-3">{u.email}</td>
-                <td className="border-b px-6 py-3 capitalize">{u.role}</td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3 text-left">{u.name}</td>
+                <td className="border-b px-6 py-3 text-left">{u.email}</td>
+                <td className="border-b px-6 py-3 text-left capitalize">{u.role}</td>
+                <td className="border-b px-6 py-3 text-left">
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium
                     ${u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                     {u.status}
                   </span>
                 </td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3 text-left">
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
                     onClick={() => handleEdit(u)}

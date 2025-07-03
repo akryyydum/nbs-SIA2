@@ -431,13 +431,13 @@ const Orders = () => {
         <table className="min-w-full rounded-2xl overflow-hidden">
           <thead>
             <tr className="bg-white/70 text-red-700 font-semibold text-lg">
-              <th className="px-6 py-3 border-b">Order ID</th>
-              <th className="px-6 py-3 border-b">User</th>
-              <th className="px-6 py-3 border-b">Status</th>
-              <th className="px-6 py-3 border-b">Payment</th>
-              <th className="px-6 py-3 border-b">Total Price</th>
-              <th className="px-6 py-3 border-b">Created</th>
-              <th className="px-6 py-3 border-b">Actions</th>
+              <th className="px-6 py-3 border-b text-left">Order ID</th>
+              <th className="px-6 py-3 border-b text-left">User</th>
+              <th className="px-6 py-3 border-b text-left">Status</th>
+              <th className="px-6 py-3 border-b text-left">Payment</th>
+              <th className="px-6 py-3 border-b text-left">Total Price</th>
+              <th className="px-6 py-3 border-b text-left">Created</th>
+              <th className="px-6 py-3 border-b text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -451,9 +451,9 @@ const Orders = () => {
               </tr>
             ) : paginatedOrders.map(order => (
               <tr key={order._id} className="hover:bg-red-50 transition">
-                <td className="border-b px-6 py-3">{order._id}</td>
-                <td className="border-b px-6 py-3">{order.user?.name || 'N/A'}</td>
-                <td className="border-b px-6 py-3 capitalize">
+                <td className="border-b px-6 py-3 text-left">{order._id}</td>
+                <td className="border-b px-6 py-3 text-left">{order.user?.name || 'N/A'}</td>
+                <td className="border-b px-6 py-3 text-left capitalize">
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium
                     ${order.status === 'paid' ? 'bg-green-100 text-green-700'
                       : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
@@ -469,10 +469,10 @@ const Orders = () => {
                         : order.status}
                   </span>
                 </td>
-                <td className="border-b px-6 py-3">{order.modeofPayment || 'N/A'}</td>
-                <td className="border-b px-6 py-3">₱{Number(order.totalPrice).toFixed(2)}</td>
-                <td className="border-b px-6 py-3">{new Date(order.createdAt).toLocaleString()}</td>
-                <td className="border-b px-6 py-3">
+                <td className="border-b px-6 py-3 text-left">{order.modeofPayment || 'N/A'}</td>
+                <td className="border-b px-6 py-3 text-left">₱{Number(order.totalPrice).toFixed(2)}</td>
+                <td className="border-b px-6 py-3 text-left">{new Date(order.createdAt).toLocaleString()}</td>
+                <td className="border-b px-6 py-3 text-left">
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
                     onClick={() => handleView(order)}
