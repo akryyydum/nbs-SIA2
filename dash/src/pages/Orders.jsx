@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
+import React from 'react';
 
 const Orders = () => {
   const { user } = useAuth();
@@ -9,12 +10,20 @@ const Orders = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  // Add metrics/chart state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [books, setBooks] = useState([]);
+  const [newOrder, setNewOrder] = useState({
+    user: "",
+    items: [{ book: "", quantity: 1 }],
+    modeofPayment: "Cash"
+  });
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [aov, setAov] = useState(0);
   const [topBooksData, setTopBooksData] = useState([]);
   const [categoryChartData, setCategoryChartData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ORDERS_PER_PAGE = 10;
 
   // ✅ FIXED: This ensures axios works on both localhost and LAN
   const API = axios.create({
@@ -137,9 +146,51 @@ const Orders = () => {
     setCategoryChartData(categoryData);
   }, [orders]);
 
+  // Fetch books for the add order form
+  useEffect(() => {
+    if (showAddModal) {
+      API.get('/books').then(res => setBooks(res.data || []));
+    }
+  }, [showAddModal]);
+
+  // Add order handler
+  const handleAddOrder = async (e) => {
+    e.preventDefault();
+    try {
+      const orderData = {
+        user: newOrder.user,
+        items: newOrder.items.map(i => ({ book: i.book, quantity: Number(i.quantity) })),
+        modeofPayment: "Cash"
+      };
+      await API.post('/orders', orderData);
+      setShowAddModal(false);
+      setNewOrder({ user: "", items: [{ book: "", quantity: 1 }], modeofPayment: "Cash" });
+      fetchOrders();
+      alert("Order created!");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to create order");
+    }
+  };
+
+  const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * ORDERS_PER_PAGE,
+    currentPage * ORDERS_PER_PAGE
+  );
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Orders Management</h2>
+
+      {/* Add Order Button */}
+      <div className="mb-4">
+        <button
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          onClick={() => setShowAddModal(true)}
+        >
+          + Add Order
+        </button>
+      </div>
 
       {/* Metrics and Charts */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -249,6 +300,124 @@ const Orders = () => {
         </div>
       )}
 
+      {/* Add Order Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <form
+            className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative space-y-4"
+            onSubmit={handleAddOrder}
+          >
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold"
+              onClick={() => setShowAddModal(false)}
+              type="button"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-2 text-black">Add New Order</h3>
+            <div>
+              <label className="font-semibold">Customer:</label>
+              <input
+                type="text"
+                required
+                className="ml-2 border px-2 py-1 rounded w-full"
+                placeholder="Enter customer name or email"
+                value={newOrder.user}
+                onChange={e => setNewOrder(o => ({ ...o, user: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="font-semibold">Mode of Payment:</label>
+              <input
+                type="text"
+                className="ml-2 border px-2 py-1 rounded w-full bg-gray-100"
+                value="Cash"
+                disabled
+              />
+            </div>
+            <div>
+              <label className="font-semibold">Items:</label>
+              {newOrder.items.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2 flex-wrap">
+                  <select
+                    required
+                    className="border px-2 py-1 rounded min-w-0 w-full max-w-xs flex-1"
+                    value={item.book}
+                    onChange={e => {
+                      const items = [...newOrder.items];
+                      items[idx].book = e.target.value;
+                      setNewOrder(o => ({ ...o, items }));
+                    }}
+                  >
+                    <option value="">Select book</option>
+                    {books.map(b => (
+                      <option key={b._id} value={b._id}>
+                        {b.title} {b.author ? `by ${b.author}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={1}
+                    className="border px-2 py-1 rounded w-16"
+                    value={item.quantity}
+                    onChange={e => {
+                      const items = [...newOrder.items];
+                      items[idx].quantity = e.target.value;
+                      setNewOrder(o => ({ ...o, items }));
+                    }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="text-red-600 font-bold"
+                    onClick={() => {
+                      setNewOrder(o => ({
+                        ...o,
+                        items: o.items.filter((_, i) => i !== idx)
+                      }));
+                    }}
+                    disabled={newOrder.items.length === 1}
+                    style={{ minWidth: 32 }}
+                  >×</button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="text-green-600 font-bold"
+                onClick={() => setNewOrder(o => ({
+                  ...o,
+                  items: [...o.items, { book: "", quantity: 1 }]
+                }))}
+              >+ Add Item</button>
+            </div>
+            {/* Optional: Show a summary of selected books */}
+            {newOrder.items.length > 0 && (
+              <div className="mt-2 text-sm text-gray-600">
+                <span className="font-semibold">Summary:</span>
+                <ul className="list-disc ml-6">
+                  {newOrder.items.map((item, idx) => {
+                    const book = books.find(b => b._id === item.book);
+                    return (
+                      <li key={idx}>
+                        {book ? book.title : "Select a book"} x {item.quantity}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"
+            >
+              Create Order
+            </button>
+          </form>
+        </div>
+      )}
+
       <div
         className="overflow-x-auto rounded-2xl shadow-2xl border border-red-100"
         style={{
@@ -274,13 +443,13 @@ const Orders = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-gray-500">Loading...</td>
+                <td colSpan={7} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-gray-400">No orders found</td>
+                <td colSpan={7} className="text-center py-8 text-gray-400">No orders found</td>
               </tr>
-            ) : orders.map(order => (
+            ) : paginatedOrders.map(order => (
               <tr key={order._id} className="hover:bg-red-50 transition">
                 <td className="border-b px-6 py-3">{order._id}</td>
                 <td className="border-b px-6 py-3">{order.user?.name || 'N/A'}</td>
@@ -322,6 +491,35 @@ const Orders = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 my-4">
+          <button
+            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Prev
+          </button>
+          {[...Array(totalPages)].map((_, idx) => (
+            <button
+              key={idx}
+              className={`px-3 py-1 rounded ${currentPage === idx + 1 ? 'bg-red-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+              onClick={() => setCurrentPage(idx + 1)}
+            >
+              {idx + 1}
+            </button>
+          ))}
+          <button
+            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };
