@@ -6,17 +6,59 @@ import { useAuth } from '../context/AuthContext';
 const RegisterPage = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer' });
   const { login } = useAuth();
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await registerUser({ ...form, status: 'pending' });
-      alert('Registered! Waiting for admin approval.');
-      // Do not log in or redirect
-      setForm({ name: '', email: '', password: '', role: 'customer' });
+      await registerUser({ ...form });
+      if (form.role === 'customer') {
+        // Send OTP
+        setOtpLoading(true);
+        await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/send-otp`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: form.email })
+          }
+        );
+        setOtpLoading(false);
+        setShowOtp(true);
+        alert('Registered! Please check your email for the OTP.');
+      } else {
+        alert('Registered! Waiting for admin approval.');
+        setForm({ name: '', email: '', password: '', role: 'customer' });
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Registration failed');
     }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setOtpLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/verify-otp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form.email, otp })
+        }
+      );
+      if (!res.ok) throw new Error();
+      alert('OTP verified! You can now log in.');
+      setShowOtp(false);
+      setForm({ name: '', email: '', password: '', role: 'customer' });
+      setOtp('');
+      window.location.href = '/';
+    } catch {
+      alert('Invalid or expired OTP.');
+    }
+    setOtpLoading(false);
   };
 
   return (
@@ -30,61 +72,84 @@ const RegisterPage = () => {
         <div className="w-full max-w-md">
           <h2 className="text-3xl font-bold mb-2 text-black">Create an account</h2>
           <p className="mb-8 text-gray-500">Please enter your details</p>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Full name"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">Email address</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="Email address"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">Password</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Password"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
-              />
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">Role</label>
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+          {!showOtp ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Full name"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Email address</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="Email address"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Password</label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="Password"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Role</label>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="admin">Admin</option>
+                  <option value="inventory department">Inventory Department</option>
+                  <option value="sales department">Sales Department</option>
+                  <option value="supplier department">Supplier Department</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
               >
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
-                <option value="inventory department">Inventory Department</option>
-                <option value="sales department">Sales Department</option>
-                <option value="supplier department">Supplier Department</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
-            >
-              Register
-            </button>
-          </form>
+                Register
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-6">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">Enter OTP sent to your email</label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  placeholder="OTP"
+                  required
+                  className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
+                disabled={otpLoading || !otp}
+              >
+                {otpLoading ? 'Verifying...' : 'Verify OTP'}
+              </button>
+            </form>
+          )}
           <div className="mt-8 text-center text-sm text-gray-600">
             Already have an account?
             <a

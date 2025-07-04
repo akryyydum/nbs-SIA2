@@ -23,18 +23,21 @@ exports.register = async (req, res) => {
   const userExists = await User.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  // Register all users as pending (except default admin)
-  const user = await User.create({ name, email, password, role, status: 'pending' });
+  // Customers are immediately active, others are pending
+  const status = role === 'customer' ? 'active' : 'pending';
+  const user = await User.create({ name, email, password, role, status });
 
+  // If customer, send OTP (handled on frontend/backend as needed)
   res.status(201).json({
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
     status: user.status
-    // No token returned, user cannot log in until approved
+    // No token returned, user must verify OTP before login (handled on frontend)
   });
 };
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -44,14 +47,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Block users with pending status
-    if (user.status === 'pending') {
-      return res.status(403).json({ message: 'Your account is pending approval by admin.' });
-    }
-
-    // Block users with declined status
-    if (user.status === 'declined') {
-      return res.status(403).json({ message: 'Your registration was declined by admin.' });
+    // Only block non-customers with pending/declined status
+    if (user.role !== 'customer') {
+      if (user.status === 'pending') {
+        return res.status(403).json({ message: 'Your account is pending approval by admin.' });
+      }
+      if (user.status === 'declined') {
+        return res.status(403).json({ message: 'Your registration was declined by admin.' });
+      }
     }
 
     const token = generateToken(user);

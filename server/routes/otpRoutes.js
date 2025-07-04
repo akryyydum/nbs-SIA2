@@ -21,9 +21,9 @@ const transporter = nodemailer.createTransport({
 // Add a body parser middleware to ensure req.body is populated
 router.use(express.json());
 
-// Send OTP to email
+// Send OTP to email (for registration or reset)
 router.post('/send-otp', async (req, res) => {
-  const { email } = req.body;
+  const { email, purpose } = req.body;
   if (!email) return res.status(400).json({ message: 'Email is required' });
   const user = await User.findOne({ email });
   if (!user) return res.status(404).json({ message: 'Email not found' });
@@ -31,12 +31,21 @@ router.post('/send-otp', async (req, res) => {
   const otp = crypto.randomInt(100000, 999999).toString();
   otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 }; // 5 min
 
+  let subject, text;
+  if (purpose === 'register') {
+    subject = 'NBS Registration OTP';
+    text = `Welcome to National Book Store!\n\nYour registration OTP is ${otp}. It will expire in 5 minutes.`;
+  } else {
+    subject = 'Password Reset OTP';
+    text = `Your OTP is ${otp}. It will expire in 5 minutes.`;
+  }
+
   try {
     await transporter.sendMail({
       from: `"NBS Support" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Password Reset OTP',
-      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+      subject,
+      text,
     });
 
     res.json({ message: 'OTP sent' });
@@ -69,6 +78,18 @@ router.post('/reset-password', async (req, res) => {
     console.error('Reset password error:', err);
     res.status(500).json({ message: 'Failed to reset password' });
   }
+});
+
+// Verify OTP for registration (customer)
+router.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+  const record = otpStore[email];
+  if (!record || record.otp !== otp || Date.now() > record.expiresAt) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+  // Optionally, you can mark the user as verified here if you want to track it
+  delete otpStore[email];
+  res.json({ message: 'OTP verified' });
 });
 
 // Add a route to check if email exists in the system
