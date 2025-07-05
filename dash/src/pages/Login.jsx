@@ -73,8 +73,6 @@ const LoginPage = () => {
           body: JSON.stringify({ email })
         }
       );
-      // Fix: If your VITE_API_BASE_URL is not set, window.location.origin will be :5173 (frontend), not backend!
-      // Make sure VITE_API_BASE_URL is set to your backend (e.g. http://localhost:5000/api)
       if (!checkRes.ok) {
         const errMsg = await checkRes.json();
         alert(errMsg.message || 'Email not found in the system.');

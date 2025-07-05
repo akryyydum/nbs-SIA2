@@ -116,6 +116,28 @@ const Checkout = () => {
         setSubmitting(false);
         return;
       }
+      // Bank transaction API call
+      try {
+        const response = await axios.post(
+          'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/pay-business',
+          {
+            customerAcoountNumber: bankInfo.accountNumber,
+            toBusinessAccount: '222-3384-522-8972',
+            amount: totalPrice,
+            description: 'Book Purchase'
+          }
+        );
+        // Optionally check response.data for success/failure
+        if (!response.data || response.data.status !== 'success') {
+          setError('Bank transaction failed.');
+          setSubmitting(false);
+          return;
+        }
+      } catch (err) {
+        setError('Bank transaction failed: ' + (err.response?.data?.message || err.message));
+        setSubmitting(false);
+        return;
+      }
     }
     try {
       // Prepare items for order
@@ -207,7 +229,9 @@ const Checkout = () => {
               />
             </div>
           </div>
-          {/* Cart Summary */}
+          {/* Cart Summary
+          
+          */}
           <div>
             <h3 className="font-semibold mb-2 text-red-700">Order Summary</h3>
             <ul className="divide-y">
