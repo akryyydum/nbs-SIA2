@@ -64,27 +64,38 @@ const Checkout = () => {
     setBilling(b => ({ ...b, [e.target.name]: e.target.value }));
   };
 
-  // Simulate bank verification (replace with real API in production)
+  // Real bank verification using API
   const verifyBank = async () => {
     setBankError('');
     setBankVerified(false);
-    // Fake bank verification logic
     if (!bankInfo.bankName || !bankInfo.accountNumber || !bankInfo.accountName) {
       setBankError('Please fill in all bank fields.');
       return false;
     }
-    // Simulate a bank lookup and balance check
-    // For demo: accountNumber '1234567890' is valid, balance is 10000
-    if (bankInfo.accountNumber === '1234567890' && bankInfo.bankName && bankInfo.accountName) {
-      setBankInfo(b => ({ ...b, balance: 10000 }));
-      if (10000 < totalPrice) {
+    try {
+      // Replace with your actual bank verification endpoint and payload
+      const response = await axios.post(
+        'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/verify-account',
+        {
+          bankName: bankInfo.bankName,
+          accountNumber: bankInfo.accountNumber,
+          accountName: bankInfo.accountName
+        }
+      );
+      // Assume response.data has { valid: boolean, balance: number }
+      if (!response.data || !response.data.valid) {
+        setBankError('Bank account not found or invalid.');
+        return false;
+      }
+      setBankInfo(b => ({ ...b, balance: response.data.balance }));
+      if (response.data.balance < totalPrice) {
         setBankError('Insufficient balance.');
         return false;
       }
       setBankVerified(true);
       return true;
-    } else {
-      setBankError('Bank account not found or invalid.');
+    } catch (err) {
+      setBankError('Bank verification failed: ' + (err.response?.data?.message || err.message));
       return false;
     }
   };
@@ -116,7 +127,14 @@ const Checkout = () => {
         setSubmitting(false);
         return;
       }
-      // Bank transaction API call
+      // Build description from cart items
+      const description =
+        cart
+          .map(
+            item =>
+              `${item.book?.title || 'Book'} x${item.quantity}`
+          )
+          .join(', ') || 'Book Purchase';
       try {
         const response = await axios.post(
           'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/pay-business',
@@ -124,7 +142,7 @@ const Checkout = () => {
             customerAcoountNumber: bankInfo.accountNumber,
             toBusinessAccount: '222-3384-522-8972',
             amount: totalPrice,
-            description: 'Book Purchase'
+            description
           }
         );
         // Optionally check response.data for success/failure
