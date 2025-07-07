@@ -29,8 +29,6 @@ const Checkout = () => {
     accountName: '',
     balance: ''
   });
-  const [bankVerified, setBankVerified] = useState(false);
-  const [bankError, setBankError] = useState('');
   const navigate = useNavigate();
 
   // Fetch cart and prefill billing info
@@ -64,46 +62,8 @@ const Checkout = () => {
     setBilling(b => ({ ...b, [e.target.name]: e.target.value }));
   };
 
-  // Real bank verification using API
-  const verifyBank = async () => {
-    setBankError('');
-    setBankVerified(false);
-    if (!bankInfo.bankName || !bankInfo.accountNumber || !bankInfo.accountName) {
-      setBankError('Please fill in all bank fields.');
-      return false;
-    }
-    try {
-      // Replace with your actual bank verification endpoint and payload
-      const response = await axios.post(
-        'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/verify-account',
-        {
-          bankName: bankInfo.bankName,
-          accountNumber: bankInfo.accountNumber,
-          accountName: bankInfo.accountName
-        }
-      );
-      // Assume response.data has { valid: boolean, balance: number }
-      if (!response.data || !response.data.valid) {
-        setBankError('Bank account not found or invalid.');
-        return false;
-      }
-      setBankInfo(b => ({ ...b, balance: response.data.balance }));
-      if (response.data.balance < totalPrice) {
-        setBankError('Insufficient balance.');
-        return false;
-      }
-      setBankVerified(true);
-      return true;
-    } catch (err) {
-      setBankError('Bank verification failed: ' + (err.response?.data?.message || err.message));
-      return false;
-    }
-  };
-
   const handleBankInput = e => {
     setBankInfo(b => ({ ...b, [e.target.name]: e.target.value }));
-    setBankVerified(false);
-    setBankError('');
   };
 
   const handleSubmit = async e => {
@@ -122,11 +82,6 @@ const Checkout = () => {
       return;
     }
     if (paymentMethod === 'bank') {
-      const ok = await verifyBank();
-      if (!ok) {
-        setSubmitting(false);
-        return;
-      }
       // Build description from cart items
       const description =
         cart
@@ -179,7 +134,6 @@ const Checkout = () => {
         {
           items,
           modeofPayment
-          // ...existing code...
         },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
@@ -326,15 +280,6 @@ const Checkout = () => {
                     required
                   />
                 </div>
-                {/* Show balance if verified */}
-                {bankVerified && (
-                  <div className="text-green-700 text-sm">
-                    Bank verified. Balance: ₱{Number(bankInfo.balance).toFixed(2)}
-                  </div>
-                )}
-                {bankError && (
-                  <div className="text-red-600 text-sm">{bankError}</div>
-                )}
               </div>
             )}
           </div>
