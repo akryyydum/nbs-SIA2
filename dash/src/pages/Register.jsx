@@ -13,7 +13,8 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await registerUser({ ...form });
+      // Always set status to 'inactive' on registration
+      await registerUser({ ...form, status: 'pending' });
       if (form.role === 'customer') {
         // Send OTP
         setOtpLoading(true);
@@ -50,6 +51,15 @@ const RegisterPage = () => {
         }
       );
       if (!res.ok) throw new Error();
+      // Activate user after OTP verification
+      await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/activate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form.email })
+        }
+      );
       alert('OTP verified! You can now log in.');
       setShowOtp(false);
       setForm({ name: '', email: '', password: '', role: 'customer' });
