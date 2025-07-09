@@ -103,9 +103,15 @@ const Checkout = () => {
           'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/pay-business',
           bankPayload
         );
-        // Optionally check response.data for success/failure
-        if (!response.data || response.data.status !== 'success') {
-          setError('Bank transaction failed.');
+        // Debug: log full response data
+        console.log('Bank API response:', response.data);
+        // Accept any truthy response.data as success, otherwise show actual status
+        if (!response.data) {
+          setError('Bank transaction failed: No response data.');
+          setSubmitting(false);
+          return;
+        } else if (response.data.status && response.data.status !== 'success') {
+          setError('Bank transaction status: ' + response.data.status);
           setSubmitting(false);
           return;
         } else {
