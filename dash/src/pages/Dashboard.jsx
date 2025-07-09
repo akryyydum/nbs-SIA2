@@ -532,27 +532,45 @@ const DashboardPage = () => {
           }
         }
       `}</style>
-      {/* ...existing code... */}
-
       {/* Footer with logo and developer names */}
-      <footer className="w-full flex flex-row items-center justify-center py-6 gap-7 bg-white border-t border-gray-200 mt-8">
-        <div className="flex flex-col items-center gap-3 mb-2">
+     <footer className="w-full flex flex-row items-start justify-center py-6 gap-50 bg-white border-t border-gray-200 mt-8 text-sm text-gray-600">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3">
           <img
             src="/nbs.svg"
             alt="Logo"
-            className="w-25 h-25 object-contain"
+            className="w-20 h-20 object-contain"
             style={{ background: "transparent" }}
           />
         </div>
-        <div className="flex flex-col  text-gray-600 text-sm">
-          Developed by:
-          <span></span>
+
+        {/* Developers */}
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-800 mb-1">Developed by:</span>
           <span>Lance Krystian Andres</span>
           <span>Wendell Apolonio</span>
           <span>Felix Leid Jr.</span>
           <span>Rohann Harold Mondiguing</span>
         </div>
+
+        {/* Contact */}
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-800 mb-1">Contact Us:</span>
+          <span>
+            Email:{" "}
+            <a href="mailto:nbs@example.com" className="text-blue-600 underline">
+              nbs@example.com
+            </a>
+          </span>
+          <span>
+            Phone:{" "}
+            <a href="tel:+639123456789" className="text-blue-600 underline">
+              +63 912 345 6789
+            </a>
+          </span>
+        </div>
       </footer>
+
     </div>
   );
 };
