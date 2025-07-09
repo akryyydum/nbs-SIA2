@@ -89,8 +89,7 @@ const Navbar = () => {
   const isSalesDashboard = location.pathname === '/sales-dashboard';
 
   return (
-    <nav className="bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-poppins bold sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <nav className="text-sm font-light bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-poppins bold sticky top-0 z-50">  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex h-16 items-center relative">
           {/* Left Section (Nav Links - desktop only) */}
           <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -149,11 +148,9 @@ const Navbar = () => {
               )}
             </div>
           </div>
-          {/* Center Logo */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none select-none z-10">
             <img src="/nbs.svg" alt="NBS Logo" className="h-12 object-contain" />
           </div>
-          {/* Right Section (Cart, Account, Admin, Search) */}
           <div className="hidden md:flex space-x-8 items-center flex-shrink-0">
             {/* Admin Control Panel Link */}
             
