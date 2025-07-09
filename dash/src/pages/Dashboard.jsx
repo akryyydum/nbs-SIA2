@@ -1,11 +1,47 @@
 // src/pages/DashboardPage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import React from 'react';
 
 const images = [
-  "https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg",
+  "https://images.pexels.com/photos/159711/books-bookstore-book_reading-159711.jpeg",
   "https://images.pexels.com/photos/694740/pexels-photo-694740.jpeg",
   "https://images.pexels.com/photos/12064/pexels-photo-12064.jpeg"
+];
+
+const businesses = [
+  {
+    name: "Blended",
+    url: "http://192.168.9.7:5173",
+    img: "/blended.jpg"
+  },
+  {
+    name: "Tara laba",
+    url: "http://192.168.9.27:5173",
+    img: "/tl.jpg"
+  },
+  {
+    name: "Dental Clinic",
+    url: "http://192.168.9.35:5173",
+    img: "/dentist.png"
+  },
+  {
+    name: "Jollibee",
+    url: "http://192.168.9.37:5173",
+    img: "https://1000logos.net/wp-content/uploads/2021/05/Jollibee-logo.png",
+    imgClass: "bg-white"
+  },
+  {
+    name: "PNB",
+    url: "http://192.168.9.23:5173",
+    img: "https://www.pds.com.ph/wp-content/uploads/2018/12/PNB-Logo-Short-YouFirst-011117-FC-HQ-1024x676.png",
+    imgClass: "bg-white"
+  },
+  {
+    name: "ITBYTES",
+    url: "http://192.168.9.4:5173",
+    img: "/it.jpg"
+  }
 ];
 
 const DashboardPage = () => {
@@ -85,6 +121,21 @@ const DashboardPage = () => {
       (book.sold || 0) > (top.sold || 0) ? book : top, newArrivals[0]
     );
   })();
+
+  const [businessStatus, setBusinessStatus] = useState({});
+
+  useEffect(() => {
+    // Check each business URL for up/down status
+    businesses.forEach(biz => {
+      fetch(biz.url, { mode: 'no-cors' })
+        .then(() => {
+          setBusinessStatus(prev => ({ ...prev, [biz.url]: 'up' }));
+        })
+        .catch(() => {
+          setBusinessStatus(prev => ({ ...prev, [biz.url]: 'down' }));
+        });
+    });
+  }, []);
 
   return (
    <div className="min-h-screen w-full flex flex-col bg-white font-poppins relative overflow-hidden">
@@ -369,90 +420,31 @@ const DashboardPage = () => {
       <div className="w-full bg-gray-50 py-10 border-t border-gray-200 mt-8 flex flex-col items-center flex-shrink-0 animate-fade-in">
         <div className="text-2xl font-bold mb-8 text-gray-700">Other Businesses</div>
         <div className="w-full flex flex-wrap justify-center gap-12 px-4 max-w-7xl">
-          {/* Blended */}
-          <a
-            href="http://192.168.9.7:5173"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-          >
-            <img
-              src="/blended.jpg"
-              alt="Blended"
-              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
-            />
-            <span className="text-xl font-semibold text-gray-700">Blended</span>
-          </a>
-          {/* Tara laba */}
-          <a
-            href="http://192.168.9.27:5173"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-          >
-            <img
-              src="/tl.jpg"
-              alt="Tara laba"
-              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
-            />
-            <span className="text-xl font-semibold text-gray-700">Tara laba</span>
-          </a>
-          {/* Dental Clinic */}
-          <a
-            href="http://192.168.9.35:5173"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-          >
-            <img
-              src="/dentist.png"
-              alt="Dental Clinic"
-              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
-            />
-            <span className="text-xl font-semibold text-gray-700">Dental Clinic</span>
-          </a>
-          {/* Jollibee */}
-          <a
-            href="http://192.168.9.37:5173"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-          >
-            <img
-              src="https://1000logos.net/wp-content/uploads/2021/05/Jollibee-logo.png"
-              alt="Jollibee"
-              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition bg-white"
-            />
-            <span className="text-xl font-semibold text-gray-700">Jollibee</span>
-          </a>
-          {/* PNB */}
-          <a
-            href="http://192.168.9.23:5173"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-          >
-            <img
-              src="https://www.pds.com.ph/wp-content/uploads/2018/12/PNB-Logo-Short-YouFirst-011117-FC-HQ-1024x676.png"
-              alt="PNB"
-              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition bg-white"
-            />
-            <span className="text-xl font-semibold text-gray-700">PNB</span>
-          </a>
-          {/* ITBYTES */}
-          <a
-            href="http://192.168.9.4:5173"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-          >
-            <img
-              src="/it.jpg"
-              alt="ITBYTES"
-              className="w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition"
-            />
-            <span className="text-xl font-semibold text-gray-700">ITBYTES</span>
-          </a>
+          {businesses.map((biz) => (
+            <a
+              key={biz.url}
+              href={biz.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center group"
+            >
+              <img
+                src={biz.img}
+                alt={biz.name}
+                className={`w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition ${biz.imgClass || ''}`}
+              />
+              <span className="text-xl font-semibold text-gray-700">{biz.name}</span>
+              {businessStatus[biz.url] === 'up' && (
+                <span className="mt-1 text-green-700 text-xs font-semibold bg-green-100 px-2 py-0.5 rounded-full">Online</span>
+              )}
+              {businessStatus[biz.url] === 'down' && (
+                <span className="mt-1 text-red-700 text-xs font-semibold bg-red-100 px-2 py-0.5 rounded-full">Offline</span>
+              )}
+              {!businessStatus[biz.url] && (
+                <span className="mt-1 text-gray-500 text-xs font-semibold bg-gray-100 px-2 py-0.5 rounded-full">Checking...</span>
+              )}
+            </a>
+          ))}
         </div>
       </div>
       {/* Fade-in and sliding animation keyframes */}
@@ -541,6 +533,26 @@ const DashboardPage = () => {
         }
       `}</style>
       {/* ...existing code... */}
+
+      {/* Footer with logo and developer names */}
+      <footer className="w-full flex flex-row items-center justify-center py-6 gap-7 bg-white border-t border-gray-200 mt-8">
+        <div className="flex flex-col items-center gap-3 mb-2">
+          <img
+            src="/nbs.svg"
+            alt="Logo"
+            className="w-25 h-25 object-contain"
+            style={{ background: "transparent" }}
+          />
+        </div>
+        <div className="flex flex-col  text-gray-600 text-sm">
+          Developed by:
+          <span></span>
+          <span>Lance Krystian Andres</span>
+          <span>Wendell Apolonio</span>
+          <span>Felix Leid Jr.</span>
+          <span>Rohann Harold Mondiguing</span>
+        </div>
+      </footer>
     </div>
   );
 };
