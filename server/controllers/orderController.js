@@ -104,8 +104,18 @@ exports.deleteOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    await Order.deleteOne({ _id: order._id }); // <-- Use deleteOne instead of remove
-    res.json({ message: 'Order removed' });
+    // Restore stock for each book in the order
+    for (const item of order.items) {
+      let book = await Book.findById(item.book);
+      if (book) {
+        book.stock += item.quantity;
+        await book.save();
+      }
+      // Optionally handle supplierBook if needed
+    }
+
+    await Order.deleteOne({ _id: order._id });
+    res.json({ message: 'Order removed and stock restored' });
   } catch (err) {
     console.error('Delete order error:', err);
     res.status(500).json({ message: err.message || 'Internal server error' });
