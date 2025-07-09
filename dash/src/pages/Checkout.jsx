@@ -82,8 +82,8 @@ const Checkout = () => {
       return;
     }
     if (paymentMethod === 'bank') {
-      // Build description from cart items
-      const description =
+      // Build details from cart items
+      const details =
         cart
           .map(
             item =>
@@ -94,10 +94,10 @@ const Checkout = () => {
         const response = await axios.post(
           'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/pay-business',
           {
-            customerAcoountNumber: bankInfo.accountNumber,
+            customerAccountNumber: bankInfo.accountNumber,
             toBusinessAccount: '222-3384-522-8972',
             amount: totalPrice,
-            description
+            details
           }
         );
         // Optionally check response.data for success/failure

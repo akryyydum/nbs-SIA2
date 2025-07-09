@@ -26,7 +26,10 @@ app.use('/api/auth', otpRoutes);
 
 // Middleware
 app.use(cors({
-  origin: '*', // For development, allow all origins. For production, use: origin: 'http://192.168.0.110:5173'
+  origin: [
+    'http://localhost:5173',
+    'http://192.168.0.110:5173'
+  ],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' })); // Parse incoming JSON, allow up to 10mb

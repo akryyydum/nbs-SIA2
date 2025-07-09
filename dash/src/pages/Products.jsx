@@ -61,23 +61,29 @@ const Products = () => {
       return;
     }
     try {
-      // Use new endpoint for atomic add-to-cart and stock update
-      await API.post('/cart/add', {
-        bookId: book._id,
-        quantity: qty
-      }, {
+      // Always use API instance for LAN compatibility
+      const res = await API.get('/cart', {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      let items = res.data.items || [];
+      // Find if book already in cart
+      const idx = items.findIndex(item =>
+        (item.book && (item.book._id === book._id || item.book === book._id))
+      );
+      if (idx !== -1) {
+        items[idx].quantity = (items[idx].quantity || 1) + qty;
+      } else {
+        items.push({ book: book._id, quantity: qty });
+      }
+      // Save updated cart to backend
+      await API.post('/cart', { items }, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       alert(`Added "${book.title}" to cart!`);
+      // Notify Navbar to update cart
       window.dispatchEvent(new Event('cart-updated'));
-      // Optionally, update local book stock in UI
-      setBooks(prevBooks => prevBooks.map(b => b._id === book._id ? { ...b, stock: b.stock - qty } : b));
     } catch (err) {
-      if (err.response?.data?.message === 'Not enough stock available') {
-        alert('Not enough stock available for this book.');
-      } else {
-        alert('Failed to add to cart');
-      }
+      alert('Failed to add to cart');
     }
   };
 
