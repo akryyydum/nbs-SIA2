@@ -90,24 +90,30 @@ const Checkout = () => {
               `${item.book?.title || 'Book'} x${item.quantity}`
           )
           .join(', ') || 'Book Purchase';
+      // Debug: log payload to check for issues
+      const bankPayload = {
+        customerAccountNumber: bankInfo.accountNumber,
+        toBusinessAccount: '222-3384-522-8972',
+        amount: totalPrice,
+        details
+      };
+      console.log('Bank API payload:', bankPayload); 
       try {
         const response = await axios.post(
           'http://192.168.9.23:4000/api/Philippine-National-Bank/business-integration/customer/pay-business',
-          {
-            customerAccountNumber: bankInfo.accountNumber,
-            toBusinessAccount: '222-3384-522-8972',
-            amount: totalPrice,
-            details
-          }
+          bankPayload
         );
         // Optionally check response.data for success/failure
         if (!response.data || response.data.status !== 'success') {
           setError('Bank transaction failed.');
           setSubmitting(false);
           return;
+        } else {
+          setSuccess('Bank payment sent successfully.');
         }
       } catch (err) {
         setError('Bank transaction failed: ' + (err.response?.data?.message || err.message));
+        console.error('Bank transaction error:', err);
         setSubmitting(false);
         return;
       }
