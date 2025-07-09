@@ -155,107 +155,109 @@ const Navbar = () => {
             {/* Admin Control Panel Link */}
             
             {/* Cart Icon with Dropdown */}
-            <div className="relative">
-              <button
-                className="ml-4 text-black hover:text-red-900 transition-colors duration-200 relative"
-                onClick={() => setCartOpen((v) => !v)}
-                aria-label="Cart"
-              >
-                <FaShoppingCart className="h-7 w-7 transition-transform duration-300" style={{ transform: cartOpen ? 'scale(1.1)' : 'scale(1)' }} />
-                {cart.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 animate-bounce">{cart.length}</span>
-                )}
-              </button>
-              {cartOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
-                  <div className="p-4 max-h-80 overflow-y-auto">
-                    <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2">
-                      <FaShoppingCart className="text-red-600" /> Cart
-                    </h4>
-                    {cart.length === 0 ? (
-                      <div className="text-gray-400 text-sm text-center py-4 animate-fade-in">Cart is empty</div>
-                    ) : (
-                      cart.map((item, idx) => (
-                        <div
-                          key={item._id || idx}
-                          className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0 transition-all duration-200 hover:bg-red-50 rounded group"
-                        >
-                          {/* Checkbox for selection */}
-                          <button
-                            className="focus:outline-none"
-                            onClick={() => {
-                              setCart(cart.map((c, i) =>
-                                i === idx ? { ...c, selected: !c.selected } : c
-                              ));
-                            }}
+            {!isSalesDashboard && (
+              <div className="relative">
+                <button
+                  className="ml-4 text-black hover:text-red-900 transition-colors duration-200 relative"
+                  onClick={() => setCartOpen((v) => !v)}
+                  aria-label="Cart"
+                >
+                  <FaShoppingCart className="h-7 w-7 transition-transform duration-300" style={{ transform: cartOpen ? 'scale(1.1)' : 'scale(1)' }} />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 animate-bounce">{cart.length}</span>
+                  )}
+                </button>
+                {cartOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
+                    <div className="p-4 max-h-80 overflow-y-auto">
+                      <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2">
+                        <FaShoppingCart className="text-red-600" /> Cart
+                      </h4>
+                      {cart.length === 0 ? (
+                        <div className="text-gray-400 text-sm text-center py-4 animate-fade-in">Cart is empty</div>
+                      ) : (
+                        cart.map((item, idx) => (
+                          <div
+                            key={item._id || idx}
+                            className="flex items-center gap-3 mb-3 border-b pb-2 last:border-b-0 last:pb-0 transition-all duration-200 hover:bg-red-50 rounded group"
                           >
-                            {item.selected ? (
-                              <FaCheckSquare className="text-red-600 text-lg transition-transform duration-200 scale-110" />
-                            ) : (
-                              <FaRegSquare className="text-gray-400 text-lg" />
+                            {/* Checkbox for selection */}
+                            <button
+                              className="focus:outline-none"
+                              onClick={() => {
+                                setCart(cart.map((c, i) =>
+                                  i === idx ? { ...c, selected: !c.selected } : c
+                                ));
+                              }}
+                            >
+                              {item.selected ? (
+                                <FaCheckSquare className="text-red-600 text-lg transition-transform duration-200 scale-110" />
+                              ) : (
+                                <FaRegSquare className="text-gray-400 text-lg" />
+                              )}
+                            </button>
+                            {item.book?.image && (
+                              <img
+                                src={item.book.image}
+                                alt={item.book.title}
+                                className="h-12 w-9 object-cover rounded shadow-sm transition-transform duration-200 group-hover:scale-105"
+                              />
                             )}
-                          </button>
-                          {item.book?.image && (
-                            <img
-                              src={item.book.image}
-                              alt={item.book.title}
-                              className="h-12 w-9 object-cover rounded shadow-sm transition-transform duration-200 group-hover:scale-105"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
-                            <div className="text-xs text-gray-500">{item.book?.author}</div>
-                            <div className="text-xs text-red-600">₱{Number(item.book?.price).toFixed(2)}</div>
-                            <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">{item.book?.title || 'Book'}</div>
+                              <div className="text-xs text-gray-500">{item.book?.author}</div>
+                              <div className="text-xs text-red-600">₱{Number(item.book?.price).toFixed(2)}</div>
+                              <div className="text-xs text-gray-700">Qty: {item.quantity || 1}</div>
+                            </div>
+                            {/* Delete button */}
+                            <button
+                              className="text-red-500 hover:text-red-700 text-lg px-2 transition-transform duration-200 hover:scale-125"
+                              title="Remove from cart"
+                              onClick={async () => {
+                                try {
+                                  await API.delete(`/cart/${item._id}`, { headers: { Authorization: `Bearer ${user.token}` } });
+                                  setCart(cart.filter((_, i) => i !== idx));
+                                } catch {
+                                  // Optionally show error
+                                }
+                              }}
+                            >
+                              <FaTrashAlt />
+                            </button>
                           </div>
-                          {/* Delete button */}
-                          <button
-                            className="text-red-500 hover:text-red-700 text-lg px-2 transition-transform duration-200 hover:scale-125"
-                            title="Remove from cart"
-                            onClick={async () => {
-                              try {
-                                await API.delete(`/cart/${item._id}`, { headers: { Authorization: `Bearer ${user.token}` } });
-                                setCart(cart.filter((_, i) => i !== idx));
-                              } catch {
-                                // Optionally show error
-                              }
-                            }}
-                          >
-                            <FaTrashAlt />
-                          </button>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
+                    <div className="p-3 border-t flex justify-between items-center">
+                      {/* Select/Deselect All */}
+                      <button
+                        className="text-xs text-red-600 hover:underline flex items-center gap-1"
+                        type="button"
+                        onClick={() => {
+                          const allSelected = cart.every(item => item.selected);
+                          setCart(cart.map(item => ({ ...item, selected: !allSelected })));
+                        }}
+                      >
+                        {cart.every(item => item.selected) ? <FaCheckSquare /> : <FaRegSquare />}
+                        {cart.every(item => item.selected) ? 'Deselect All' : 'Select All'}
+                      </button>
+                      <button
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                        disabled={cart.filter(item => item.selected).length === 0}
+                        onClick={() => {
+                          setCartOpen(false);
+                          // Pass selected items to checkout (example: via state or query)
+                          const selectedIds = cart.filter(item => item.selected).map(item => item._id);
+                          navigate('/checkout', { state: { selectedCartIds: selectedIds } });
+                        }}
+                      >
+                        <FaShoppingCart /> Checkout Selected
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-3 border-t flex justify-between items-center">
-                    {/* Select/Deselect All */}
-                    <button
-                      className="text-xs text-red-600 hover:underline flex items-center gap-1"
-                      type="button"
-                      onClick={() => {
-                        const allSelected = cart.every(item => item.selected);
-                        setCart(cart.map(item => ({ ...item, selected: !allSelected })));
-                      }}
-                    >
-                      {cart.every(item => item.selected) ? <FaCheckSquare /> : <FaRegSquare />}
-                      {cart.every(item => item.selected) ? 'Deselect All' : 'Select All'}
-                    </button>
-                    <button
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-                      disabled={cart.filter(item => item.selected).length === 0}
-                      onClick={() => {
-                        setCartOpen(false);
-                        // Pass selected items to checkout (example: via state or query)
-                        const selectedIds = cart.filter(item => item.selected).map(item => item._id);
-                        navigate('/checkout', { state: { selectedCartIds: selectedIds } });
-                      }}
-                    >
-                      <FaShoppingCart /> Checkout Selected
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             {/* Account Icon and Dropdown */}
             <div className="relative" ref={accountRef}>
               <button
