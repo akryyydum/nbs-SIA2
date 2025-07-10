@@ -11,6 +11,10 @@ import {
 } from '../api/supplier';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+// Chart.js imports
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const SupplierDashboard = () => {
   // State placeholders
@@ -154,8 +158,44 @@ const SupplierDashboard = () => {
     }))
   ];
 
+  // Table and cell styles for consistency
+  const tableStyles = {
+    textAlign: 'center',
+    borderCollapse: 'collapse',
+    width: '100%',
+  };
+  const cellStyles = {
+    textAlign: 'center',
+    padding: '8px',
+    border: '1px solid #ddd',
+  };
+
+  // Chart Data
+  const pieData = {
+    labels: ['Active', 'Inactive'],
+    datasets: [
+      {
+        data: [kpis.activeSuppliers || 0, kpis.inactiveSuppliers || 0],
+        backgroundColor: ['#dc2626', '#fbbf24'],
+        hoverBackgroundColor: ['#b91c1c', '#f59e42'],
+      },
+    ],
+  };
+
+  // For demonstration, use dummy data for new suppliers per month if not provided
+  const barData = {
+    labels: kpis.suppliersPerMonth?.map(m => m.month) || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [
+      {
+        label: 'New Suppliers',
+        data: kpis.suppliersPerMonth?.map(m => m.count) || [2, 3, 1, 4, 2, 5],
+        backgroundColor: '#dc2626',
+      },
+    ],
+  };
+
   return (
-    <div className="p-8">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h1 className="text-3xl font-bold mb-6 text-red-700">Supplier Dashboard</h1>
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -176,57 +216,78 @@ const SupplierDashboard = () => {
           <div className="text-2xl text-red-700">{kpis.newSuppliersThisMonth || '--'}</div>
         </div>
       </div>
-      {/* Supplier Table */}
-      <div className="bg-white shadow rounded p-4 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Suppliers</h2>
-          <button onClick={handleAdd} className="bg-red-600 text-white px-4 py-2 rounded">Add New</button>
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="bg-white shadow rounded p-4">
+          <h3 className="text-lg font-bold mb-2 text-red-700">Active vs Inactive Suppliers</h3>
+          <Pie data={pieData} />
         </div>
-        <table className="min-w-full table-auto border-collapse border border-gray-300">
+        <div className="bg-white shadow rounded p-4">
+          <h3 className="text-lg font-bold mb-2 text-red-700">New Suppliers Per Month</h3>
+          <Bar data={barData} options={{ plugins: { legend: { display: false } } }} />
+        </div>
+      </div>
+      {/* Supplier Table */}
+      <div className="bg-white rounded shadow p-4 mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-red-700">Suppliers</h2>
+          <button
+            onClick={handleAdd}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded flex items-center gap-2 shadow"
+          >
+            Add New
+          </button>
+        </div>
+        <table style={tableStyles}>
           <thead>
-            <tr className="bg-red-100 text-left">
-              <th className="px-4 py-2 border border-gray-300">ID</th>
-              <th className="px-4 py-2 border border-gray-300">Company</th>
-              <th className="px-4 py-2 border border-gray-300">Contact</th>
-              <th className="px-4 py-2 border border-gray-300">Email/Phone</th>
-              <th className="px-4 py-2 border border-gray-300">Address</th>
-              <th className="px-4 py-2 border border-gray-300">Categories</th>
-              <th className="px-4 py-2 border border-gray-300">Status</th>
-              <th className="px-4 py-2 border border-gray-300">Type</th>
-              <th className="px-4 py-2 border border-gray-300">Actions</th>
+            <tr style={{ backgroundColor: '#f8f8f8' }}>
+              <th style={cellStyles}>ID</th>
+              <th style={cellStyles}>Company</th>
+              <th style={cellStyles}>Contact</th>
+              <th style={cellStyles}>Email/Phone</th>
+              <th style={cellStyles}>Address</th>
+              <th style={cellStyles}>Categories</th>
+              <th style={cellStyles}>Status</th>
+              <th style={cellStyles}>Type</th>
+              <th style={cellStyles}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {allSuppliers.map((supplier, index) => (
               <tr
                 key={supplier._id}
-                className={`$ {index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-gray-100 transition-colors`}
+                style={{
+                  backgroundColor: index % 2 === 0 ? '#f9fafb' : '#fff',
+                  transition: 'background 0.2s',
+                }}
+                onMouseOver={e => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                onMouseOut={e => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#f9fafb' : '#fff')}
               >
-                <td className="px-4 py-2 border border-gray-300">{supplier._id}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier.companyName}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier.contactPerson}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier.email} / {supplier.phone}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier.address}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier.productCategories?.join(', ')}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier.status}</td>
-                <td className="px-4 py-2 border border-gray-300">{supplier._type}</td>
-                <td className="px-4 py-2 border border-gray-300">
+                <td style={cellStyles}>{supplier._id}</td>
+                <td style={cellStyles}>{supplier.companyName}</td>
+                <td style={cellStyles}>{supplier.contactPerson}</td>
+                <td style={cellStyles}>{supplier.email} / {supplier.phone}</td>
+                <td style={cellStyles}>{supplier.address}</td>
+                <td style={cellStyles}>{supplier.productCategories?.join(', ')}</td>
+                <td style={cellStyles}>{supplier.status}</td>
+                <td style={cellStyles}>{supplier._type}</td>
+                <td style={cellStyles}>
                   {supplier._type === 'Supplier' ? (
                     <>
-                      <button onClick={() => handleEdit(supplier)} className="text-blue-600 mr-2">Edit</button>
-                      <button onClick={() => handleDelete(supplier._id)} className="text-red-600 mr-2">Delete</button>
-                      <button onClick={() => handleViewBooks(supplier)} className="text-green-600 mr-2">View Books</button>
+                      <button onClick={() => handleEdit(supplier)} style={{ color: 'blue', marginRight: '8px' }}>Edit</button>
+                      <button onClick={() => handleDelete(supplier._id)} style={{ color: 'red', marginRight: '8px' }}>Delete</button>
+                      <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green', marginRight: '8px' }}>View Books</button>
                       {(user?.role === 'inventory department' || user?.role === 'admin' || user?.role === 'supplier department') && (
                         <button
                           onClick={() => handleAddBook(supplier)}
-                          className="text-purple-600"
+                          style={{ color: 'purple' }}
                         >
                           Add Book
                         </button>
                       )}
                     </>
                   ) : (
-                    <button onClick={() => handleViewBooks(supplier)} className="text-green-600">View Books</button>
+                    <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green' }}>View Books</button>
                   )}
                 </td>
               </tr>
