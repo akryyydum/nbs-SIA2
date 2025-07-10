@@ -122,6 +122,8 @@ const Order = () => {
       // Find the order and set for receipt
       const order = orders.find(o => o._id === orderId);
       if (order) setReceiptOrder({ ...order, status: 'received' });
+      // Notify Products page to refresh books and update stocks
+      window.dispatchEvent(new Event('books-updated'));
     } catch (err) {
       alert('Failed to mark as received');
     }
