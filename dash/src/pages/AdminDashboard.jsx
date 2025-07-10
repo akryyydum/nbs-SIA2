@@ -82,19 +82,18 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        // You should implement these endpoints in your backend for real data
-        const [booksRes, usersRes, suppliersRes, ordersRes, logsRes] = await Promise.all([
+        const [booksRes, usersRes, supplierKpisRes, ordersRes, logsRes] = await Promise.all([
           axios.get(`${API_BASE}/books`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get(`${API_BASE}/suppliers/kpis`, { headers: { Authorization: `Bearer ${user?.token}` } }), // <-- use kpis endpoint
           axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })), // changed endpoint
+          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })),
         ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
-        const suppliers = suppliersRes.data || [];
         const orders = ordersRes.data || [];
-        const customerLogins = logsRes.data || []; // changed variable name
+        const customerLogins = logsRes.data || [];
+        const totalSuppliers = supplierKpisRes.data?.totalSuppliers || 0; // <-- get from kpis
 
         // Calculate statistics
         const totalSales = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
@@ -133,10 +132,10 @@ const AdminDashboard = () => {
         setStats({
           totalBooks: books.length,
           totalUsers: users.length,
-          totalSuppliers: suppliers.length,
+          totalSuppliers, // <-- use KPI value
           totalOrders: orders.length,
           totalSales,
-          customerLogins, // changed from supplierLogins
+          customerLogins,
           stockByCategory,
           salesTrends,
           topBooks,
