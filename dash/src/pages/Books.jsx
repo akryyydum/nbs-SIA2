@@ -201,10 +201,27 @@ const Books = () => {
               supplier: orderSupplier,
             });
           } catch (err) {
-            // If not found, try SupplierBook collection
+            // If not found, get book details from supplier and add to inventory
+            // 1. Decrease supplier stock
             await API.put(`/suppliers/${orderSupplier}/supplierBook/${item.bookId}/decrease-stock`, {
               quantity: item.quantity,
             });
+            // 2. Get book details from supplier
+            const { data: supplierBook } = await API.get(`/suppliers/${orderSupplier}/supplierBook`);
+            const bookData = supplierBook.find(b => b._id === item.bookId);
+            if (bookData) {
+              // 3. Add to inventory
+              await API.post('/books', {
+                title: bookData.title,
+                author: bookData.author,
+                price: bookData.price,
+                category: bookData.category,
+                description: bookData.description,
+                image: bookData.image,
+                stock: item.quantity,
+                supplier: orderSupplier,
+              });
+            }
           }
         }
       }
