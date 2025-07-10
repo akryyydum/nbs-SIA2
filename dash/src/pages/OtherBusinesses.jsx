@@ -1,34 +1,94 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const businesses = [
-  { name: 'Blended', url: 'http://192.168.9.7:5173' },
-  { name: 'National Bookstore', url: 'http://192.168.9.16:5173' },
-  { name: 'Tara laba', url: 'http://192.168.9.27:5173' },
-  { name: 'Dental Clinic', url: 'http://192.168.9.35:5173' },
-  { name: 'Jollibee', url: 'http://192.168.9.37:5173' },
-  { name: 'PNB', url: 'http://192.168.9.23:5173' },
-  { name: 'ITBYTES', url: 'http://192.168.9.4:5173' },
+  {
+    name: 'Blended',
+    url: 'http://192.168.9.7:5173',
+    img: '/blended.jpg'
+  },
+  {
+    name: 'National Bookstore',
+    url: 'http://192.168.9.16:5173',
+    img: '/nbs.svg'
+  },
+  {
+    name: 'Tara laba',
+    url: 'http://192.168.9.27:5173',
+    img: '/tl.jpg'
+  },
+  {
+    name: 'Dental Clinic',
+    url: 'http://192.168.9.35:5173',
+    img: '/dentist.png'
+  },
+  {
+    name: 'Jollibee',
+    url: 'http://192.168.9.37:5173',
+    img: 'https://1000logos.net/wp-content/uploads/2021/05/Jollibee-logo.png',
+    imgClass: 'bg-white'
+  },
+  {
+    name: 'PNB',
+    url: 'http://192.168.9.23:5173',
+    img: 'https://www.pds.com.ph/wp-content/uploads/2018/12/PNB-Logo-Short-YouFirst-011117-FC-HQ-1024x676.png',
+    imgClass: 'bg-white'
+  },
+  {
+    name: 'ITBYTES',
+    url: 'http://192.168.9.4:5173',
+    img: '/it.jpg'
+  }
 ];
 
-const OtherBusinesses = () => (
-  <div className="max-w-xl mx-auto p-8">
-    <h1 className="text-3xl font-bold mb-6 text-center">Other Businesses</h1>
-    <ul className="space-y-4">
-      {businesses.map((biz, idx) => (
-        <li key={idx} className="flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 hover:bg-red-50 transition">
-          <span className="font-semibold text-gray-800">{biz.name}</span>
-          <a
-            href={biz.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-red-700 hover:underline text-sm"
-          >
-            {biz.url}
-          </a>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+const OtherBusinesses = () => {
+  const [businessStatus, setBusinessStatus] = useState({});
+
+  useEffect(() => {
+    businesses.forEach(biz => {
+      fetch(biz.url, { mode: 'no-cors' })
+        .then(() => {
+          setBusinessStatus(prev => ({ ...prev, [biz.url]: 'up' }));
+        })
+        .catch(() => {
+          setBusinessStatus(prev => ({ ...prev, [biz.url]: 'down' }));
+        });
+    });
+  }, []);
+
+  return (
+    <div className="min-h-screen w-full flex flex-col bg-white font-poppins relative overflow-hidden">
+      <div className="max-w-5xl mx-auto p-8">
+        <h1 className="text-3xl font-bold mb-8 text-center">Other Businesses</h1>
+        <div className="w-full flex flex-wrap justify-center gap-12 px-4">
+          {businesses.map((biz) => (
+            <a
+              key={biz.url}
+              href={biz.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center group"
+            >
+              <img
+                src={biz.img}
+                alt={biz.name}
+                className={`w-32 h-32 object-contain mb-3 rounded-full shadow group-hover:scale-110 transition ${biz.imgClass || ''}`}
+              />
+              <span className="text-xl font-semibold text-gray-700">{biz.name}</span>
+              {businessStatus[biz.url] === 'up' && (
+                <span className="mt-1 text-green-700 text-xs font-semibold bg-green-100 px-2 py-0.5 rounded-full">Online</span>
+              )}
+              {businessStatus[biz.url] === 'down' && (
+                <span className="mt-1 text-red-700 text-xs font-semibold bg-red-100 px-2 py-0.5 rounded-full">Offline</span>
+              )}
+              {!businessStatus[biz.url] && (
+                <span className="mt-1 text-gray-500 text-xs font-semibold bg-gray-100 px-2 py-0.5 rounded-full">Checking...</span>
+              )}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default OtherBusinesses;
