@@ -50,8 +50,22 @@ const Products = () => {
 
   useEffect(() => {
     fetchBooks();
-    // Fetch suppliers for display
-    API.get('/suppliers').then(res => setSuppliers(res.data)).catch(() => {});
+    // Fetch suppliers from both /suppliers and users with supplier department role
+    Promise.all([
+      API.get('/suppliers'),
+      API.get('/users')
+    ]).then(([supRes, userRes]) => {
+      const supplierUsers = (userRes.data || []).filter(u => u.role === 'supplier department');
+      const merged = [
+        ...supRes.data,
+        ...supplierUsers.map(u => ({
+          _id: u._id,
+          companyName: u.name || u.email || u._id,
+          fromUser: true
+        }))
+      ];
+      setSuppliers(merged);
+    }).catch(() => {});
   }, [fetchBooks]);
 
   // Add to cart handler (calls backend API, increments quantity)
@@ -103,10 +117,13 @@ const Products = () => {
     const key = `${book.title?.toLowerCase()}|${book.author?.toLowerCase()}`;
     if (!groupedBooksMap[key]) {
       groupedBooksMap[key] = { ...book, stock: Number(book.stock) || 0, suppliers: new Set() };
-      if (book.supplier) groupedBooksMap[key].suppliers.add(book.supplier);
     } else {
       groupedBooksMap[key].stock += Number(book.stock) || 0;
-      if (book.supplier) groupedBooksMap[key].suppliers.add(book.supplier);
+    }
+    // Add all supplier IDs from both book.supplier and book.suppliers
+    if (book.supplier) groupedBooksMap[key].suppliers.add(book.supplier);
+    if (Array.isArray(book.suppliers)) {
+      book.suppliers.forEach(sid => groupedBooksMap[key].suppliers.add(sid));
     }
   });
   const groupedBooks = Object.values(groupedBooksMap).map(b => ({
@@ -374,12 +391,6 @@ const Products = () => {
                 {book.category && (
                   <div className="text-xs text-gray-400 mb-2 text-center">Category: {book.category}</div>
                 )}
-                {/* Supplier display */}
-                {book.suppliers && book.suppliers.length > 0 && (
-                  <div className="text-xs text-gray-400 mb-2 text-center">
-                    Supplier: {book.suppliers.map(sid => suppliers.find(s => s._id === sid)?.companyName || sid).join(', ')}
-                  </div>
-                )}
                 <div className="text-xs text-gray-400 mt-auto mb-2">Stock: {book.stock}</div>
                 {/* Add to Cart Button */}
                 <button
@@ -457,7 +468,11 @@ const Products = () => {
               {/* Supplier display in modal */}
               {modalBook.suppliers && (
                 <div className="text-xs text-gray-400 mb-4 text-center">
-                  Supplier: {modalBook.suppliers.map(sid => suppliers.find(s => s._id === sid)?.companyName || sid).join(', ')}
+                  Supplier: {
+                    modalBook.suppliers
+                      .map(sid => suppliers.find(s => s._id === sid)?.companyName || sid)
+                      .join(', ')
+                  }
                 </div>
               )}
               <div className="text-xs text-gray-400 mb-4 text-center">Stock: {modalBook.stock}</div>
