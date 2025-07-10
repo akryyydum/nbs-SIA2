@@ -70,13 +70,12 @@ const SalesDashboard = () => {
         }
         return false;
       });
-
-      const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-      const transactions = acceptedOrPaidOrders.length;
-      const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
-      setTotalRevenue(revenue);
-      setTotalTransactions(transactions);
-      setAov(avgOrderValue);
+      const revenue = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+const transactions = orders.length;
+const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
+setTotalRevenue(revenue);
+setTotalTransactions(transactions);
+setAov(avgOrderValue);
 
       // Top books and category chart: use all orders for stats
       const bookSalesMap = {};
