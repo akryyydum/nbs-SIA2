@@ -202,7 +202,7 @@ const Books = () => {
             });
           } catch (err) {
             // If not found, try SupplierBook collection
-            await API.put(`/suppliers/${orderSupplier}/supplierBook/${item.bookId}/increase-stock`, {
+            await API.put(`/suppliers/${orderSupplier}/supplierBook/${item.bookId}/decrease-stock`, {
               quantity: item.quantity,
             });
           }

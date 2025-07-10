@@ -237,6 +237,28 @@ router.put('/:supplierId/supplierBook/:bookId/increase-stock', async (req, res) 
   }
 });
 
+// Decrease stock of a supplier's book
+router.put('/:supplierId/supplierBook/:bookId/decrease-stock', async (req, res) => {
+  try {
+    const { supplierId, bookId } = req.params;
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ message: 'Quantity must be provided and greater than 0' });
+    }
+    const supplierBook = await SupplierBook.findOne({ _id: bookId, supplier: supplierId });
+    if (!supplierBook) return res.status(404).json({ message: 'Book not found in supplier catalog' });
+
+    if (supplierBook.stock < quantity) {
+      return res.status(400).json({ message: 'Insufficient stock' });
+    }
+    supplierBook.stock -= quantity;
+    await supplierBook.save();
+    res.json({ message: 'Stock decreased', stock: supplierBook.stock });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Update a supplier
 router.put('/:id', async (req, res) => {
   try {
