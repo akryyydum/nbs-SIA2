@@ -97,8 +97,25 @@ const Products = () => {
     setCarouselIndex(i => (i === newArrivals.length - 1 ? 0 : i + 1));
   };
 
-  // Filtering logic
-  const filteredBooks = books.filter(book => {
+  // Group books by title and author, sum stocks, and join supplier names
+  const groupedBooksMap = {};
+  books.forEach(book => {
+    const key = `${book.title?.toLowerCase()}|${book.author?.toLowerCase()}`;
+    if (!groupedBooksMap[key]) {
+      groupedBooksMap[key] = { ...book, stock: Number(book.stock) || 0, suppliers: new Set() };
+      if (book.supplier) groupedBooksMap[key].suppliers.add(book.supplier);
+    } else {
+      groupedBooksMap[key].stock += Number(book.stock) || 0;
+      if (book.supplier) groupedBooksMap[key].suppliers.add(book.supplier);
+    }
+  });
+  const groupedBooks = Object.values(groupedBooksMap).map(b => ({
+    ...b,
+    suppliers: Array.from(b.suppliers)
+  }));
+
+  // Filtering logic (now use groupedBooks instead of books)
+  const filteredBooks = groupedBooks.filter(book => {
     // Search filter
     const matchesSearch = !search ||
       book.title?.toLowerCase().includes(search) ||
@@ -358,9 +375,9 @@ const Products = () => {
                   <div className="text-xs text-gray-400 mb-2 text-center">Category: {book.category}</div>
                 )}
                 {/* Supplier display */}
-                {book.supplier && (
+                {book.suppliers && book.suppliers.length > 0 && (
                   <div className="text-xs text-gray-400 mb-2 text-center">
-                    Supplier: {suppliers.find(s => s._id === book.supplier)?.companyName || book.supplier}
+                    Supplier: {book.suppliers.map(sid => suppliers.find(s => s._id === sid)?.companyName || sid).join(', ')}
                   </div>
                 )}
                 <div className="text-xs text-gray-400 mt-auto mb-2">Stock: {book.stock}</div>
@@ -438,9 +455,9 @@ const Products = () => {
                 <div className="text-xs text-gray-400 mb-2 text-center">Category: {modalBook.category}</div>
               )}
               {/* Supplier display in modal */}
-              {modalBook.supplier && (
+              {modalBook.suppliers && (
                 <div className="text-xs text-gray-400 mb-4 text-center">
-                  Supplier: {suppliers.find(s => s._id === modalBook.supplier)?.companyName || modalBook.supplier}
+                  Supplier: {modalBook.suppliers.map(sid => suppliers.find(s => s._id === sid)?.companyName || sid).join(', ')}
                 </div>
               )}
               <div className="text-xs text-gray-400 mb-4 text-center">Stock: {modalBook.stock}</div>
