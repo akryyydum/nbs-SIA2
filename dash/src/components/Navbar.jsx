@@ -15,6 +15,8 @@ const Navbar = () => {
   const [search, setSearch] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
   const [cart, setCart] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
   const accountRef = useRef();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +59,20 @@ const Navbar = () => {
 
   // Remove socket.io useEffect for cart updates
 
+  // Fetch notifications (transactions) for the logged-in user
+  useEffect(() => {
+    if (!user?.token) {
+      setNotifications([]);
+      return;
+    }
+    // You should have a backend endpoint for user transactions/notifications
+    API.get('/transactions', {
+      headers: { Authorization: `Bearer ${user.token}` }
+    })
+      .then(res => setNotifications(res.data || []))
+      .catch(() => setNotifications([]));
+  }, [user]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (search.trim()) {
@@ -89,12 +105,16 @@ const Navbar = () => {
   const isSalesDashboard = location.pathname === '/sales-dashboard';
 
   return (
-    <nav className="text-sm font-light bg-white/60 backdrop-blur-md border-b-2 border-red-200 shadow-md font-poppins bold sticky top-0 z-50">  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <nav className="text-md font-light bg-white/60 backdrop-blur-md shadow-md font-poppins sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex h-16 items-center relative">
-          {/* Left Section (Nav Links - desktop only) */}
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            {/* Nav Links (desktop only) */}
-            <div className="hidden md:flex space-x-6 items-center flex-shrink-0">
+          {/* Logo on the left */}
+          <div className="flex items-center flex-shrink-0 z-10">
+            <img src="/nbs.svg" alt="NBS Logo" className="h-12 object-contain" />
+          </div>
+          {/* Nav Links (centered absolutely) */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center w-auto z-0">
+            <div className="hidden md:flex gap-7 space-x-6 items-center">
               {user?.role === 'admin' ? (
                 <Link
                   to="/admin"
@@ -104,7 +124,7 @@ const Navbar = () => {
                   Control Panel
                 </Link>
               ) : (
-                // Only show these links if NOT on sales dashboar
+                // Only show these links if NOT on sales dashboard
                 !isSalesDashboard && (
                   <>
                     <Link
@@ -114,13 +134,12 @@ const Navbar = () => {
                     >
                       Home
                     </Link>
-                    
                     <Link
                       to="/products"
                       className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
                       onClick={handleLinkClick}
                     >
-                      Products
+                      Books
                     </Link>
                     <Link
                       to="/contact"
@@ -148,12 +167,43 @@ const Navbar = () => {
               )}
             </div>
           </div>
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none select-none z-10">
-            <img src="/nbs.svg" alt="NBS Logo" className="h-12 object-contain" />
-          </div>
-          <div className="hidden md:flex space-x-8 items-center flex-shrink-0">
-            {/* Admin Control Panel Link */}
-            
+          {/* Right section (cart, account, notifications) */}
+          <div className="hidden md:flex items-center flex-shrink-0 z-10" style={{ marginLeft: 'auto', gap: '2rem' }}>
+            {/* Notification Bell */}
+            <div className="relative">
+              <button
+                className="ml-4 text-black hover:text-red-900 transition-colors duration-200 relative"
+                onClick={() => setNotifOpen(v => !v)}
+                aria-label="Notifications"
+              >
+                <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {notifications.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 animate-bounce">{notifications.length}</span>
+                )}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
+                  <div className="p-4 max-h-80 overflow-y-auto">
+                    <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2">
+                      Transactions
+                    </h4>
+                    {notifications.length === 0 ? (
+                      <div className="text-gray-400 text-sm text-center py-4 animate-fade-in">No transactions yet</div>
+                    ) : (
+                      notifications.map((notif, idx) => (
+                        <div key={notif._id || idx} className="mb-3 border-b pb-2 last:border-b-0 last:pb-0">
+                          <div className="font-semibold text-sm">{notif.title || 'Transaction'}</div>
+                          <div className="text-xs text-gray-500">{notif.description || ''}</div>
+                          <div className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             {/* Cart Icon with Dropdown */}
             {!isSalesDashboard && (
               <div className="relative">
@@ -303,24 +353,6 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-            {/* Search Bar (desktop only, now after profile) */}
-            <form className="hidden md:block" onSubmit={handleSearch}>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search books..."
-                  className="px-4 py-2 rounded-lg border border-red-200 shadow focus:outline-none focus:ring-2 focus:ring-red-200 transition w-64"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-800 transition"
-                >
-                  <FaSearch />
-                </button>
-              </div>
-            </form>
           </div>
           {/* Mobile Hamburger */}
           <div className="md:hidden flex items-center">

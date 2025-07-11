@@ -26,7 +26,10 @@ const Products = () => {
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const search = searchParams.get('search')?.toLowerCase() || '';
+  // Remove this line:
+  // const search = searchParams.get('search')?.toLowerCase() || '';
+  // Use only the controlled state below:
+  const [search, setSearch] = useState(searchParams.get('search') || '');
 
   // Move fetchBooks outside useEffect so it can be reused
   const fetchBooks = useCallback(async () => {
@@ -135,9 +138,9 @@ const Products = () => {
   const filteredBooks = groupedBooks.filter(book => {
     // Search filter
     const matchesSearch = !search ||
-      book.title?.toLowerCase().includes(search) ||
-      book.author?.toLowerCase().includes(search) ||
-      book.description?.toLowerCase().includes(search);
+      book.title?.toLowerCase().includes(search.toLowerCase()) ||
+      book.author?.toLowerCase().includes(search.toLowerCase()) ||
+      book.description?.toLowerCase().includes(search.toLowerCase());
     // Category filter
     const matchesCategory = !selectedCategory || book.category === selectedCategory;
     // Price filter
@@ -148,9 +151,65 @@ const Products = () => {
   });
 
   return (
-    <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <div className="p-8 min-h-screen bg-[#f8f5f2] font-poppins">
+      {/* Hero Section with Search Bar */}
+      <div className="max-w-3xl mx-auto mb-12 mt-4 text-center">
+        <div className="text-xs text-gray-500 mb-2 tracking-wide">Find your next great read.</div>
+        <div className="text-3xl md:text-4xl font-bold mb-6">
+          <span className="text-black">Can't find the </span>
+          <span className="text-red-600">book?</span>
+        </div>
+        {/* Search Bar Styled */}
+        <form
+          className="flex items-center bg-white rounded-2xl shadow border border-gray-200 px-2 py-1 max-w-2xl mx-auto"
+          style={{ boxShadow: '0 4px 24px 0 rgba(31,38,135,0.08)' }}
+          onSubmit={e => {
+            e.preventDefault();
+            // Update the URL search param for consistency
+            const params = new URLSearchParams(location.search);
+            if (search) {
+              params.set('search', search);
+            } else {
+              params.delete('search');
+            }
+            window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+          }}
+        >
+          <select
+            className="bg-transparent border-none outline-none px-4 py-3 text-gray-700 text-base font-medium"
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value)}
+            tabIndex={0}
+          >
+            <option value="">Category</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            className="flex-1 px-4 py-3 text-base bg-transparent outline-none border-none"
+            placeholder="The Martians"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ minWidth: 0 }}
+            tabIndex={0}
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 text-red-600 hover:text-red-800 transition"
+            aria-label="Search"
+            tabIndex={0}
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          </button>
+        </form>
+      </div>
       {/* New Arrivals Carousel */}
-      {newArrivals.length > 0 && (
+      {newArrivals.length > 0 && !search && (
         <div className="mb-16">
           <h2
             className="text-4xl font-bold mb-8 flex items-center gap-3 justify-center text-transparent bg-clip-text bg-gradient-to-r from-red-700 via-black to-red-700 animate-gradient-x"
@@ -309,19 +368,8 @@ const Products = () => {
         </div>
       )}
       <h2 className="text-2xl font-bold mb-8 text-black">All Books</h2>
-      {/* Filters */}
+      {/* Filters (hide category filter since it's in the search bar now) */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
-        {/* Category Filter */}
-        <select
-          className="border border-gray-200 rounded-lg px-3 py-2"
-          value={selectedCategory}
-          onChange={e => setSelectedCategory(e.target.value)}
-        >
-          <option value="">All Categories</option>
-          {categories.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
         {/* Price Range Filter */}
         <input
           type="number"
