@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { FaPlus } from 'react-icons/fa';
+// Add Chart.js imports
+import { Bar, Line } from 'react-chartjs-2';
+import { Chart, BarElement, LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend } from 'chart.js';
+Chart.register(BarElement, LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
 const tableStyles = {
   textAlign: 'center',
@@ -158,6 +162,35 @@ const SupplierBooks = () => {
     }
   };
 
+  // Chart Data
+  // Bar: Stock per Book
+  const barData = {
+    labels: books.map(b => b.title),
+    datasets: [
+      {
+        label: 'Stock',
+        data: books.map(b => b.stock),
+        backgroundColor: '#dc2626',
+      },
+    ],
+  };
+
+  // Line: Price per Book
+  const lineData = {
+    labels: books.map(b => b.title),
+    datasets: [
+      {
+        label: 'Price',
+        data: books.map(b => Number(b.price)),
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.1)',
+        tension: 0.3,
+        fill: true,
+        pointBackgroundColor: '#2563eb',
+      },
+    ],
+  };
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <h2 className="text-2xl font-bold mb-6 text-red-700">My Supplier Books</h2>
@@ -169,6 +202,18 @@ const SupplierBooks = () => {
           <FaPlus />
           Add Book
         </button>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="bg-white shadow rounded p-4">
+          <h3 className="text-lg font-bold mb-2 text-red-700">Stock per Book</h3>
+          <Bar data={barData} options={{ plugins: { legend: { display: false } } }} />
+        </div>
+        <div className="bg-white shadow rounded p-4">
+          <h3 className="text-lg font-bold mb-2 text-blue-700">Price per Book</h3>
+          <Line data={lineData} options={{ plugins: { legend: { display: false } } }} />
+        </div>
       </div>
 
       {modalOpen && (
@@ -286,43 +331,73 @@ const SupplierBooks = () => {
 
       <div className="mt-8 bg-white rounded shadow p-4">
         <h3 className="text-lg font-bold mb-2 text-red-700">Supplier Books Table</h3>
-        <table style={tableStyles}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8f8f8' }}>
-              <th style={cellStyles}>Title</th>
-              <th style={cellStyles}>Author</th>
-              <th style={cellStyles}>Price</th>
-              <th style={cellStyles}>Stock</th>
-              <th style={cellStyles}>Image</th>
-              <th style={cellStyles}>Description</th>
-              <th style={cellStyles}>Category</th>
-              <th style={cellStyles}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {books.map((b) => (
-              <tr key={b._id}>
-                <td style={cellStyles}>{b.title}</td>
-                <td style={cellStyles}>{b.author}</td>
-                <td style={cellStyles}>₱{Number(b.price).toFixed(2)}</td>
-                <td style={cellStyles}>{b.stock}</td>
-                <td style={cellStyles}>
-                  {b.image ? (
-                    <img src={b.image} alt={b.title} style={imageStyles} />
-                  ) : (
-                    <span style={{ color: 'gray' }}>No image</span>
-                  )}
-                </td>
-                <td style={cellStyles}>{b.description}</td>
-                <td style={cellStyles}>{b.category}</td>
-                <td style={cellStyles}>
-                  <button onClick={() => handleEdit(b)} style={{ color: 'blue', marginRight: '8px' }}>Edit</button>
-                  <button onClick={() => handleDelete(b._id)} style={{ color: 'red' }}>Delete</button>
-                </td>
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <table style={tableStyles} className="min-w-full">
+            <thead>
+              <tr className="bg-red-100 text-gray-700 uppercase text-xs tracking-wider">
+                <th style={cellStyles} className="py-3 px-4">Title</th>
+                <th style={cellStyles} className="py-3 px-4">Author</th>
+                <th style={cellStyles} className="py-3 px-4">Price</th>
+                <th style={cellStyles} className="py-3 px-4">Stock</th>
+                <th style={cellStyles} className="py-3 px-4">Image</th>
+                <th style={cellStyles} className="py-3 px-4">Description</th>
+                <th style={cellStyles} className="py-3 px-4">Category</th>
+                <th style={cellStyles} className="py-3 px-4">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {books.map((b, idx) => (
+                <tr
+                  key={b._id}
+                  style={{
+                    backgroundColor: idx % 2 === 0 ? '#f9fafb' : '#fff',
+                    transition: 'background 0.2s',
+                  }}
+                  className="hover:bg-red-50 transition-colors"
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#f9fafb' : '#fff')}
+                >
+                  <td style={cellStyles} className="py-2 px-4 font-medium">{b.title}</td>
+                  <td style={cellStyles} className="py-2 px-4">{b.author}</td>
+                  <td style={cellStyles} className="py-2 px-4 text-red-700 font-semibold">₱{Number(b.price).toFixed(2)}</td>
+                  <td style={cellStyles} className="py-2 px-4">{b.stock}</td>
+                  <td style={cellStyles} className="py-2 px-4">
+                    {b.image ? (
+                      <img
+                        src={b.image}
+                        alt={b.title}
+                        style={imageStyles}
+                        className="rounded shadow border border-gray-200"
+                      />
+                    ) : (
+                      <span className="text-gray-400 italic">No image</span>
+                    )}
+                  </td>
+                  <td style={cellStyles} className="py-2 px-4 max-w-xs truncate">{b.description}</td>
+                  <td style={cellStyles} className="py-2 px-4">
+                    <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
+                      {b.category}
+                    </span>
+                  </td>
+                  <td style={cellStyles} className="py-2 px-4">
+                    <button
+                      onClick={() => handleEdit(b)}
+                      className="text-blue-600 hover:underline mr-2 font-semibold"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(b._id)}
+                      className="text-red-600 hover:underline font-semibold"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
