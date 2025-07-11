@@ -139,7 +139,7 @@ const Navbar = () => {
                       className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
                       onClick={handleLinkClick}
                     >
-                      Products
+                      Books
                     </Link>
                     <Link
                       to="/contact"
