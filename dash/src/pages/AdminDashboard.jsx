@@ -226,6 +226,9 @@ const AdminDashboard = () => {
     ],
   };
 
+  const graphCardStyle =
+    "bg-white rounded-2xl shadow-lg p-6 border border-red-100 mb-8 transition-all duration-300 hover:shadow-2xl";
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 font-poppins">
       <h1 className="text-3xl font-bold text-red-700 mb-8 flex items-center gap-3 animate-fade-in-down">
@@ -253,26 +256,41 @@ const AdminDashboard = () => {
           </div>
           {/* Sales and Stock Graphs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <ChartCard title="Stock by Category" icon={<FaChartPie className="text-xl text-pink-400" />}>
-              <Pie data={stockByCategoryData} className="animate-fade-in" />
-            </ChartCard>
-            <ChartCard title="Sales Trends" icon={<FaChartLine className="text-xl text-blue-400" />}>
-              <Line data={salesTrendsData} className="animate-fade-in" />
-            </ChartCard>
-            <ChartCard title="Top Selling Books" icon={<FaCrown className="text-xl text-yellow-400" />}>
-              <Bar data={topBooksData} className="animate-fade-in" />
-            </ChartCard>
+            <div className={graphCardStyle}>
+              <div className="flex items-center gap-2 text-lg font-bold text-pink-400 mb-4">
+                <FaChartPie className="text-xl" /> Stock by Category
+              </div>
+              <Pie data={stockByCategoryData} />
+            </div>
+            <div className={graphCardStyle}>
+              <div className="flex items-center gap-2 text-lg font-bold text-blue-400 mb-4">
+                <FaChartLine className="text-xl" /> Sales Trends
+              </div>
+              <Line data={salesTrendsData} />
+            </div>
+            <div className={graphCardStyle}>
+              <div className="flex items-center gap-2 text-lg font-bold text-yellow-400 mb-4">
+                <FaCrown className="text-xl" /> Top Selling Books
+              </div>
+              <Bar data={topBooksData} />
+            </div>
           </div>
           {/* Customer Logins */}
-          <ChartCard title="Customer Logins (per day)" icon={<FaUserClock className="text-xl text-green-400" />} className="mb-8">
-            <Line data={customerLoginsData} className="animate-fade-in" />
-          </ChartCard>
+          <div className={graphCardStyle}>
+            <div className="flex items-center gap-2 text-lg font-bold text-green-400 mb-4">
+              <FaUserClock className="text-xl" /> Customer Logins (per day)
+            </div>
+            <Line data={customerLoginsData} />
+          </div>
           {/* Total Sales */}
-          <ChartCard title="Total Sales" icon={<FaMoneyBillWave className="text-xl text-green-600" />} className="mb-8">
-            <div className="text-3xl font-bold text-green-700 animate-fade-in">
+          <div className={graphCardStyle}>
+            <div className="flex items-center gap-2 text-lg font-bold text-green-600 mb-4">
+              <FaMoneyBillWave className="text-xl" /> Total Sales
+            </div>
+            <div className="text-3xl font-bold text-green-700">
               ₱{Number(stats.totalSales).toLocaleString()}
             </div>
-          </ChartCard>
+          </div>
         </>
       )}
     </div>
