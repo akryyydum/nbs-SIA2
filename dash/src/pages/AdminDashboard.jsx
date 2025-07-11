@@ -292,8 +292,18 @@ function KpiCard({ label, value, icon }) {
 
 // Chart Card component with icon, animation, and hover effect
 function ChartCard({ title, icon, children, className = "" }) {
+  // Use a smaller scale on hover for Customer Logins and Total Sales charts
+  const isSmallScale =
+    title === "Customer Logins (per day)" || title === "Total Sales";
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${className} animate-fade-in transition-all duration-500 hover:scale-105 hover:shadow-xl cursor-pointer`}>
+    <div
+      className={
+        `bg-white rounded-lg shadow p-6 ${className} animate-fade-in transition-all duration-500 cursor-pointer ` +
+        (isSmallScale
+          ? "hover:scale-[1.02] hover:shadow-xl"
+          : "hover:scale-105 hover:shadow-xl")
+      }
+    >
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 font-semibold">
         {icon} {title}
       </div>
