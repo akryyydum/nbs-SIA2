@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { FaShoppingCart } from 'react-icons/fa';
 
 const API_BASE = '/api'; // Use relative path for any IP
 
@@ -179,130 +180,128 @@ const Order = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8 animate-fade-in-order">
-      <h2 className="text-2xl font-bold mb-4 text-black">My Orders</h2>
-      {/* Filter choices */}
-      <div className="mb-6 flex gap-4">
-        <button
-          className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setFilter('all')}
-        >All</button>
-        <button
-          className={`px-4 py-2 rounded ${filter === 'pending' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setFilter('pending')}
-        >Pending</button>
-        <button
-          className={`px-4 py-2 rounded ${filter === 'accepted' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setFilter('accepted')}
-        >Accepted</button>
-        <button
-          className={`px-4 py-2 rounded ${filter === 'shipped' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setFilter('shipped')}
-        >Shipped</button>
-        <button
-          className={`px-4 py-2 rounded ${filter === 'declined' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setFilter('declined')}
-        >Declined</button>
-        <button
-          className={`px-4 py-2 rounded ${filter === 'received' ? 'bg-black text-white' : 'bg-gray-200 text-black'}`}
-          onClick={() => setFilter('received')}
-        >Received</button>
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafd] to-[#e9e6f7] py-10 px-2 font-poppins">
+      {/* Tabs */}
+      <div className="flex gap-2 mb-10 max-w-5xl mx-auto">
+        { [
+          { key: 'pending', label: 'New Orders' },
+          { key: 'accepted', label: 'Assigned' },
+          { key: 'shipped', label: 'On Going' },
+          { key: 'received', label: 'Completed' }
+        ].map(tab => (
+          <button
+            key={tab.key}
+            className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 shadow-sm text-base
+              ${filter === tab.key
+                ? 'bg-white text-red-700 shadow-md border border-red-300 animate-tab-pop'
+                : 'bg-[#f3f4fa] text-gray-500 hover:bg-white hover:text-black'
+            }`}
+            onClick={() => setFilter(tab.key)}
+            style={{ position: 'relative', overflow: 'hidden' }}
+          >
+            {tab.label}
+            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full font-bold ${
+              filter === tab.key ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'
+            }`}>
+              {orders.filter(order => {
+                if (tab.key === 'pending') return order.status === 'pending';
+                if (tab.key === 'accepted') return order.status === 'accepted';
+                if (tab.key === 'shipped') return order.status === 'out for delivery';
+                if (tab.key === 'received') return order.status === 'received';
+                return false;
+              }).length}
+            </span>
+          </button>
+        ))}
       </div>
-      {/* Fade-in for tab content */}
-      <div key={filter} className="animate-fade-in-order">
+      {/* Orders Grid */}
+      <div key={filter} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto animate-fade-in-order">
         {loading ? (
-          <div className="text-center text-gray-500 py-8">Loading orders...</div>
+          <div className="col-span-full text-center text-gray-500 py-8">Loading orders...</div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center text-gray-400 py-8">No orders found.</div>
+          <div className="col-span-full text-center text-gray-400 py-8">No orders found.</div>
         ) : (
-          <div className="space-y-6">
-            {filteredOrders.map(order => (
-              <div key={order._id} className="border rounded-lg p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-2">
-                  <div>
-                    <span className="font-semibold">Order ID:</span> {order._id}
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium
-                    ${order.status === 'paid' ? 'bg-green-100 text-green-700'
-                      : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
-                      : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
-                      : order.status === 'out for delivery' ? 'bg-blue-100 text-blue-700'
-                      : order.status === 'received' ? 'bg-green-200 text-green-800'
-                      : order.status === 'declined' ? 'bg-gray-300 text-gray-700'
-                      : 'bg-gray-100 text-gray-700'}`}>
-                    {order.status === 'out for delivery'
-                      ? 'shipped'
-                      : order.status === 'received'
-                        ? 'received'
-                        : order.status}
-                  </span>
-                </div>
-                <div className="mb-2 text-sm text-gray-600">
-                  <span className="font-semibold">Placed:</span> {new Date(order.createdAt).toLocaleString()}
-                  <span className="ml-4 font-semibold">Payment:</span> {order.modeofPayment}
-                </div>
+          filteredOrders.map(order => (
+            <div
+              key={order._id}
+              className="relative bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-3 transition hover:shadow-2xl"
+              style={{
+                minHeight: 210,
+                boxShadow: '0 4px 24px 0 rgba(31,38,135,0.08)'
+              }}
+            >
+              {/* Order Header */}
+              <div className="flex justify-between items-center mb-2">
                 <div>
-                  <span className="font-semibold text-sm">Items:</span>
-                  <ul className="ml-4 text-sm">
-                    {order.items.map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2 mb-1">
-                        {item.book?.image && (
-                          <img
-                            src={item.book.image}
-                            alt={item.book?.title || 'Book'}
-                            className="h-8 w-6 object-cover rounded shadow"
-                          />
-                        )}
-                        <span>
-                          {item.book?.title || 'Book'} x {item.quantity}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="text-xs text-gray-400 font-semibold">Order No.</div>
+                  <div className="font-bold text-lg text-black tracking-wide">#{order._id?.slice(-10)}</div>
                 </div>
-                <div className="mt-2 font-bold text-right">
-                  Total: ₱{Number(order.totalPrice).toFixed(2)}
-                </div>
-                <div className="mt-3 flex justify-end gap-2">
-                  <button
-                    className="px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300 transition"
-                    onClick={() => setModalOrder(order)}
-                  >
-                    View
-                  </button>
-                  {/* Cancel button for pending orders */}
-                  {order.status === 'pending' && (
-                    <button
-                      className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
-                      onClick={() => handleCancel(order._id)}
-                      disabled={cancelling === order._id}
-                    >
-                      {cancelling === order._id ? 'Cancelling...' : 'Cancel Order'}
-                    </button>
-                  )}
-                  {/* Order Received button for shipped orders */}
-                  {order.status === 'out for delivery' && (
-                    <button
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                      onClick={() => handleReceived(order._id)}
-                      disabled={receiving === order._id}
-                    >
-                      {receiving === order._id ? 'Processing...' : 'Order Received'}
-                    </button>
-                  )}
-                  {/* Print Receipt button for received orders */}
-                  {order.status === 'received' && (
-                    <button
-                      className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
-                      onClick={() => setReceiptOrder(order)}
-                    >
-                      Print Receipt
-                    </button>
-                  )}
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold
+                      ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
+                        : order.status === 'accepted' ? 'bg-blue-100 text-blue-700'
+                        : order.status === 'out for delivery' ? 'bg-blue-100 text-blue-700'
+                        : order.status === 'received' ? 'bg-green-100 text-green-700'
+                        : order.status === 'declined' ? 'bg-gray-200 text-gray-500'
+                        : 'bg-gray-100 text-gray-700'}`}>
+                      {order.status === 'out for delivery'
+                        ? 'On Going'
+                        : order.status === 'received'
+                          ? 'Completed'
+                          : order.status === 'pending'
+                            ? 'New'
+                            : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </span>
+                    {/* Cart icon with item count */}
+                    <span className="relative">
+                      <FaShoppingCart className="text-black-500 text-xl drop-shadow" />
+                      <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 font-bold shadow">{order.items?.length || 0}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+              {/* Order Details */}
+              <div className="text-sm text-gray-700 mb-1">
+                <span className="font-semibold">{new Date(order.createdAt).toLocaleString()}</span>
+              </div>  
+              {/* Order Actions */}
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  className="px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition text-sm font-semibold"
+                  onClick={() => setModalOrder(order)}
+                >
+                  View
+                </button>
+                {order.status === 'pending' && (
+                  <button
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition text-sm font-semibold"
+                    onClick={() => handleCancel(order._id)}
+                    disabled={cancelling === order._id}
+                  >
+                    {cancelling === order._id ? 'Cancelling...' : 'Cancel'}
+                  </button>
+                )}
+                {order.status === 'out for delivery' && (
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-semibold"
+                    onClick={() => handleReceived(order._id)}
+                    disabled={receiving === order._id}
+                  >
+                    {receiving === order._id ? 'Processing...' : 'Order Received'}
+                  </button>
+                )}
+                {order.status === 'received' && (
+                  <button
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition text-sm font-semibold"
+                    onClick={() => setReceiptOrder(order)}
+                  >
+                    Print Receipt
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
         )}
       </div>
       {/* Modal for order details */}
@@ -464,6 +463,14 @@ const Order = () => {
         @keyframes fadeInOrder {
           from { opacity: 0; transform: translateY(40px);}
           to { opacity: 1; transform: translateY(0);}
+        }
+        .animate-tab-pop {
+          animation: tabPop 0.25s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes tabPop {
+          0% { background: #fff; color: #000; transform: scale(1);}
+          50% { background: #f87171; color: #fff; transform: scale(1.08);}
+          100% { background: #fff; color: #b91c1c; transform: scale(1);}
         }
       `}</style>
     </div>
