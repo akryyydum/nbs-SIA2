@@ -40,11 +40,24 @@ const Products = () => {
       // Extract unique categories from books
       const cats = Array.from(new Set(res.data.map(b => b.category).filter(Boolean)));
       setCategories(cats);
-      // Sort by createdAt descending, fallback to _id if no createdAt
-      const sorted = [...res.data].sort((a, b) =>
-        (new Date(b.createdAt || b._id)) - (new Date(a.createdAt || a._id))
-      );
-      setNewArrivals(sorted.slice(0, 6));
+
+      // Group books by title and author for new arrivals (no duplicates)
+      const groupedArrivalsMap = {};
+      res.data.forEach(book => {
+        const key = `${book.title?.toLowerCase()}|${book.author?.toLowerCase()}`;
+        if (!groupedArrivalsMap[key]) {
+          groupedArrivalsMap[key] = { ...book, stock: Number(book.stock) || 0 };
+        } else {
+          groupedArrivalsMap[key].stock += Number(book.stock) || 0;
+        }
+      });
+      // Sort by createdAt descending, fallback to _id if no createdAt, then slice top 6
+      const groupedArrivals = Object.values(groupedArrivalsMap)
+        .sort((a, b) =>
+          (new Date(b.createdAt || b._id)) - (new Date(a.createdAt || a._id))
+        )
+        .slice(0, 6);
+      setNewArrivals(groupedArrivals);
     } catch (err) {
       setBooks([]);
     }
