@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, admin, sales } = require('../middleware/AuthMiddleware');
+const { protect, adminOrSales, sales } = require('../middleware/AuthMiddleware');
 const {
   createOrder,
   getMyOrders,
@@ -25,8 +25,8 @@ router.get('/my', protect, getMyOrders);
 router.get('/', protect, sales, getAllOrders);
 
 // Accept order
-router.put('/:id/accept', protect, sales, acceptOrder);
-router.put('/:id/ship', protect, sales, shipOrder);
+router.put('/:id/accept', protect, adminOrSales, acceptOrder);
+router.put('/:id/ship', protect, adminOrSales, shipOrder);
 
 // Decline order
 router.put('/:id/decline', protect, sales, declineOrder);

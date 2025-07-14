@@ -64,6 +64,15 @@ exports.adminOrSupplier = (req, res, next) => {
   return res.status(403).json({ message: 'Forbidden: Admin or Supplier Department only' });
 };
 
+// AuthMiddleware.js
+exports.adminOrSales = (req, res, next) => {
+  if (req.user.role === 'admin' || req.user.role === 'sales department') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden' });
+  }
+};
+
 // Allow user to update their own profile, or admin can update anyone
 exports.canEditProfile = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Not authorized' });

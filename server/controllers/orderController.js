@@ -2,6 +2,7 @@ const Order = require('../models/order.model');
 const Book = require('../models/books.model');
 const SupplierBook = require('../models/supplierBook.model');
 const Notification = require('../models/notification.model'); // Make sure this model exists
+const User = require('../models/user.model'); // Add at the top if not already
 
 // @desc    Create a new order
 // @route   POST /api/orders
@@ -48,6 +49,20 @@ exports.createOrder = async (req, res) => {
     });
 
     const savedOrder = await order.save();
+
+    // Notify all admin and sales department users
+    const notifyUsers = await User.find({ role: { $in: ['admin', 'sales department'] } });
+    const notifications = notifyUsers.map(u => ({
+      user: u._id,
+      title: 'New Order Placed',
+      description: `A new order (${savedOrder._id}) has been placed by ${req.user.name || req.user.email}.`,
+      order: savedOrder._id,
+      read: false,
+    }));
+    if (notifications.length) {
+      await Notification.insertMany(notifications);
+    }
+
     res.status(201).json(savedOrder);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -126,6 +141,7 @@ exports.deleteOrder = async (req, res) => {
 // @desc    Accept order (admin only): set status to 'out for delivery' and decrease book stocks
 // @route   PUT /api/orders/:id/accept
 exports.acceptOrder = async (req, res) => {
+  console.log('acceptOrder called by:', req.user.role, req.user.email);
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -160,13 +176,17 @@ exports.acceptOrder = async (req, res) => {
     await order.save();
 
     // --- Notification for customer: Accepted ---
-    await Notification.create({
-      user: order.user,
-      title: 'Order Accepted',
-      description: `Your order ${order._id} has been accepted.`,
-      order: order._id,
-      read: false,
-    });
+    try {
+      await Notification.create({
+        user: order.user,
+        title: 'Order Accepted',
+        description: `Your order ${order._id} has been accepted.`,
+        order: order._id,
+        read: false,
+      });
+    } catch (notifErr) {
+      console.error('Notification creation error:', notifErr);
+    }
 
     res.json({ message: 'Order accepted successfully', order });
   } catch (err) {
@@ -196,6 +216,7 @@ exports.declineOrder = async (req, res) => {
 // @desc    Ship order (admin only): set status to 'out for delivery'
 // @route   PUT /api/orders/:id/ship
 exports.shipOrder = async (req, res) => {
+  console.log('shipOrder called by:', req.user.role, req.user.email);
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -226,9 +247,20 @@ exports.shipOrder = async (req, res) => {
 // @desc    Mark order as received (admin or sales department)
 // @route   PUT /api/orders/:id/received
 exports.markOrderReceived = async (req, res) => {
+  console.log('markOrderReceived called by:', req.user.role, req.user.email);
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    // Only allow owner or admin/sales
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'sales department' &&
+      order.user.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
     if (order.status !== 'out for delivery') {
       return res.status(400).json({ message: 'Order is not out for delivery' });
     }
