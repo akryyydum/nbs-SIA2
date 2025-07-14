@@ -34,7 +34,7 @@ const Books = () => {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderSupplier, setOrderSupplier] = useState('');
   const [orderItems, setOrderItems] = useState([
-    { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }
+    { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' }, imageFile: null }
   ]);
   const [supplierBooks, setSupplierBooks] = useState([]); // <-- add this line
 
@@ -185,9 +185,16 @@ const Books = () => {
     try {
       for (const item of orderItems) {
         if (item.isNew) {
+          // Upload image if file is selected
+          let imageUrl = item.newBook.image;
+          if (item.imageFile) {
+            imageUrl = await uploadImage(item.imageFile);
+          }
+          
           // Create new book with stock = quantity
           const payload = {
             ...item.newBook,
+            image: imageUrl,
             stock: item.quantity,
             supplier: orderSupplier,
           };
@@ -227,7 +234,7 @@ const Books = () => {
       }
       setOrderModalOpen(false);
       setOrderSupplier('');
-      setOrderItems([{ bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }]);
+      setOrderItems([{ bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' }, imageFile: null }]);
       fetchBooks();
       alert('Order placed and inventory updated!');
     } catch (err) {
@@ -601,9 +608,7 @@ const Books = () => {
                           }}
                           required
                         />
-                        <input
-                          type="text"
-                          placeholder="Category"
+                        <select
                           className="border px-2 py-1 rounded"
                           value={item.newBook.category}
                           onChange={e => {
@@ -612,7 +617,13 @@ const Books = () => {
                             setOrderItems(arr);
                           }}
                           required
-                        />
+                        >
+                          <option value="" disabled>Select Category</option>
+                          <option value="Fiction">Fiction</option>
+                          <option value="Non-Fiction">Non-Fiction</option>
+                          <option value="Science">Science</option>
+                          <option value="History">History</option>
+                        </select>
                         <input
                           type="text"
                           placeholder="Description"
@@ -624,17 +635,48 @@ const Books = () => {
                             setOrderItems(arr);
                           }}
                         />
-                        <input
-                          type="text"
-                          placeholder="Image URL"
-                          className="border px-2 py-1 rounded col-span-2"
-                          value={item.newBook.image}
-                          onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.image = e.target.value;
-                            setOrderItems(arr);
-                          }}
-                        />
+                        <div className="col-span-2">
+                          <label className="block mb-1 text-sm text-gray-700 font-semibold">Book Image</label>
+                          <div className="flex items-center gap-2">
+                            <label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={e => {
+                                  if (e.target.files[0]) {
+                                    const arr = [...orderItems];
+                                    arr[idx].imageFile = e.target.files[0];
+                                    arr[idx].newBook.image = '';
+                                    setOrderItems(arr);
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                                onClick={e => {
+                                  e.preventDefault();
+                                  e.target.previousSibling.click();
+                                }}
+                              >
+                                Choose File
+                              </button>
+                            </label>
+                            {item.imageFile && (
+                              <span className="text-xs text-green-700">{item.imageFile.name}</span>
+                            )}
+                          </div>
+                          {item.imageFile && (
+                            <div className="mt-2">
+                              <img
+                                src={URL.createObjectURL(item.imageFile)}
+                                alt="Preview"
+                                className="h-16 w-16 object-cover rounded shadow"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                     <div className="flex gap-2 items-center mt-2">
@@ -657,7 +699,7 @@ const Books = () => {
                 <button
                   type="button"
                   className="text-green-600 font-bold"
-                  onClick={() => setOrderItems([...orderItems, { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' } }])}
+                  onClick={() => setOrderItems([...orderItems, { bookId: '', quantity: 1, isNew: false, newBook: { title: '', author: '', price: '', category: '', description: '', image: '' }, imageFile: null }])}
                 >+ Add Another Book</button>
               </div>
               <button
