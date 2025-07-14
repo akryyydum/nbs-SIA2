@@ -159,11 +159,47 @@ const Inventory = () => {
 
   const handleOrderFromSupplier = async (orderDetails) => {
     try {
-      await API.post('/orders', orderDetails);
+      // Handle new books - create them first
+      const processedItems = [];
+      
+      for (const item of orderDetails.items) {
+        if (item.isNewBook) {
+          // Create the new book first
+          const newBookData = {
+            title: item.title,
+            author: item.author,
+            price: item.price,
+            description: item.description || '',
+            category: item.category,
+            supplier: orderDetails.supplier,
+            stock: 0, // Start with 0 stock, will be updated after order
+            image: item.image || ''
+          };
+          
+          const bookResponse = await API.post('/books', newBookData);
+          processedItems.push({
+            book: bookResponse.data._id,
+            quantity: item.quantity
+          });
+        } else {
+          processedItems.push({
+            book: item.book,
+            quantity: item.quantity
+          });
+        }
+      }
+
+      const finalPayload = {
+        ...orderDetails,
+        items: processedItems
+      };
+
+      await API.post('/orders', finalPayload);
       alert('Order placed successfully!');
       fetchBooks();
     } catch (err) {
-      alert('Failed to place order');
+      console.error('Order error:', err);
+      alert('Failed to place order: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -172,14 +208,44 @@ const Inventory = () => {
   };
 
   const handleOrderSubmit = async () => {
-    if (!selectedSupplier || orderDetails.some(o => !o.book || o.quantity <= 0)) {
+    // Validate that all fields are completed
+    const hasInvalidOrder = orderDetails.some(o => {
+      if (o.newBook) {
+        return !o.title || !o.author || !o.price || !o.category || o.quantity <= 0;
+      } else {
+        return !o.book || o.quantity <= 0;
+      }
+    });
+
+    if (!selectedSupplier || hasInvalidOrder) {
       alert('Please complete all fields');
       return;
     }
 
+    // Transform the data to match backend expectations
     const payload = {
+      items: orderDetails.map(order => {
+        if (order.newBook) {
+          return {
+            isNewBook: true,
+            title: order.title,
+            author: order.author,
+            price: order.price,
+            description: order.description || '',
+            category: order.category,
+            image: order.image || '',
+            quantity: order.quantity
+          };
+        } else {
+          return {
+            book: order.book,
+            quantity: order.quantity
+          };
+        }
+      }),
+      modeofPayment: 'Supplier Order', // Add a mode of payment for supplier orders
       supplier: selectedSupplier,
-      books: orderDetails
+      isSupplierOrder: true
     };
 
     await handleOrderFromSupplier(payload);
