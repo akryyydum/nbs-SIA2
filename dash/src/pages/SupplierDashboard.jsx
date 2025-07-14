@@ -68,82 +68,32 @@ const SupplierDashboard = () => {
       .catch(() => setSupplierUsers([]));
   }, [user]);
 
-  // Handlers for CRUD (to be implemented)
-  const handleAdd = () => {
-    setSelectedSupplier(null);
-    setShowModal(true);
-  };
-  const handleEdit = (supplier) => {
-    setSelectedSupplier(supplier);
-    setShowModal(true);
-    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
-    getSupplierProducts(supplier._id, config).then(res => setProducts(res.data));
-    getSupplierLogs(supplier._id, config).then(res => setLogs(res.data));
-  };
-  const handleDelete = async (id) => {
-    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
-    if (window.confirm('Are you sure you want to delete this supplier?')) {
-      await deleteSupplier(id, config);
-      fetchSuppliersAndKpis(config); // Refresh suppliers and KPIs after delete
-    }
-  };
+  // Fetch books for each supplier and attach to supplier object for KPI calculation
+  const [suppliersWithBooks, setSuppliersWithBooks] = useState([]);
 
-  // Show books for a supplier
-  const handleViewBooks = async (supplier) => {
-    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
-    const res = await getBooksBySupplier(supplier._id, config);
-    setBooksModal({ open: true, books: res.data, supplier });
-  };
-
-  // Add Book Handler
-  const handleAddBook = (supplier) => {
-    setSelectedSupplier(supplier);
-    setBookForm({
-      title: '',
-      author: '',
-      price: '',
-      category: '',
-      description: '',
-      image: '',
-      stock: 0,
-    });
-    setShowBookModal(true);
-  };
-
-  const handleBookFormChange = (e) => {
-    const { name, value } = e.target;
-    setBookForm(f => ({ ...f, [name]: value }));
-  };
-
-  const handleBookSubmit = async (e) => {
-    e.preventDefault();
-    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
-    try {
-      await axios.post(`/api/suppliers/${selectedSupplier._id}/books`, bookForm, config);
-      setShowBookModal(false);
-      setBookForm({
-        title: '',
-        author: '',
-        price: '',
-        category: '',
-        description: '',
-        image: '',
-        stock: 0,
+  useEffect(() => {
+    async function fetchBooksForSuppliers() {
+      const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+      const suppliersList = [...suppliers];
+      const promises = suppliersList.map(async (supplier) => {
+        try {
+          const res = await getBooksBySupplier(supplier._id, config);
+          return { ...supplier, books: res.data };
+        } catch {
+          return { ...supplier, books: [] };
+        }
       });
-      // Optionally refresh books modal if open
-      if (booksModal.open && booksModal.supplier?._id === selectedSupplier._id) {
-        const res = await getBooksBySupplier(selectedSupplier._id, config);
-        setBooksModal(bm => ({ ...bm, books: res.data }));
-      }
-      fetchKpis(config); // Refresh KPIs after adding a book
-    } catch (err) {
-      alert('Failed to add book: ' + (err.response?.data?.message || err.message));
+      const results = await Promise.all(promises);
+      setSuppliersWithBooks(results);
     }
-  };
+    if (suppliers.length > 0) {
+      fetchBooksForSuppliers();
+    }
+  }, [suppliers, user]);
 
-  // Merge suppliers and supplierUsers for table
+  // Merge suppliersWithBooks and supplierUsers for table and KPIs
   const allSuppliers = [
-    ...suppliers.map(s => ({ ...s, _type: 'Supplier' })),
+    ...suppliersWithBooks.map(s => ({ ...s, _type: 'Supplier' })),
     ...supplierUsers.map(u => ({
       _id: u._id,
       companyName: u.name || u.email || u._id,
@@ -154,9 +104,39 @@ const SupplierDashboard = () => {
       productCategories: [],
       status: u.status || 'active',
       _type: 'User',
-      userObj: u
+      userObj: u,
+      books: [], // Users don't have books
+      createdAt: u.createdAt || u.registrationDate || new Date().toISOString(), // Ensure createdAt exists
     }))
   ];
+
+  // Calculate KPIs from allSuppliers
+  const totalSuppliers = allSuppliers.length;
+  const activeSuppliers = allSuppliers.filter(s => s.status === 'active').length;
+  const inactiveSuppliers = allSuppliers.filter(s => s.status === 'inactive').length;
+
+  // Most used supplier: the one with the most ordered books (basis: books array)
+  let mostUsedSupplier = '--';
+  let maxBooks = 0;
+  allSuppliers.forEach(s => {
+    const booksCount = Array.isArray(s.books) ? s.books.length : 0;
+    if (booksCount > maxBooks) {
+      maxBooks = booksCount;
+      mostUsedSupplier = s.companyName;
+    }
+  });
+  if (maxBooks === 0) {
+    mostUsedSupplier = '--';
+  }
+
+  // New suppliers this month (createdAt must be present in supplier/user objects)
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0,0,0,0);
+  const newSuppliersThisMonth = allSuppliers.filter(s => {
+    if (!s.createdAt) return false;
+    return new Date(s.createdAt) >= startOfMonth;
+  }).length;
 
   // Table and cell styles for consistency
   const tableStyles = {
@@ -170,28 +150,123 @@ const SupplierDashboard = () => {
     border: '1px solid #ddd',
   };
 
-  // Chart Data
+  // Chart Data (use calculated KPIs from allSuppliers)
   const pieData = {
     labels: ['Active', 'Inactive'],
     datasets: [
       {
-        data: [kpis.activeSuppliers || 0, kpis.inactiveSuppliers || 0],
+        data: [activeSuppliers, inactiveSuppliers],
         backgroundColor: ['#dc2626', '#fbbf24'],
         hoverBackgroundColor: ['#b91c1c', '#f59e42'],
       },
     ],
   };
 
-  // For demonstration, use dummy data for new suppliers per month if not provided
+  // Dynamically generate months for the current year
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  // Show up to current month
+  const months = monthNames.slice(0, currentMonth + 1);
+  const suppliersPerMonth = months.map((month, idx) => {
+    return allSuppliers.filter(s => {
+      if (!s.createdAt) return false;
+      const created = new Date(s.createdAt);
+      return created.getMonth() === idx && created.getFullYear() === currentYear && (s._type === 'Supplier' || s._type === 'User');
+    }).length;
+  });
+
   const barData = {
-    labels: kpis.suppliersPerMonth?.map(m => m.month) || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: months,
     datasets: [
       {
         label: 'New Suppliers',
-        data: kpis.suppliersPerMonth?.map(m => m.count) || [2, 3, 1, 4, 2, 5],
+        data: suppliersPerMonth,
         backgroundColor: '#dc2626',
       },
     ],
+  };
+
+  // Handlers for CRUD
+  const handleAdd = () => {
+    setSelectedSupplier(null);
+    setShowModal(true);
+  };
+
+  const handleEdit = (supplier) => {
+    setSelectedSupplier(supplier);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this supplier?')) {
+      const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+      try {
+        await deleteSupplier(id, config);
+        fetchSuppliersAndKpis(config);
+      } catch (err) {
+        alert('Failed to delete supplier: ' + (err.response?.data?.message || err.message));
+      }
+    }
+  };
+
+  const handleViewBooks = (supplier) => {
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+    getBooksBySupplier(supplier._id, config)
+      .then(res => {
+        setBooksModal({ open: true, books: res.data, supplier });
+      })
+      .catch(() => {
+        setBooksModal({ open: true, books: [], supplier });
+      });
+  };
+
+  const handleAddBook = (supplier) => {
+    setSelectedSupplier(supplier);
+    setShowBookModal(true);
+  };
+
+  const handleBookFormChange = (e) => {
+    const { name, value } = e.target;
+    setBookForm(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleBookSubmit = async (e) => {
+    e.preventDefault();
+    const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+    const bookData = {
+      title: bookForm.title,
+      author: bookForm.author,
+      price: parseFloat(bookForm.price),
+      stock: parseInt(bookForm.stock, 10),
+      category: bookForm.category,
+      description: bookForm.description,
+      image: bookForm.image,
+    };
+    try {
+      await createSupplier(bookData, config);
+      setShowBookModal(false);
+      setBookForm({
+        title: '',
+        author: '',
+        price: '',
+        category: '',
+        description: '',
+        image: '',
+        stock: 0,
+      });
+      fetchSuppliersAndKpis(config);
+      // Fetch logs after book order
+      if (selectedSupplier) {
+        const logsRes = await getSupplierLogs(selectedSupplier._id, config);
+        setLogs(logsRes.data);
+      }
+    } catch (err) {
+      alert('Failed to add book: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   return (
@@ -201,39 +276,39 @@ const SupplierDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white shadow rounded p-4 text-center">
           <div className="text-lg font-semibold">Total Suppliers</div>
-          <div className="text-2xl text-red-700">{kpis.totalSuppliers || '--'}</div>
+          <div className="text-2xl text-red-700">{totalSuppliers}</div>
         </div>
         <div className="bg-white shadow rounded p-4 text-center">
           <div className="text-lg font-semibold">Active vs Inactive</div>
-          <div className="text-2xl text-red-700">{kpis.activeSuppliers || '--'} / {kpis.inactiveSuppliers || '--'}</div>
+          <div className="text-2xl text-red-700">{activeSuppliers} / {inactiveSuppliers}</div>
         </div>
         <div className="bg-white shadow rounded p-4 text-center">
           <div className="text-lg font-semibold">Most Used Supplier</div>
-          <div className="text-2xl text-red-700">{kpis.mostUsedSupplier || '--'}</div>
+          <div className="text-2xl text-red-700">{mostUsedSupplier}</div>
         </div>
         <div className="bg-white shadow rounded p-4 text-center">
           <div className="text-lg font-semibold">New This Month</div>
-          <div className="text-2xl text-red-700">{kpis.newSuppliersThisMonth || '--'}</div>
+          <div className="text-2xl text-red-700">{newSuppliersThisMonth}</div>
         </div>
       </div>
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white shadow rounded p-4">
+        <div className="bg-white shadow rounded p-4 flex flex-col items-center">
           <h3 className="text-lg font-bold mb-2 text-red-700">Active vs Inactive Suppliers</h3>
-          <Pie data={pieData} />
+          <Pie data={pieData} style={{ maxWidth: 300, maxHeight: 300 }} width={300} height={300} />
         </div>
-        <div className="bg-white shadow rounded p-4">
+        <div className="bg-white shadow rounded p-4 flex flex-col items-center">
           <h3 className="text-lg font-bold mb-2 text-red-700">New Suppliers Per Month</h3>
-          <Bar data={barData} options={{ plugins: { legend: { display: false } } }} />
+          <Bar data={barData} options={{ plugins: { legend: { display: false } } }} style={{ maxWidth: 300, maxHeight: 300 }} width={300} height={300} />
         </div>
       </div>
       {/* Supplier Table */}
-      <div className="bg-white rounded shadow p-4 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-red-700">Suppliers</h2>
+      <div className="bg-white rounded shadow p-6 mb-12">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-red-700">Suppliers</h2>
           <button
             onClick={handleAdd}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded flex items-center gap-2 shadow"
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded flex items-center gap-2 shadow"
           >
             Add New
           </button>
@@ -243,10 +318,8 @@ const SupplierDashboard = () => {
             <tr style={{ backgroundColor: '#f8f8f8' }}>
               <th style={cellStyles}>ID</th>
               <th style={cellStyles}>Company</th>
-              <th style={cellStyles}>Contact</th>
               <th style={cellStyles}>Email/Phone</th>
               <th style={cellStyles}>Address</th>
-              <th style={cellStyles}>Categories</th>
               <th style={cellStyles}>Status</th>
               <th style={cellStyles}>Type</th>
               <th style={cellStyles}>Actions</th>
@@ -265,29 +338,27 @@ const SupplierDashboard = () => {
               >
                 <td style={cellStyles}>{supplier._id}</td>
                 <td style={cellStyles}>{supplier.companyName}</td>
-                <td style={cellStyles}>{supplier.contactPerson}</td>
                 <td style={cellStyles}>{supplier.email} / {supplier.phone}</td>
                 <td style={cellStyles}>{supplier.address}</td>
-                <td style={cellStyles}>{supplier.productCategories?.join(', ')}</td>
                 <td style={cellStyles}>{supplier.status}</td>
                 <td style={cellStyles}>{supplier._type}</td>
                 <td style={cellStyles}>
                   {supplier._type === 'Supplier' ? (
                     <>
-                      <button onClick={() => handleEdit(supplier)} style={{ color: 'blue', marginRight: '8px' }}>Edit</button>
-                      <button onClick={() => handleDelete(supplier._id)} style={{ color: 'red', marginRight: '8px' }}>Delete</button>
-                      <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green', marginRight: '8px' }}>View Books</button>
+                      <button onClick={() => handleEdit(supplier)} style={{ color: 'blue', marginRight: '8px', fontSize: '1.1em' }}>Edit</button>
+                      <button onClick={() => handleDelete(supplier._id)} style={{ color: 'red', marginRight: '8px', fontSize: '1.1em' }}>Delete</button>
+                      <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green', marginRight: '8px', fontSize: '1.1em' }}>View Books</button>
                       {(user?.role === 'inventory department' || user?.role === 'admin' || user?.role === 'supplier department') && (
                         <button
                           onClick={() => handleAddBook(supplier)}
-                          style={{ color: 'purple' }}
+                          style={{ color: 'purple', fontSize: '1.1em' }}
                         >
                           Add Book
                         </button>
                       )}
                     </>
                   ) : (
-                    <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green' }}>View Books</button>
+                    <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green', fontSize: '1.1em' }}>View Books</button>
                   )}
                 </td>
               </tr>
@@ -298,7 +369,7 @@ const SupplierDashboard = () => {
       {/* Modal for Add/Edit Supplier */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md relative">
             <button
               className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
               onClick={() => setShowModal(false)}
@@ -315,13 +386,14 @@ const SupplierDashboard = () => {
                 const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
                 const supplierData = {
                   companyName: e.target.companyName.value,
-                  contactPerson: e.target.contactPerson.value,
                   email: e.target.email.value,
                   phone: e.target.phone.value,
                   address: e.target.address.value,
-                  productCategories: e.target.productCategories.value.split(',').map(cat => cat.trim()),
                   status: e.target.status.value,
                 };
+                if (!selectedSupplier) {
+                  supplierData.createdAt = new Date().toISOString(); // Only set for new supplier
+                }
                 try {
                   if (selectedSupplier) {
                     await updateSupplier(selectedSupplier._id, supplierData, config);
@@ -341,14 +413,6 @@ const SupplierDashboard = () => {
                 name="companyName"
                 defaultValue={selectedSupplier?.companyName || ''}
                 placeholder="Company Name"
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="text"
-                name="contactPerson"
-                defaultValue={selectedSupplier?.contactPerson || ''}
-                placeholder="Contact Person"
                 required
                 className="w-full border px-3 py-2 rounded"
               />
@@ -373,14 +437,6 @@ const SupplierDashboard = () => {
                 name="address"
                 defaultValue={selectedSupplier?.address || ''}
                 placeholder="Address"
-                required
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="text"
-                name="productCategories"
-                defaultValue={selectedSupplier?.productCategories?.join(', ') || ''}
-                placeholder="Product Categories (comma-separated)"
                 required
                 className="w-full border px-3 py-2 rounded"
               />
