@@ -12,6 +12,7 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [books, setBooks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [newOrder, setNewOrder] = useState({
     user: "",
     items: [{ book: "", quantity: 1 }],
@@ -146,10 +147,11 @@ const Orders = () => {
     setCategoryChartData(categoryData);
   }, [orders]);
 
-  // Fetch books for the add order form
+  // Fetch books and users for the add order form
   useEffect(() => {
     if (showAddModal) {
       API.get('/books').then(res => setBooks(res.data || []));
+      API.get('/users').then(res => setUsers(res.data || []));
     }
   }, [showAddModal]);
 
@@ -318,14 +320,19 @@ const Orders = () => {
             <h3 className="text-xl font-bold mb-2 text-black">Add New Order</h3>
             <div>
               <label className="font-semibold">Customer:</label>
-              <input
-                type="text"
+              <select
                 required
                 className="ml-2 border px-2 py-1 rounded w-full"
-                placeholder="Enter customer name or email"
                 value={newOrder.user}
                 onChange={e => setNewOrder(o => ({ ...o, user: e.target.value }))}
-              />
+              >
+                <option value="">Select customer</option>
+                {users.filter(u => u.role === 'customer').map(u => (
+                  <option key={u._id} value={u._id}>
+                    {u.name} ({u.email})
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="font-semibold">Mode of Payment:</label>

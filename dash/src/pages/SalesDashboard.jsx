@@ -15,7 +15,7 @@ const SalesDashboard = () => {
   const [modalOrder, setModalOrder] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  // const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [books, setBooks] = useState([]);
   const [newOrder, setNewOrder] = useState({
     user: "",
@@ -51,7 +51,7 @@ const SalesDashboard = () => {
       const res = await API.get('/orders');
       setOrders(res.data);
 
-      // Revenue/transactions logic:
+      // Revenue/transactions logic (same as Orders.jsx):
       // - Bank: status is "paid"
       // - Cash: always include (regardless of status)
       // - COD: status is "received"
@@ -70,14 +70,16 @@ const SalesDashboard = () => {
         }
         return false;
       });
-      const revenue = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-const transactions = orders.length;
-const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
-setTotalRevenue(revenue);
-setTotalTransactions(transactions);
-setAov(avgOrderValue);
 
-      // Top books and category chart: use all orders for stats
+      // Only use acceptedOrPaidOrders for metrics (like Orders.jsx)
+      const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+      const transactions = acceptedOrPaidOrders.length;
+      const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
+      setTotalRevenue(revenue);
+      setTotalTransactions(transactions);
+      setAov(avgOrderValue);
+
+      // Top books and category chart: use acceptedOrPaidOrders for stats
       const bookSalesMap = {};
       const categorySalesMap = {};
       acceptedOrPaidOrders.forEach(order => {
@@ -591,14 +593,19 @@ setAov(avgOrderValue);
                 {/* User text field instead of dropdown */}
                 <div>
                   <label className="font-semibold">Customer:</label>
-                  <input
-                    type="text"
+                  <select
                     required
                     className="ml-2 border px-2 py-1 rounded w-full"
-                    placeholder="Enter customer name or email"
                     value={newOrder.user}
                     onChange={e => setNewOrder(o => ({ ...o, user: e.target.value }))}
-                  />
+                  >
+                    <option value="">Select customer</option>
+                    {users.filter(u => u.role === 'customer').map(u => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.email})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 {/* Mode of Payment - fixed as Cash */}
                 <div>

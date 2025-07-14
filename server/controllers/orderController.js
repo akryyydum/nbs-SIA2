@@ -1,6 +1,7 @@
 const Order = require('../models/order.model');
 const Book = require('../models/books.model');
 const SupplierBook = require('../models/supplierBook.model');
+const Notification = require('../models/notification.model'); // Make sure this model exists
 
 // @desc    Create a new order
 // @route   POST /api/orders
@@ -39,11 +40,11 @@ exports.createOrder = async (req, res) => {
     }
 
     const order = new Order({
-      user: req.user._id,
+      user: req.user._id, // Always use the logged-in user's id for customer orders
       items: enrichedItems,
       totalPrice,
-      modeofPayment, // <-- ensure this is set
-      status: 'pending' // Ensure status is set to 'pending' on creation
+      modeofPayment,
+      status: 'pending'
     });
 
     const savedOrder = await order.save();
@@ -152,11 +153,20 @@ exports.acceptOrder = async (req, res) => {
 
     // If cash, set to delivered, else accepted
     if (order.modeofPayment === "Cash") {
-      order.status = "received"; // <-- should be "received"
+      order.status = "received";
     } else {
       order.status = "accepted";
     }
     await order.save();
+
+    // --- Notification for customer: Accepted ---
+    await Notification.create({
+      user: order.user,
+      title: 'Order Accepted',
+      description: `Your order ${order._id} has been accepted.`,
+      order: order._id,
+      read: false,
+    });
 
     res.json({ message: 'Order accepted successfully', order });
   } catch (err) {
@@ -183,6 +193,36 @@ exports.declineOrder = async (req, res) => {
   }
 };
 
+// @desc    Ship order (admin only): set status to 'out for delivery'
+// @route   PUT /api/orders/:id/ship
+exports.shipOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'accepted') {
+      return res.status(400).json({ message: 'Only accepted orders can be shipped' });
+    }
+
+    order.status = 'out for delivery';
+    await order.save();
+
+    // --- Notification for customer: Shipped ---
+    await Notification.create({
+      user: order.user,
+      title: 'Order Shipped',
+      description: `Your order ${order._id} has been shipped.`,
+      order: order._id,
+      read: false,
+    });
+
+    res.json({ message: 'Order shipped successfully' });
+  } catch (err) {
+    console.error('Error in shipOrder:', err);
+    res.status(500).json({ message: err.message || 'Internal Server Error' });
+  }
+};
+
 // @desc    Mark order as received (admin or sales department)
 // @route   PUT /api/orders/:id/received
 exports.markOrderReceived = async (req, res) => {
@@ -194,6 +234,16 @@ exports.markOrderReceived = async (req, res) => {
     }
     order.status = 'received';
     await order.save();
+
+    // --- Notification for customer: Delivered ---
+    await Notification.create({
+      user: order.user,
+      title: 'Order Delivered',
+      description: `Your order ${order._id} has been delivered.`,
+      order: order._id,
+      read: false,
+    });
+
     res.json({ message: 'Order marked as received' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -238,23 +288,3 @@ exports.markOrderReceived = async (req, res) => {
 //     res.status(500).json({ message: err.message || 'Failed to fetch visuals' });
 //   }
 // };
-// @desc    Ship order (admin only): set status to 'out for delivery'
-// @route   PUT /api/orders/:id/ship
-exports.shipOrder = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
-
-    if (order.status !== 'accepted') {
-      return res.status(400).json({ message: 'Only accepted orders can be shipped' });
-    }
-
-    order.status = 'out for delivery';
-    await order.save();
-
-    res.json({ message: 'Order shipped successfully' });
-  } catch (err) {
-    console.error('Error in shipOrder:', err);
-    res.status(500).json({ message: err.message || 'Internal Server Error' });
-  }
-};
