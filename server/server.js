@@ -23,6 +23,8 @@ const app = express();
 // server.js or app.js
 const otpRoutes = require('./routes/otpRoutes');
 app.use('/api/auth', otpRoutes);
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
 
 // Middleware
 app.use(cors({

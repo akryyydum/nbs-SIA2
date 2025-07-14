@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { FaTrashAlt, FaCheckSquare, FaRegSquare, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSearch } from 'react-icons/fa';
+import Notifications from './Notifications';
 
 // Add this API instance for LAN compatibility
 const API = axios.create({
@@ -65,8 +66,7 @@ const Navbar = () => {
       setNotifications([]);
       return;
     }
-    // You should have a backend endpoint for user transactions/notifications
-    API.get('/transactions', {
+    API.get('/notifications', {
       headers: { Authorization: `Bearer ${user.token}` }
     })
       .then(res => setNotifications(res.data || []))
@@ -170,40 +170,7 @@ const Navbar = () => {
           {/* Right section (cart, account, notifications) */}
           <div className="hidden md:flex items-center flex-shrink-0 z-10" style={{ marginLeft: 'auto', gap: '2rem' }}>
             {/* Notification Bell */}
-            <div className="relative">
-              <button
-                className="ml-4 text-black hover:text-red-900 transition-colors duration-200 relative"
-                onClick={() => setNotifOpen(v => !v)}
-                aria-label="Notifications"
-              >
-                <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                {notifications.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 animate-bounce">{notifications.length}</span>
-                )}
-              </button>
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
-                  <div className="p-4 max-h-80 overflow-y-auto">
-                    <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2">
-                      Transactions
-                    </h4>
-                    {notifications.length === 0 ? (
-                      <div className="text-gray-400 text-sm text-center py-4 animate-fade-in">No transactions yet</div>
-                    ) : (
-                      notifications.map((notif, idx) => (
-                        <div key={notif._id || idx} className="mb-3 border-b pb-2 last:border-b-0 last:pb-0">
-                          <div className="font-semibold text-sm">{notif.title || 'Transaction'}</div>
-                          <div className="text-xs text-gray-500">{notif.description || ''}</div>
-                          <div className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <Notifications user={user} />
             {/* Cart Icon with Dropdown */}
             {!isSalesDashboard && (
               <div className="relative">
