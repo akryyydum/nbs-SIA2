@@ -527,7 +527,7 @@ const Products = () => {
                 <div className="text-xs text-gray-400 mb-2 text-center">Category: {modalBook.category}</div>
               )}
               {/* Supplier display in modal */}
-              {modalBook.suppliers && (
+              {modalBook.suppliers && user?.role !== 'customer' && (
                 <div className="text-xs text-gray-400 mb-4 text-center">
                   Supplier: {
                     modalBook.suppliers
