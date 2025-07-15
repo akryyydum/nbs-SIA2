@@ -15,11 +15,33 @@ const LoginPage = () => {
   const [newPassword, setNewPassword] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false); // Show password toggle
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpVerifying, setOtpVerifying] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await loginUser({ email, password });
+      // If customer and status is pending, show OTP modal
+      if (res.data.role === 'customer' && res.data.status === 'pending') {
+        setOtpEmail(email);
+        setShowOtpModal(true);
+        // Send OTP
+        setOtpLoading(true);
+        await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/send-otp`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, purpose: 'register' })
+          }
+        );
+        setOtpLoading(false);
+        alert('Your account is not yet verified. OTP sent to your email.');
+        return;
+      }
       // Only block login if status is exactly 'pending' or 'declined'
       if (res.data.status === 'pending') {
         alert('Your account is pending approval by admin.');
@@ -116,6 +138,41 @@ const LoginPage = () => {
       alert('Failed to reset password. Please check your OTP and try again.');
     }
     setOtpLoading(false);
+  };
+
+  // OTP verification handler for login
+  const handleOtpVerifyLogin = async (e) => {
+    e.preventDefault();
+    setOtpVerifying(true);
+    try {
+      // Verify OTP
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/verify-otp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: otpEmail, otp: otpInput })
+        }
+      );
+      if (!res.ok) throw new Error();
+      // Activate user
+      await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/activate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: otpEmail })
+        }
+      );
+      alert('OTP verified! Please log in again.');
+      setShowOtpModal(false);
+      setOtpInput('');
+      setOtpEmail('');
+      window.location.reload();
+    } catch {
+      alert('Invalid or expired OTP.');
+    }
+    setOtpVerifying(false);
   };
 
   return (
@@ -315,6 +372,43 @@ const LoginPage = () => {
               to { opacity: 1; transform: scale(1) translateY(0);}
             }
           `}</style>
+        </div>
+      )}
+      {/* OTP Modal for login */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl"
+              onClick={() => setShowOtpModal(false)}
+              type="button"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <form onSubmit={handleOtpVerifyLogin} className="space-y-6">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Enter OTP sent to your email
+                </label>
+                <input
+                  type="text"
+                  value={otpInput}
+                  onChange={e => setOtpInput(e.target.value)}
+                  placeholder="OTP"
+                  required
+                  className="w-full px-4 py-2 border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-black"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 bg-red-700 hover:bg-red-800 text-white font-semibold rounded transition-colors"
+                disabled={otpVerifying || !otpInput}
+              >
+                {otpVerifying ? 'Verifying...' : 'Verify OTP'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>
