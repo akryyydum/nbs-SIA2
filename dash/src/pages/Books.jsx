@@ -41,6 +41,8 @@ const Books = () => {
   // --- Supplier Filter State ---
   const [supplierFilter, setSupplierFilter] = useState('');
   const [showDashboard, setShowDashboard] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const API = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
@@ -337,6 +339,18 @@ const Books = () => {
   const filteredBooks = supplierFilter
     ? books.filter(b => b.supplier === supplierFilter)
     : books;
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE);
+  const paginatedBooks = filteredBooks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [supplierFilter]);
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 font-poppins animate-fade-in">
@@ -831,11 +845,11 @@ const Books = () => {
               <tr>
                 <td colSpan={9} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
-            ) : books.length === 0 ? (
+            ) : paginatedBooks.length === 0 ? (
               <tr>
                 <td colSpan={9} className="text-center py-8 text-gray-400">No books found</td>
               </tr>
-            ) : books.map(b => (
+            ) : paginatedBooks.map(b => (
               <tr key={b._id} className="hover:bg-red-50 transition">
                 <td className="border-b px-6 py-3">{b.title}</td>
                 <td className="border-b px-6 py-3">{b.author}</td>
@@ -867,6 +881,34 @@ const Books = () => {
             ))}
           </tbody>
         </table>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 my-4">
+            <button
+              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Prev
+            </button>
+            {[...Array(totalPages)].map((_, idx) => (
+              <button
+                key={idx}
+                className={`px-3 py-1 rounded ${currentPage === idx + 1 ? 'bg-red-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+                onClick={() => setCurrentPage(idx + 1)}
+              >
+                {idx + 1}
+              </button>
+            ))}
+            <button
+              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
       {/* Animations */}
       <style>

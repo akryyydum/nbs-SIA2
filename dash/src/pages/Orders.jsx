@@ -18,12 +18,15 @@ const Orders = () => {
     items: [{ book: "", quantity: 1 }],
     modeofPayment: "Cash"
   });
+  const [bankNumber, setBankNumber] = useState("");
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [aov, setAov] = useState(0);
   const [topBooksData, setTopBooksData] = useState([]);
   const [categoryChartData, setCategoryChartData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [nameError, setNameError] = useState("");
+  const [bankError, setBankError] = useState(""); // <-- Add this line
   const ORDERS_PER_PAGE = 10;
 
   // ✅ FIXED: This ensures axios works on both localhost and LAN
@@ -170,18 +173,41 @@ const Orders = () => {
     }
   }, [showAddModal]);
 
+  // Validation: only letters and spaces, at least one letter
+  const isValidName = (name) =>
+    /^[A-Za-z\s]+$/.test(name) && /[A-Za-z]/.test(name);
+
+  // Add this validation function near the top of your component:
+  const isValidBankNumber = (value) => /^[0-9-]+$/.test(value);
+
   // Add order handler
   const handleAddOrder = async (e) => {
     e.preventDefault();
+    if (!isValidName(newOrder.user)) {
+      setNameError("Only letters and spaces are allowed, and at least one letter is required.");
+      return;
+    }
+    if (newOrder.modeofPayment === "Bank") {
+      if (!bankNumber.trim()) {
+        setBankError("Bank number is required for bank payments.");
+        return;
+      }
+      if (!isValidBankNumber(bankNumber.trim())) {
+        setBankError("Bank number can only contain numbers and dashes.");
+        return;
+      }
+    }
     try {
       const orderData = {
         user: newOrder.user,
         items: newOrder.items.map(i => ({ book: i.book, quantity: Number(i.quantity) })),
-        modeofPayment: "Cash"
+        modeofPayment: newOrder.modeofPayment,
+        ...(newOrder.modeofPayment === "Bank" && { bankNumber: bankNumber.trim() })
       };
       await API.post('/orders', orderData);
       setShowAddModal(false);
       setNewOrder({ user: "", items: [{ book: "", quantity: 1 }], modeofPayment: "Cash" });
+      setBankNumber("");
       fetchOrders();
       alert("Order created!");
     } catch (err) {
@@ -329,29 +355,64 @@ const Orders = () => {
             <h3 className="text-xl font-bold mb-2 text-black">Add New Order</h3>
             <div>
               <label className="font-semibold">Customer:</label>
-              <select
+              <input
+                type="text"
                 required
                 className="ml-2 border px-2 py-1 rounded w-full"
+                placeholder="Enter customer name"
                 value={newOrder.user}
-                onChange={e => setNewOrder(o => ({ ...o, user: e.target.value }))}
-              >
-                <option value="">Select customer</option>
-                {users.filter(u => u.role === 'customer').map(u => (
-                  <option key={u._id} value={u._id}>
-                    {u.name} ({u.email})
-                  </option>
-                ))}
-              </select>
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === "" || isValidName(value)) {
+                    setNewOrder(o => ({ ...o, user: value }));
+                    setNameError("");
+                  } else {
+                    setNameError("Only letters and spaces are allowed, and at least one letter is required.");
+                  }
+                }}
+              />
+              {nameError && (
+                <div className="text-red-600 text-sm mt-1">{nameError}</div>
+              )}
             </div>
             <div>
               <label className="font-semibold">Mode of Payment:</label>
-              <input
-                type="text"
-                className="ml-2 border px-2 py-1 rounded w-full bg-gray-100"
-                value="Cash"
-                disabled
-              />
+              <select
+                className="ml-2 border px-2 py-1 rounded w-full"
+                value={newOrder.modeofPayment}
+                onChange={e => {
+                  setNewOrder(o => ({ ...o, modeofPayment: e.target.value }));
+                  setBankNumber("");
+                }}
+              >
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+              </select>
             </div>
+            {newOrder.modeofPayment === "Bank" && (
+              <div>
+                <label className="font-semibold">Bank Number:</label>
+                <input
+                  type="text"
+                  required
+                  className="ml-2 border px-2 py-1 rounded w-full"
+                  placeholder="Enter bank number"
+                  value={bankNumber}
+                  onChange={e => {
+                    const value = e.target.value;
+                    if (value === "" || isValidBankNumber(value)) {
+                      setBankNumber(value);
+                      setBankError("");
+                    } else {
+                      setBankError("Bank number can only contain numbers and dashes.");
+                    }
+                  }}
+                />
+                {bankError && (
+                  <div className="text-red-600 text-sm mt-1">{bankError}</div>
+                )}
+              </div>
+            )}
             <div>
               <label className="font-semibold">Items:</label>
               {newOrder.items.map((item, idx) => (
