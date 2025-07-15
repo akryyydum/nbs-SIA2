@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
@@ -223,6 +223,69 @@ const SalesDashboard = () => {
     };
     if (activeTab === "logs") fetchLogs();
   }, [activeTab, user]);
+
+  // Filter out supplier orders for the customer view
+  const customerOrders = useMemo(
+    () => orders.filter(order =>
+      !order.isSupplierOrder && order.modeofPayment !== 'Supplier Order'
+    ),
+    [orders]
+  );
+
+  // Dashboard metrics recalculation when customerOrders changes
+  useEffect(() => {
+    if (!customerOrders || customerOrders.length === 0) {
+      setTotalRevenue(0);
+      setTotalTransactions(0);
+      setAov(0);
+      setTopBooksData([]);
+      setCategoryChartData([]);
+      return;
+    }
+
+    // Only count orders that are actually completed/approved/received/paid
+    const acceptedOrPaidOrders = customerOrders.filter(order => {
+      if (order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
+        return order.status === "paid";
+      }
+      if (order.modeofPayment === "Cash") {
+        return order.status === "accepted" || order.status === "received";
+      }
+      if (order.modeofPayment === "Cash on Delivery" || order.modeofPayment === "cod") {
+        return order.status === "received";
+      }
+      return false;
+    });
+
+    const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    const transactions = acceptedOrPaidOrders.length;
+    const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
+    setTotalRevenue(revenue);
+    setTotalTransactions(transactions);
+    setAov(avgOrderValue);
+
+    // Top books and category chart logic
+    const bookSalesMap = {};
+    const categorySalesMap = {};
+    acceptedOrPaidOrders.forEach(order => {
+      order.items.forEach(item => {
+        const bookTitle = item.book?.title || 'Unknown';
+        bookSalesMap[bookTitle] = (bookSalesMap[bookTitle] || 0) + item.quantity;
+        const category = item.book?.category || 'Uncategorized';
+        categorySalesMap[category] = (categorySalesMap[category] || 0) + item.quantity;
+      });
+    });
+
+    const topBooks = Object.entries(bookSalesMap)
+      .map(([title, quantity]) => ({ title, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+
+    const categoryData = Object.entries(categorySalesMap).map(([category, quantity]) => ({ category, quantity }));
+
+    setTopBooksData(topBooks);
+    setCategoryChartData(categoryData);
+  }, [customerOrders]);
 
   return (
     <div className="p-6 font-lora bg-gradient-to-br from-red-50 via-white to-red-100 min-h-screen">

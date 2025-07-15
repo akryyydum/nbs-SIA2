@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
@@ -93,9 +93,23 @@ const Orders = () => {
     }
   };
 
-  // Calculate metrics and chart data when orders change
+  const customerOrders = useMemo(
+    () => orders.filter(order =>
+      !order.isSupplierOrder && order.modeofPayment !== 'Supplier Order'
+    ),
+    [orders]
+  );
+
+  // Pagination logic should use customerOrders
+  const totalPages = Math.ceil(customerOrders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = customerOrders.slice(
+    (currentPage - 1) * ORDERS_PER_PAGE,
+    currentPage * ORDERS_PER_PAGE
+  );
+
+  // Calculate metrics and chart data when customerOrders change
   useEffect(() => {
-    if (!orders || orders.length === 0) {
+    if (!customerOrders || customerOrders.length === 0) {
       setTotalRevenue(0);
       setTotalTransactions(0);
       setAov(0);
@@ -103,13 +117,14 @@ const Orders = () => {
       setCategoryChartData([]);
       return;
     }
-    // Revenue/transactions logic (same as SalesDashboard)
-    const acceptedOrPaidOrders = orders.filter(order => {
+
+    // Only count orders that are actually completed/approved/received/paid
+    const acceptedOrPaidOrders = customerOrders.filter(order => {
       if (order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
         return order.status === "paid";
       }
       if (order.modeofPayment === "Cash") {
-        return true;
+        return order.status === "accepted" || order.status === "received";
       }
       if (order.modeofPayment === "Cash on Delivery" || order.modeofPayment === "cod") {
         return order.status === "received";
@@ -117,8 +132,8 @@ const Orders = () => {
       return false;
     });
 
-    const revenue = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-    const transactions = orders.length;
+    const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    const transactions = acceptedOrPaidOrders.length;
     const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
     setTotalRevenue(revenue);
     setTotalTransactions(transactions);
@@ -145,7 +160,7 @@ const Orders = () => {
 
     setTopBooksData(topBooks);
     setCategoryChartData(categoryData);
-  }, [orders]);
+  }, [customerOrders]);
 
   // Fetch books and users for the add order form
   useEffect(() => {
@@ -173,12 +188,6 @@ const Orders = () => {
       alert(err.response?.data?.message || "Failed to create order");
     }
   };
-
-  const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
-  const paginatedOrders = orders.slice(
-    (currentPage - 1) * ORDERS_PER_PAGE,
-    currentPage * ORDERS_PER_PAGE
-  );
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
@@ -452,7 +461,7 @@ const Orders = () => {
               <tr>
                 <td colSpan={7} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
-            ) : orders.length === 0 ? (
+            ) : customerOrders.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center py-8 text-gray-400">No orders found</td>
               </tr>

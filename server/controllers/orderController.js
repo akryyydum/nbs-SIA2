@@ -84,7 +84,15 @@ exports.getMyOrders = async (req, res) => {
 // @route   GET /api/orders
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate('user', 'name email').populate('items.book');
+    // Only fetch orders that are NOT supplier orders
+    const orders = await Order.find({
+      $or: [
+        { isSupplierOrder: { $exists: false } },
+        { isSupplierOrder: false }
+      ]
+    })
+      .populate('user', 'name email')
+      .populate('items.book');
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
