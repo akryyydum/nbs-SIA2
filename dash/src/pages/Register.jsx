@@ -9,9 +9,31 @@ const RegisterPage = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    // Data validation
+    if (!form.name || !form.email || !form.password || !form.role) {
+      setError("All fields are required.");
+      return;
+    }
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError("Invalid email format.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    const hasNumber = /[0-9]/.test(form.password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(form.password);
+    if (!hasNumber || !hasSpecial) {
+      setError("Password must include a number and a special character.");
+      return;
+    }
     try {
       // Always set status to 'inactive' on registration
       await registerUser({ ...form, status: 'pending' });
@@ -82,6 +104,7 @@ const RegisterPage = () => {
         <div className="w-full max-w-md">
           <h2 className="text-3xl font-bold mb-2 text-black">Create an account</h2>
           <p className="mb-8 text-gray-500">Please enter your details</p>
+          {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
           {!showOtp ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
