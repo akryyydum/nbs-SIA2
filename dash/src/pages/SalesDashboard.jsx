@@ -23,6 +23,9 @@ const SalesDashboard = () => {
     modeofPayment: "Cash"
   });
   const [logs, setLogs] = useState([]);
+  const [nameError, setNameError] = useState("");
+  const [bankError, setBankError] = useState(""); // <-- Add this line
+  const [bankNumber, setBankNumber] = useState("");
   const { user } = useAuth();
 
   // Dashboard visuals state (like Inventory)
@@ -194,16 +197,31 @@ const SalesDashboard = () => {
   // Add order handler
   const handleAddOrder = async (e) => {
     e.preventDefault();
+    if (!isValidName(newOrder.user)) {
+      setNameError("Only letters and spaces are allowed, and at least one letter is required.");
+      return;
+    }
+    if (newOrder.modeofPayment === "Bank") {
+      if (!bankNumber.trim()) {
+        setBankError("Bank number is required for bank payments.");
+        return;
+      }
+      if (!isValidBankNumber(bankNumber.trim())) {
+        setBankError("Bank number can only contain numbers and dashes.");
+        return;
+      }
+    }
     try {
-      // Always set modeofPayment to "Cash" for new orders
       const orderData = {
         user: newOrder.user,
         items: newOrder.items.map(i => ({ book: i.book, quantity: Number(i.quantity) })),
-        modeofPayment: "Cash"
+        modeofPayment: newOrder.modeofPayment,
+        ...(newOrder.modeofPayment === "Bank" && { bankNumber: bankNumber.trim() })
       };
       await API.post('/orders', orderData);
       setShowAddModal(false);
       setNewOrder({ user: "", items: [{ book: "", quantity: 1 }], modeofPayment: "Cash" });
+      setBankNumber("");
       fetchOrders();
       alert("Order created!");
     } catch (err) {
@@ -286,6 +304,11 @@ const SalesDashboard = () => {
     setTopBooksData(topBooks);
     setCategoryChartData(categoryData);
   }, [customerOrders]);
+
+  const isValidName = (name) =>
+  /^[A-Za-z\s]+$/.test(name) && /[A-Za-z]/.test(name);
+
+  const isValidBankNumber = (value) => /^[0-9-]+$/.test(value);
 
   return (
     <div className="p-6 font-lora bg-gradient-to-br from-red-50 via-white to-red-100 min-h-screen">
@@ -656,30 +679,65 @@ const SalesDashboard = () => {
                 {/* User text field instead of dropdown */}
                 <div>
                   <label className="font-semibold">Customer:</label>
-                  <select
+                  <input
+                    type="text"
                     required
                     className="ml-2 border px-2 py-1 rounded w-full"
+                    placeholder="Enter customer name"
                     value={newOrder.user}
-                    onChange={e => setNewOrder(o => ({ ...o, user: e.target.value }))}
-                  >
-                    <option value="">Select customer</option>
-                    {users.filter(u => u.role === 'customer').map(u => (
-                      <option key={u._id} value={u._id}>
-                        {u.name} ({u.email})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={e => {
+                      const value = e.target.value;
+                      if (value === "" || isValidName(value)) {
+                        setNewOrder(o => ({ ...o, user: value }));
+                        setNameError("");
+                      } else {
+                        setNameError("Only letters and spaces are allowed, and at least one letter is required.");
+                      }
+                    }}
+                  />
+                  {nameError && (
+                    <div className="text-red-600 text-sm mt-1">{nameError}</div>
+                  )}
                 </div>
                 {/* Mode of Payment - fixed as Cash */}
                 <div>
                   <label className="font-semibold">Mode of Payment:</label>
-                  <input
-                    type="text"
-                    className="ml-2 border px-2 py-1 rounded w-full bg-gray-100"
-                    value="Cash"
-                    disabled
-                  />
+                  <select
+                    className="ml-2 border px-2 py-1 rounded w-full"
+                    value={newOrder.modeofPayment}
+                    onChange={e => {
+                      setNewOrder(o => ({ ...o, modeofPayment: e.target.value }));
+                      setBankNumber("");
+                    }}
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="Bank">Bank</option>
+                  </select>
                 </div>
+                {newOrder.modeofPayment === "Bank" && (
+                  <div>
+                    <label className="font-semibold">Bank Number:</label>
+                    <input
+                      type="text"
+                      required
+                      className="ml-2 border px-2 py-1 rounded w-full"
+                      placeholder="Enter bank number"
+                      value={bankNumber}
+                      onChange={e => {
+                        const value = e.target.value;
+                        if (value === "" || isValidBankNumber(value)) {
+                          setBankNumber(value);
+                          setBankError("");
+                        } else {
+                          setBankError("Bank number can only contain numbers and dashes.");
+                        }
+                      }}
+                    />
+                    {bankError && (
+                      <div className="text-red-600 text-sm mt-1">{bankError}</div>
+                    )}
+                  </div>
+                )}
                 {/* Items */}
                 <div>
                   <label className="font-semibold">Items:</label>

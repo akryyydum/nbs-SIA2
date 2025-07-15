@@ -10,6 +10,7 @@ import { useAuth } from './context/AuthContext';
 import Users from './pages/Users';
 import Books from './pages/Books'; // <-- import Books
 import Orders from './pages/Orders'; // <-- import Orders
+import MapPicker from './components/MapPicker';
 import Inventory from './pages/Inventory';
 import Products from './pages/Products';
 import SalesDashboard from './pages/SalesDashboard'; // <-- import SalesDashboard
@@ -63,6 +64,14 @@ function App() {
             <Navbar />
             <Products />
           </>
+        } />
+        <Route path="/map-picker" element={
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <div className="flex-1 flex items-center justify-center">
+              <MapPicker onSelect={() => {}} />
+            </div>
+          </div>
         } />
         <Route path="/checkout" element={
           <>
