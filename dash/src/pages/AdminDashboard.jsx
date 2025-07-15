@@ -95,8 +95,35 @@ const AdminDashboard = () => {
         const customerLogins = logsRes.data || [];
         const totalSuppliers = supplierKpisRes.data?.totalSuppliers || 0; // <-- get from kpis
 
-        // Calculate statistics
-        const totalSales = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+        // Filter out supplier orders
+        const customerOrders = orders.filter(
+          o => !o.isSupplierOrder && o.modeofPayment !== 'Supplier Order'
+        );
+
+        // Calculate statistics using only customerOrders
+        const totalSales = customerOrders.reduce((sum, o) => {
+          if (
+            (o.modeofPayment === "Cash on Delivery" || o.modeofPayment === "cod") &&
+            o.status === "received"
+          ) {
+            return sum + (o.totalPrice || 0);
+          }
+          if (
+            (o.modeofPayment === "Bank Transfer" || o.modeofPayment === "bank") &&
+            o.status === "paid"
+          ) {
+            return sum + (o.totalPrice || 0);
+          }
+          if (
+            o.modeofPayment === "Cash" &&
+            (o.status === "accepted" || o.status === "received")
+          ) {
+            return sum + (o.totalPrice || 0);
+          }
+          return sum;
+        }, 0);
+        const totalOrders = customerOrders.length;
+
         const stockByCategory = {};
         books.forEach((b) => {
           if (!b.category) return;
@@ -133,13 +160,13 @@ const AdminDashboard = () => {
           totalBooks: books.length,
           totalUsers: users.length,
           totalSuppliers, // <-- use KPI value
-          totalOrders: orders.length,
+          totalOrders,
           totalSales,
           customerLogins,
           stockByCategory,
           salesTrends,
           topBooks,
-          orders,
+          orders: customerOrders, // for export and table
         });
       } catch (err) {
         setStats((s) => ({ ...s }));
