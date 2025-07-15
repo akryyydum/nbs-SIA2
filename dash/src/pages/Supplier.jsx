@@ -122,17 +122,14 @@ const SupplierBooks = () => {
       alert('Stock is required');
       return;
     }
-    
     if (isNaN(stock)) {
       alert('Please enter a valid stock number');
       return;
     }
-    
-    if (stock < 0) {
-      alert('Stock cannot be negative');
+    if (stock < 1) {
+      alert('Stock must be at least 1');
       return;
     }
-    
     // Check if stock is not an integer
     if (!Number.isInteger(stock)) {
       alert('Stock must be a whole number');
@@ -319,7 +316,7 @@ const SupplierBooks = () => {
                 value={form.price}
                 onChange={e => {
                   const value = e.target.value;
-                  if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+                  if (value === '' || (!isNaN(value) && parseFloat(value) >= 1)) {
                     setForm(f => ({ ...f, price: value }));
                   }
                 }}
@@ -330,14 +327,14 @@ const SupplierBooks = () => {
                   }
                 }}
                 onPaste={(e) => {
-                  // Prevent pasting negative values
+                  // Prevent pasting negative values or less than 1
                   const paste = e.clipboardData.getData('text');
-                  if (paste.includes('-') || isNaN(paste) || parseFloat(paste) < 0) {
+                  if (paste.includes('-') || isNaN(paste) || parseFloat(paste) < 1) {
                     e.preventDefault();
                   }
                 }}
                 required
-                min="0"
+                min="1"
                 step="0.01"
                 className="w-full border px-3 py-2 rounded"
               />
@@ -347,7 +344,7 @@ const SupplierBooks = () => {
                 value={form.stock}
                 onChange={e => {
                   const value = e.target.value;
-                  if (value === '' || (!isNaN(value) && parseInt(value) >= 0 && Number.isInteger(parseFloat(value)))) {
+                  if (value === '' || (!isNaN(value) && parseInt(value) >= 1 && Number.isInteger(parseFloat(value)))) {
                     setForm(f => ({ ...f, stock: value }));
                   }
                 }}
@@ -358,14 +355,14 @@ const SupplierBooks = () => {
                   }
                 }}
                 onPaste={(e) => {
-                  // Prevent pasting negative values or decimals
+                  // Prevent pasting negative values, decimals, or less than 1
                   const paste = e.clipboardData.getData('text');
-                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 0) {
+                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 1) {
                     e.preventDefault();
                   }
                 }}
                 required
-                min="0"
+                min="1"
                 className="w-full border px-3 py-2 rounded"
               />
 

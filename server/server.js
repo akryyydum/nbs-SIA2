@@ -28,13 +28,7 @@ app.use('/api/notifications', notificationRoutes);
 
 // Middleware
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://192.168.0.113:5173',
-    'http://192.168.9.20:5173',
-    'http://192.168.9.17:5173',
-    'http://192.168.9.16:5173'  // <-- Add this line
-  ],
+  origin: true, // Reflects the request origin automatically
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' })); // Parse incoming JSON, allow up to 10mb
