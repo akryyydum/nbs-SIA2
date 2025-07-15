@@ -89,23 +89,13 @@ const Inventory = () => {
     const price = parseFloat(form.price);
     const stock = parseInt(form.stock);
     
-    if (price < 0) {
-      alert('Price cannot be negative');
+    if (isNaN(price) || price < 1) {
+      alert('Please enter a valid price of 1 or greater');
       return;
     }
     
-    if (stock < 0) {
-      alert('Stock cannot be negative');
-      return;
-    }
-    
-    if (isNaN(price) || price === 0) {
-      alert('Please enter a valid price greater than 0');
-      return;
-    }
-    
-    if (isNaN(stock)) {
-      alert('Please enter a valid stock number');
+    if (isNaN(stock) || stock < 1) {
+      alert('Please enter a valid stock number of 1 or greater');
       return;
     }
     
@@ -241,19 +231,19 @@ const Inventory = () => {
         const price = parseFloat(o.price);
         const quantity = parseInt(o.quantity);
         
-        // Check for negative values and invalid numbers
-        if (price < 0 || isNaN(price)) return true;
-        if (quantity <= 0 || isNaN(quantity)) return true;
+        // Check for values less than 1 and invalid numbers
+        if (isNaN(price) || price < 1) return true;
+        if (isNaN(quantity) || quantity < 1) return true;
         
         return !o.title || !o.author || !o.category;
       } else {
         const quantity = parseInt(o.quantity);
-        return !o.book || quantity <= 0 || isNaN(quantity);
+        return !o.book || isNaN(quantity) || quantity < 1;
       }
     });
 
     if (!selectedSupplier || hasInvalidOrder) {
-      alert('Please complete all fields with valid positive values');
+      alert('Please complete all fields with valid values of 1 or greater');
       return;
     }
 
@@ -355,12 +345,12 @@ const Inventory = () => {
                 value={form.price} 
                 onChange={e => {
                   const value = e.target.value;
-                  if (value === '' || (parseFloat(value) >= 0)) {
+                  if (value === '' || (parseFloat(value) >= 1)) {
                     setForm(f => ({ ...f, price: value }));
                   }
                 }} 
                 required 
-                min="0" 
+                min="1" 
                 step="0.01"
                 className="w-full border px-3 py-2 rounded" 
               />
@@ -370,12 +360,12 @@ const Inventory = () => {
                 value={form.stock} 
                 onChange={e => {
                   const value = e.target.value;
-                  if (value === '' || (parseInt(value) >= 0)) {
+                  if (value === '' || (parseInt(value) >= 1)) {
                     setForm(f => ({ ...f, stock: value }));
                   }
                 }} 
                 required 
-                min="0"
+                min="1"
                 className="w-full border px-3 py-2 rounded" 
               />
               
@@ -508,13 +498,13 @@ const Inventory = () => {
                         value={order.price || ''}
                         onChange={e => {
                           const value = e.target.value;
-                          if (value === '' || (parseFloat(value) >= 0)) {
+                          if (value === '' || (parseFloat(value) >= 1)) {
                             const updatedOrders = [...orderDetails];
                             updatedOrders[index].price = value;
                             setOrderDetails(updatedOrders);
                           }
                         }}
-                        min="0"
+                        min="1"
                         step="0.01"
                         className="w-full border px-3 py-2 rounded"
                       />
@@ -576,7 +566,7 @@ const Inventory = () => {
                     value={order.quantity}
                     onChange={e => {
                       const value = e.target.value;
-                      if (value === '' || (parseInt(value) > 0)) {
+                      if (value === '' || (parseInt(value) >= 1)) {
                         const updatedOrders = [...orderDetails];
                         updatedOrders[index].quantity = value === '' ? '' : Number(value);
                         setOrderDetails(updatedOrders);

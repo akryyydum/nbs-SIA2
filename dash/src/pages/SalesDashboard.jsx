@@ -201,6 +201,18 @@ const SalesDashboard = () => {
       setNameError("Only letters and spaces are allowed, and at least one letter is required.");
       return;
     }
+    
+    // Validate that all quantities are >= 1
+    const hasInvalidQuantity = newOrder.items.some(item => {
+      const quantity = parseInt(item.quantity);
+      return isNaN(quantity) || quantity < 1;
+    });
+    
+    if (hasInvalidQuantity) {
+      alert("All quantities must be 1 or greater");
+      return;
+    }
+    
     if (newOrder.modeofPayment === "Bank") {
       if (!bankNumber.trim()) {
         setBankError("Bank number is required for bank payments.");
@@ -764,9 +776,12 @@ const SalesDashboard = () => {
                         className="border px-2 py-1 rounded w-20"
                         value={item.quantity}
                         onChange={e => {
-                          const items = [...newOrder.items];
-                          items[idx].quantity = e.target.value;
-                          setNewOrder(o => ({ ...o, items }));
+                          const value = e.target.value;
+                          if (value === '' || (parseInt(value) >= 1)) {
+                            const items = [...newOrder.items];
+                            items[idx].quantity = value;
+                            setNewOrder(o => ({ ...o, items }));
+                          }
                         }}
                         required
                       />

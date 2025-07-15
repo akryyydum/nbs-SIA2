@@ -124,23 +124,13 @@ const Books = () => {
     const price = parseFloat(form.price);
     const stock = parseInt(form.stock);
     
-    if (price < 0) {
-      alert('Price cannot be negative');
+    if (isNaN(price) || price < 1) {
+      alert('Please enter a valid price of 1 or greater');
       return;
     }
     
-    if (stock < 0) {
-      alert('Stock cannot be negative');
-      return;
-    }
-    
-    if (isNaN(price) || price === 0) {
-      alert('Please enter a valid price greater than 0');
-      return;
-    }
-    
-    if (isNaN(stock)) {
-      alert('Please enter a valid stock number');
+    if (isNaN(stock) || stock < 1) {
+      alert('Please enter a valid stock number of 1 or greater');
       return;
     }
     
@@ -226,13 +216,13 @@ const Books = () => {
           return;
         }
         
-        if (price < 0 || isNaN(price) || price === 0) {
-          alert('Please enter a valid price greater than 0 for new books');
+        if (isNaN(price) || price < 1) {
+          alert('Please enter a valid price of 1 or greater for new books');
           return;
         }
         
-        if (quantity <= 0 || isNaN(quantity)) {
-          alert('Please enter a valid quantity greater than 0');
+        if (isNaN(quantity) || quantity < 1) {
+          alert('Please enter a valid quantity of 1 or greater');
           return;
         }
       } else {
@@ -243,8 +233,8 @@ const Books = () => {
           return;
         }
         
-        if (quantity <= 0 || isNaN(quantity)) {
-          alert('Please enter a valid quantity greater than 0');
+        if (isNaN(quantity) || quantity < 1) {
+          alert('Please enter a valid quantity of 1 or greater');
           return;
         }
       }
@@ -463,12 +453,12 @@ const Books = () => {
                 value={form.price}
                 onChange={e => {
                   const value = e.target.value;
-                  if (value === '' || (parseFloat(value) >= 0)) {
+                  if (value === '' || (parseFloat(value) >= 1)) {
                     setForm(f => ({ ...f, price: value }));
                   }
                 }}
                 required
-                min="0"
+                min="1"
                 step="0.01"
                 className="w-full border px-3 py-2 rounded"
               />
@@ -478,12 +468,12 @@ const Books = () => {
                 value={form.stock}
                 onChange={e => {
                   const value = e.target.value;
-                  if (value === '' || (parseInt(value) >= 0)) {
+                  if (value === '' || (parseInt(value) >= 1)) {
                     setForm(f => ({ ...f, stock: value }));
                   }
                 }}
                 required
-                min="0"
+                min="1"
                 className="w-full border px-3 py-2 rounded"
               />
               <div>
@@ -699,14 +689,14 @@ const Books = () => {
                           value={item.newBook.price}
                           onChange={e => {
                             const value = e.target.value;
-                            if (value === '' || (parseFloat(value) >= 0)) {
+                            if (value === '' || (parseFloat(value) >= 1)) {
                               const arr = [...orderItems];
                               arr[idx].newBook.price = value;
                               setOrderItems(arr);
                             }
                           }}
                           required
-                          min="0"
+                          min="1"
                           step="0.01"
                         />
                         <select
@@ -789,7 +779,7 @@ const Books = () => {
                         value={item.quantity}
                         onChange={e => {
                           const value = e.target.value;
-                          if (value === '' || (parseInt(value) > 0)) {
+                          if (value === '' || (parseInt(value) >= 1)) {
                             const arr = [...orderItems];
                             arr[idx].quantity = value === '' ? '' : Number(value);
                             setOrderItems(arr);
