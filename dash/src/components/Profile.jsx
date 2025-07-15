@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUserEdit } from 'react-icons/fa';
 import { updateUser } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
@@ -103,27 +103,19 @@ const Profile = ({ user }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-white overflow-x-hidden"
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#f8fafc] via-[#fbeee6] to-[#e0e7ff] overflow-x-hidden"
       style={{ overflow: 'hidden', height: '100vh' }}
     >
-      {/* Animated gradient overlay */}
+      {/* Animated gradient blobs */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-200 opacity-30 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-pink-200 opacity-30 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-yellow-100 opacity-20 rounded-full blur-2xl animate-pulse-fast -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-gradient-to-br from-pink-300 via-purple-200 to-blue-200 opacity-40 rounded-full blur-3xl animate-blob1"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-gradient-to-tr from-yellow-200 via-pink-200 to-pink-400 opacity-30 rounded-full blur-3xl animate-blob2"></div>
+        <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-gradient-to-br from-blue-100 via-pink-100 to-yellow-100 opacity-20 rounded-full blur-2xl animate-blob3 -translate-x-1/2 -translate-y-1/2"></div>
       </div>
-      {/* Background image at top 40% */}
-      <div
-        className="fixed top-0 left-0 w-full"
-        style={{
-          height: '40vh',
-          background: `url(${BG_IMAGE}) center/cover no-repeat`,
-          zIndex: 1,
-        }}
-      ></div>
+      {/* Glassmorphism Profile Card */}
       <div className="relative z-10 w-full flex items-center justify-center min-h-screen">
         <div
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-4xl w-full bg-white/60 backdrop-blur-lg shadow-2xl rounded-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up min-h-[420px] mx-4 border border-gray-200"
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-4xl w-full bg-white/40 backdrop-blur-2xl shadow-2xl rounded-3xl overflow-hidden flex flex-col md:flex-row animate-fade-in-up min-h-[440px] mx-4 border border-white/30"
           style={{
             boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
             animation: 'fadeInProfile 0.8s cubic-bezier(.4,0,.2,1)',
@@ -131,54 +123,56 @@ const Profile = ({ user }) => {
           }}
         >
           {/* Profile Image Section */}
-          <div className="md:w-1/3 flex items-center justify-center p-12 bg-white/30 relative">
+          <div className="md:w-1/3 flex flex-col items-center justify-center p-12 bg-gradient-to-br from-white/60 to-blue-50 relative">
             <div className="relative z-10 block">
               <img
                 src={avatar}
                 alt="Profile"
-                className="w-56 h-56 rounded-2xl object-cover border-4 border-white shadow-xl bg-gray-100 ring-2 ring-blue-200"
+                className="w-56 h-56 rounded-3xl object-cover border-8 border-gradient-pink shadow-2xl bg-gray-100 ring-4 ring-pink-200 animate-avatar-float"
                 style={{
-                  boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12), 0 1.5px 8px 0 rgba(0,0,0,0.10)'
+                  boxShadow: '0 8px 32px 0 rgba(31,38,135,0.12), 0 1.5px 8px 0 rgba(0,0,0,0.10)'
                 }}
               />
+              {/* Floating colored ring */}
+              <div className="absolute -top-6 -left-6 w-64 h-64 rounded-full border-4 border-pink-200 opacity-30 pointer-events-none animate-pulse-slow"></div>
             </div>
-            {/* Decorative ring */}
-            <div className="absolute top-8 left-8 w-44 h-44 rounded-full border-4 border-blue-100 opacity-40 pointer-events-none"></div>
+            {/* Decorative gradient ring */}
+            <div className="absolute top-10 left-10 w-44 h-44 rounded-full border-4 border-gradient-pink opacity-40 pointer-events-none"></div>
           </div>
           {/* Divider for desktop */}
-          <div className="hidden md:block w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent my-12"></div>
+          <div className="hidden md:block w-px bg-gradient-to-b from-transparent via-pink-200 to-transparent my-12"></div>
           {/* Profile Info */}
-          <div className="md:w-2/3 p-12 flex flex-col justify-center bg-white/30">
-            <div className="grid grid-cols-1 gap-y-6 text-base mb-6">
+          <div className="md:w-2/3 p-12 flex flex-col justify-center bg-white/40">
+            <div className="grid grid-cols-1 gap-y-7 text-base mb-8">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-700 tracking-wide">NAME:</span>
+                <span className="font-semibold text-pink-600 tracking-wide">NAME:</span>
                 {editing ? (
                   <input
                     type="text"
                     name="name"
                     value={editFields.name}
                     onChange={handleFieldChange}
-                    className="ml-2 border border-blue-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full max-w-xs bg-white/80 shadow-sm"
+                    className="ml-2 border border-pink-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-pink-300 w-full max-w-xs bg-white/80 shadow-sm transition-all duration-200"
                   />
                 ) : (
-                  <span className="ml-2 text-gray-900 font-medium">{profile.name}</span>
+                  <span className="ml-2 text-gray-900 font-bold text-lg">{profile.name}</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 <FaEnvelope className="text-blue-400" />
-                <span className="font-semibold text-gray-700 tracking-wide">EMAIL:</span>
+                <span className="font-semibold text-blue-600 tracking-wide">EMAIL:</span>
                 <span className="ml-2 text-gray-900 font-medium">{profile.email}</span>
               </div>
               <div className="flex items-center gap-2">
                 <FaLock className="text-pink-400" />
-                <span className="font-semibold text-gray-700 tracking-wide">PASSWORD:</span>
+                <span className="font-semibold text-pink-600 tracking-wide">PASSWORD:</span>
                 {editing ? (
                   <input
                     type="password"
                     name="password"
                     value={editFields.password}
                     onChange={handleFieldChange}
-                    className="ml-2 border border-blue-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full max-w-xs bg-white/80 shadow-sm"
+                    className="ml-2 border border-pink-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-pink-300 w-full max-w-xs bg-white/80 shadow-sm transition-all duration-200"
                   />
                 ) : (
                   <span className="ml-2 text-gray-900 font-medium">********</span> 
@@ -189,13 +183,13 @@ const Profile = ({ user }) => {
               <div className="flex gap-4 mt-4">
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-lg font-semibold shadow hover:from-green-500 hover:to-green-700 transition active:scale-95"
+                  className="px-7 py-2 bg-gradient-to-r from-pink-500 via-red-400 to-yellow-400 text-white rounded-xl font-semibold shadow-lg hover:from-pink-600 hover:to-yellow-500 transition-all duration-200 active:scale-95 animate-btn-pop"
                 >
                   Save
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-6 py-2 bg-gradient-to-r from-gray-200 to-gray-400 text-gray-800 rounded-lg font-semibold shadow hover:from-gray-300 hover:to-gray-500 transition active:scale-95"
+                  className="px-7 py-2 bg-gradient-to-r from-gray-200 to-gray-400 text-gray-800 rounded-xl font-semibold shadow hover:from-gray-300 hover:to-gray-500 transition-all duration-200 active:scale-95"
                 >
                   Cancel
                 </button>
@@ -203,15 +197,15 @@ const Profile = ({ user }) => {
             ) : (
               <button
                 onClick={handleEdit}
-                className="mt-4 px-6 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-semibold shadow hover:from-red-600 hover:to-pink-600 transition self-start active:scale-95"
+                className="mt-4 px-7 py-2 bg-gradient-to-r from-pink-500 via-red-400 to-yellow-400 text-white rounded-xl font-semibold shadow-lg hover:from-pink-600 hover:to-yellow-500 transition-all duration-200 self-start active:scale-95 flex items-center gap-2 animate-btn-pop"
               >
-                Edit
+                <FaUserEdit className="text-lg" /> Edit
               </button>
             )}
           </div>
         </div>
       </div>
-      {/* Fade-in animation keyframes */}
+      {/* Animations and custom gradients */}
       <style>{`
         @keyframes fadeInProfile {
           from { opacity: 0; transform: translateY(40px);}
@@ -223,16 +217,48 @@ const Profile = ({ user }) => {
         .animate-pulse-slow {
           animation: pulseSlow 6s infinite alternate;
         }
-        .animate-pulse-fast {
-          animation: pulseFast 3s infinite alternate;
-        }
         @keyframes pulseSlow {
           0% { opacity: 0.2; }
           100% { opacity: 0.4; }
         }
-        @keyframes pulseFast {
-          0% { opacity: 0.15; }
-          100% { opacity: 0.3; }
+        .animate-avatar-float {
+          animation: avatarFloat 3.5s ease-in-out infinite alternate;
+        }
+        @keyframes avatarFloat {
+          0% { transform: translateY(0);}
+          100% { transform: translateY(-12px);}
+        }
+        .border-gradient-pink {
+          border-image: linear-gradient(135deg, #f472b6 30%, #fbbf24 100%) 1;
+        }
+        .animate-btn-pop {
+          animation: btnPop 0.25s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes btnPop {
+          0% { transform: scale(1);}
+          50% { transform: scale(1.08);}
+          100% { transform: scale(1);}
+        }
+        .animate-blob1 {
+          animation: blobMove1 12s ease-in-out infinite alternate;
+        }
+        .animate-blob2 {
+          animation: blobMove2 14s ease-in-out infinite alternate;
+        }
+        .animate-blob3 {
+          animation: blobMove3 10s ease-in-out infinite alternate;
+        }
+        @keyframes blobMove1 {
+          0% { transform: translate(0,0) scale(1);}
+          100% { transform: translate(60px,40px) scale(1.1);}
+        }
+        @keyframes blobMove2 {
+          0% { transform: translate(0,0) scale(1);}
+          100% { transform: translate(-40px,-60px) scale(1.08);}
+        }
+        @keyframes blobMove3 {
+          0% { transform: translate(-50%, -50%) scale(1);}
+          100% { transform: translate(-60%, -60%) scale(1.12);}
         }
       `}</style>
     </div>

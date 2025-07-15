@@ -4,6 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { FaTrashAlt, FaCheckSquare, FaRegSquare, FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSearch } from 'react-icons/fa';
 import Notifications from './Notifications';
+import HomeIcon from '@mui/icons-material/Home';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import InfoIcon from '@mui/icons-material/Info';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 // Add this API instance for LAN compatibility
 const API = axios.create({
@@ -106,7 +111,7 @@ const Navbar = () => {
 
   return (
     <nav className="text-md font-light bg-white/60 backdrop-blur-md shadow-md font-poppins sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative ">
         <div className="flex h-16 items-center relative">
           {/* Logo on the left */}
           <div className="flex items-center flex-shrink-0 z-10">
@@ -114,13 +119,14 @@ const Navbar = () => {
           </div>
           {/* Nav Links (centered absolutely) */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center w-auto z-0">
-            <div className="hidden md:flex gap-7 space-x-6 items-center">
+            <div className="hidden md:flex gap-4 space-x-6 items-center">
               {user?.role === 'admin' ? (
                 <Link
                   to="/admin"
-                  className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                  className="text-black hover:text-red-900 transition-colors duration-200 font-semibold flex items-center gap-2"
                   onClick={handleLinkClick}
                 >
+                  <DashboardIcon fontSize="small" className="text-red-700" />
                   Control Panel
                 </Link>
               ) : (
@@ -129,30 +135,42 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/dashboard"
-                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      className={`text-black hover:text-red-900 transition-colors duration-200 font-semibold flex items-center gap-2 relative ${
+                        location.pathname === '/dashboard' ? 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-100' : 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-0'
+                      }`}
                       onClick={handleLinkClick}
                     >
+                      <HomeIcon fontSize="small" className="text-red-700" />
                       Home
                     </Link>
                     <Link
                       to="/products"
-                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      className={`text-black hover:text-red-900 transition-colors duration-200 font-semibold flex items-center gap-2 relative ${
+                        location.pathname === '/products' ? 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-100' : 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-0'
+                      }`}
                       onClick={handleLinkClick}
                     >
+                      <MenuBookIcon fontSize="small" className="text-red-700" />
                       Books
                     </Link>
                     <Link
                       to="/about"
-                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      className={`text-black hover:text-red-900 transition-colors duration-200 font-semibold flex items-center gap-2 relative ${
+                        location.pathname === '/about' ? 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-100' : 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-0'
+                      }`}
                       onClick={handleLinkClick}
                     >
+                      <InfoIcon fontSize="small" className="text-red-700" />
                       About
                     </Link>
                     <Link
                       to="/orders"
-                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
+                      className={`text-black hover:text-red-900 transition-colors duration-200 font-semibold flex items-center gap-2 relative ${
+                        location.pathname === '/orders' ? 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-100' : 'after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-red-400 after:rounded after:transition-all after:duration-300 after:scale-x-0'
+                      }`}
                       onClick={handleLinkClick}
                     >
+                      <ShoppingBagIcon fontSize="small" className="text-red-700" />
                       Orders
                     </Link>
                   </>
@@ -161,9 +179,16 @@ const Navbar = () => {
             </div>
           </div>
           {/* Right section (cart, account, notifications) */}
-          <div className="hidden md:flex items-center flex-shrink-0 z-10" style={{ marginLeft: 'auto', gap: '2rem' }}>
+          <div className="flex-1"></div>
+          <div className="hidden md:flex items-center flex-shrink-0 z-10 gap-6" style={{ marginLeft: 'auto' }}>
             {/* Notification Bell */}
-            <Notifications user={user} />
+            <div className="flex items-center relative">
+              <Notifications
+                user={user}
+                iconClassName="h-5 w-5"
+                bellStyle={{ fontSize: 20 }}
+              />
+            </div>
             {/* Cart Icon with Dropdown */}
             {!isSalesDashboard && (
               <div className="relative">
@@ -172,7 +197,7 @@ const Navbar = () => {
                   onClick={() => setCartOpen((v) => !v)}
                   aria-label="Cart"
                 >
-                  <FaShoppingCart className="h-7 w-7 transition-transform duration-300" style={{ transform: cartOpen ? 'scale(1.1)' : 'scale(1)' }} />
+                  <FaShoppingCart className="h-5 w-5 transition-transform duration-300" style={{ transform: cartOpen ? 'scale(1.1)' : 'scale(1)', fontSize: 20 }} />
                   {cart.length > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 animate-bounce">{cart.length}</span>
                   )}
@@ -268,28 +293,40 @@ const Navbar = () => {
                 )}
               </div>
             )}
-            {/* Account Icon and Dropdown */}
-            <div className="relative" ref={accountRef}>
+            {/* Profile Icon, Name, Role */}
+            <div className="relative ml-4">
               <button
                 onClick={() => setAccountOpen((v) => !v)}
-                className="ml-4 flex items-center text-black hover:text-red-900 focus:outline-none transition-colors duration-200"
+                className="flex items-center gap-3 bg-white/30 border border-gray-200 rounded-xl px-3 py-2 shadow-sm hover:shadow-md transition-all duration-200 min-w-[170px] max-w-[240px] backdrop-blur-md"
+                style={{
+                  minHeight: 48,
+                  backgroundColor: 'rgba(255,255,255,0.3)',
+                  marginLeft: 'auto'
+                }}
               >
-                {/* Show profile image if available, else fallback to icon */}
+                {/* Profile image or fallback */}
                 {user?.profileImage ? (
                   <img
                     src={user.profileImage}
                     alt="Profile"
-                    className="h-8 w-8 rounded-full object-cover border border-gray-300"
+                    className="h-10 w-10 rounded-full object-cover border border-gray-300"
                   />
                 ) : (
-                  <FaUserCircle className="h-8 w-8" />
+                  <FaUserCircle className="h-10 w-10 text-gray-400" />
                 )}
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="font-semibold text-black text-base truncate">{user?.name || 'User'}</span>
+                  <span className="text-xs text-gray-500 truncate">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Role'}</span>
+                </div>
+                <svg className="ml-auto h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               {/* Dropdown */}
               {accountOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in">
+                <div className="absolute right-0 mt-2 w-40 bg-white/80 border border-red-200 rounded-lg shadow-lg z-50 animate-fade-in backdrop-blur-md"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.8)' }}>
                   <Link to="/profile" className="block px-4 py-2 text-black hover:bg-red-50 hover:text-red-900 flex items-center gap-2">
-                    {/* Show profile image in dropdown if available */}
                     {user?.profileImage ? (
                       <img
                         src={user.profileImage}
@@ -359,34 +396,38 @@ const Navbar = () => {
           <>
             <Link
               to="/dashboard"
-              className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
+              className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200 flex items-center gap-2"
               onClick={e => { setOpen(false); handleLinkClick(e); }}
             >
+              <HomeIcon fontSize="small" className="text-red-700" />
               Home
             </Link>
           </>
         )}
         <Link
           to="/products"
-          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
+          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200 flex items-center gap-2"
           onClick={e => { setOpen(false); handleLinkClick(e); }}
         >
+          <MenuBookIcon fontSize="small" className="text-red-700" />
           Products
         </Link>
         <Link
           to="/about"
-          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
+          className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200 flex items-center gap-2"
           onClick={e => { setOpen(false); handleLinkClick(e); }}
         >
+          <InfoIcon fontSize="small" className="text-red-700" />
           About
         </Link>
         {/* Admin Control Panel Link */}
         {user?.role === 'admin' && (
           <Link
             to="/admin"
-            className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
+            className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200 flex items-center gap-2"
             onClick={e => { setOpen(false); handleLinkClick(e); }}
           >
+            <DashboardIcon fontSize="small" className="text-red-700" />
             Control Panel
           </Link>
         )}

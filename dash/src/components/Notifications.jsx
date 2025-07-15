@@ -4,7 +4,7 @@ import { FaBell } from "react-icons/fa";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`;
 
-export default function Notifications({ user }) {
+export default function Notifications({ user, iconClassName = "h-7 w-7", bellStyle = {} }) {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [deletingIds, setDeletingIds] = useState([]); // Track notifications being deleted
@@ -57,7 +57,7 @@ export default function Notifications({ user }) {
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)} className="relative">
-        <FaBell className="h-7 w-7" />
+        <FaBell className={iconClassName} style={bellStyle} />
         {notifications.some(n => !n.read) && (
           <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5">
             {notifications.filter(n => !n.read).length}
