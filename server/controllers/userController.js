@@ -21,6 +21,19 @@ exports.getUsers = async (req, res) => {
 // @desc    Create a user (admin only)
 exports.createUser = async (req, res) => {
   const { name, email, password, role, status } = req.body;
+  // Data validation
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ message: 'Name, email, password, and role are required.' });
+  }
+  // Simple email format check
+  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: 'Invalid email format.' });
+  }
+  // Password length check
+  if (password.length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+  }
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
