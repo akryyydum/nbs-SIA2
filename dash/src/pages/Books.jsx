@@ -117,12 +117,42 @@ const Books = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate price and stock
+    const price = parseFloat(form.price);
+    const stock = parseInt(form.stock);
+    
+    if (price < 0) {
+      alert('Price cannot be negative');
+      return;
+    }
+    
+    if (stock < 0) {
+      alert('Stock cannot be negative');
+      return;
+    }
+    
+    if (isNaN(price) || price === 0) {
+      alert('Please enter a valid price greater than 0');
+      return;
+    }
+    
+    if (isNaN(stock)) {
+      alert('Please enter a valid stock number');
+      return;
+    }
+    
     try {
       let imageUrl = form.image;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
-      const payload = { ...form, image: imageUrl };
+      const payload = { 
+        ...form, 
+        price: price,
+        stock: stock,
+        image: imageUrl 
+      };
       if (editing) {
         await updateBook(editing, payload, user.token);
       } else {
@@ -182,6 +212,47 @@ const Books = () => {
   // --- Order from Supplier Handler ---
   const handleOrderFromSupplier = async (e) => {
     e.preventDefault();
+    
+    // Validate all order items
+    for (const item of orderItems) {
+      if (item.isNew) {
+        const price = parseFloat(item.newBook.price);
+        const quantity = parseInt(item.quantity);
+        
+        if (!item.newBook.title || !item.newBook.author || !item.newBook.category) {
+          alert('Please fill in all required fields for new books');
+          return;
+        }
+        
+        if (price < 0 || isNaN(price) || price === 0) {
+          alert('Please enter a valid price greater than 0 for new books');
+          return;
+        }
+        
+        if (quantity <= 0 || isNaN(quantity)) {
+          alert('Please enter a valid quantity greater than 0');
+          return;
+        }
+      } else {
+        const quantity = parseInt(item.quantity);
+        
+        if (!item.bookId) {
+          alert('Please select a book to order');
+          return;
+        }
+        
+        if (quantity <= 0 || isNaN(quantity)) {
+          alert('Please enter a valid quantity greater than 0');
+          return;
+        }
+      }
+    }
+    
+    if (!orderSupplier) {
+      alert('Please select a supplier');
+      return;
+    }
+    
     try {
       for (const item of orderItems) {
         if (item.isNew) {
@@ -194,8 +265,9 @@ const Books = () => {
           // Create new book with stock = quantity
           const payload = {
             ...item.newBook,
+            price: parseFloat(item.newBook.price),
             image: imageUrl,
-            stock: item.quantity,
+            stock: parseInt(item.quantity),
             supplier: orderSupplier,
           };
           await API.post('/books', payload);
@@ -204,7 +276,7 @@ const Books = () => {
           try {
             // Try main Book collection first
             await API.put(`/books/${item.bookId}/increase-stock`, {
-              quantity: item.quantity,
+              quantity: parseInt(item.quantity),
               supplier: orderSupplier,
             });
           } catch (err) {
@@ -375,7 +447,12 @@ const Books = () => {
                 type="number"
                 placeholder="Price"
                 value={form.price}
-                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || (parseFloat(value) >= 0)) {
+                    setForm(f => ({ ...f, price: value }));
+                  }
+                }}
                 required
                 min="0"
                 step="0.01"
@@ -385,7 +462,12 @@ const Books = () => {
                 type="number"
                 placeholder="Stock"
                 value={form.stock}
-                onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || (parseInt(value) >= 0)) {
+                    setForm(f => ({ ...f, stock: value }));
+                  }
+                }}
                 required
                 min="0"
                 className="w-full border px-3 py-2 rounded"
@@ -602,11 +684,16 @@ const Books = () => {
                           className="border px-2 py-1 rounded"
                           value={item.newBook.price}
                           onChange={e => {
-                            const arr = [...orderItems];
-                            arr[idx].newBook.price = e.target.value;
-                            setOrderItems(arr);
+                            const value = e.target.value;
+                            if (value === '' || (parseFloat(value) >= 0)) {
+                              const arr = [...orderItems];
+                              arr[idx].newBook.price = value;
+                              setOrderItems(arr);
+                            }
                           }}
                           required
+                          min="0"
+                          step="0.01"
                         />
                         <select
                           className="border px-2 py-1 rounded"
@@ -687,9 +774,12 @@ const Books = () => {
                         className="border px-2 py-1 rounded w-24"
                         value={item.quantity}
                         onChange={e => {
-                          const arr = [...orderItems];
-                          arr[idx].quantity = Number(e.target.value);
-                          setOrderItems(arr);
+                          const value = e.target.value;
+                          if (value === '' || (parseInt(value) > 0)) {
+                            const arr = [...orderItems];
+                            arr[idx].quantity = value === '' ? '' : Number(value);
+                            setOrderItems(arr);
+                          }
                         }}
                         required
                       />

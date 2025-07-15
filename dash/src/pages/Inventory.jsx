@@ -84,6 +84,31 @@ const Inventory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate price and stock
+    const price = parseFloat(form.price);
+    const stock = parseInt(form.stock);
+    
+    if (price < 0) {
+      alert('Price cannot be negative');
+      return;
+    }
+    
+    if (stock < 0) {
+      alert('Stock cannot be negative');
+      return;
+    }
+    
+    if (isNaN(price) || price === 0) {
+      alert('Please enter a valid price greater than 0');
+      return;
+    }
+    
+    if (isNaN(stock)) {
+      alert('Please enter a valid stock number');
+      return;
+    }
+    
     try {
       let imageUrl = form.image;
 
@@ -93,6 +118,8 @@ const Inventory = () => {
 
       const payload = {
         ...form,
+        price: price,
+        stock: stock,
         image: imageUrl,
         supplier: form.supplier || null
       };
@@ -211,14 +238,22 @@ const Inventory = () => {
     // Validate that all fields are completed
     const hasInvalidOrder = orderDetails.some(o => {
       if (o.newBook) {
-        return !o.title || !o.author || !o.price || !o.category || o.quantity <= 0;
+        const price = parseFloat(o.price);
+        const quantity = parseInt(o.quantity);
+        
+        // Check for negative values and invalid numbers
+        if (price < 0 || isNaN(price)) return true;
+        if (quantity <= 0 || isNaN(quantity)) return true;
+        
+        return !o.title || !o.author || !o.category;
       } else {
-        return !o.book || o.quantity <= 0;
+        const quantity = parseInt(o.quantity);
+        return !o.book || quantity <= 0 || isNaN(quantity);
       }
     });
 
     if (!selectedSupplier || hasInvalidOrder) {
-      alert('Please complete all fields');
+      alert('Please complete all fields with valid positive values');
       return;
     }
 
@@ -230,16 +265,16 @@ const Inventory = () => {
             isNewBook: true,
             title: order.title,
             author: order.author,
-            price: order.price,
+            price: parseFloat(order.price),
             description: order.description || '',
             category: order.category,
             image: order.image || '',
-            quantity: order.quantity
+            quantity: parseInt(order.quantity)
           };
         } else {
           return {
             book: order.book,
-            quantity: order.quantity
+            quantity: parseInt(order.quantity)
           };
         }
       }),
@@ -314,8 +349,35 @@ const Inventory = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <input type="text" placeholder="Title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
               <input type="text" placeholder="Author" value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
-              <input type="number" placeholder="Price" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
-              <input type="number" placeholder="Stock" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} required className="w-full border px-3 py-2 rounded" />
+              <input 
+                type="number" 
+                placeholder="Price" 
+                value={form.price} 
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || (parseFloat(value) >= 0)) {
+                    setForm(f => ({ ...f, price: value }));
+                  }
+                }} 
+                required 
+                min="0" 
+                step="0.01"
+                className="w-full border px-3 py-2 rounded" 
+              />
+              <input 
+                type="number" 
+                placeholder="Stock" 
+                value={form.stock} 
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || (parseInt(value) >= 0)) {
+                    setForm(f => ({ ...f, stock: value }));
+                  }
+                }} 
+                required 
+                min="0"
+                className="w-full border px-3 py-2 rounded" 
+              />
               
               {/* Hidden Image URL field to avoid user interference */}
               <input type="hidden" value={form.image} readOnly />
@@ -445,10 +507,15 @@ const Inventory = () => {
                         placeholder="Price"
                         value={order.price || ''}
                         onChange={e => {
-                          const updatedOrders = [...orderDetails];
-                          updatedOrders[index].price = e.target.value;
-                          setOrderDetails(updatedOrders);
+                          const value = e.target.value;
+                          if (value === '' || (parseFloat(value) >= 0)) {
+                            const updatedOrders = [...orderDetails];
+                            updatedOrders[index].price = value;
+                            setOrderDetails(updatedOrders);
+                          }
                         }}
+                        min="0"
+                        step="0.01"
                         className="w-full border px-3 py-2 rounded"
                       />
                       <select
@@ -508,9 +575,12 @@ const Inventory = () => {
                     type="number"
                     value={order.quantity}
                     onChange={e => {
-                      const updatedOrders = [...orderDetails];
-                      updatedOrders[index].quantity = Number(e.target.value);
-                      setOrderDetails(updatedOrders);
+                      const value = e.target.value;
+                      if (value === '' || (parseInt(value) > 0)) {
+                        const updatedOrders = [...orderDetails];
+                        updatedOrders[index].quantity = value === '' ? '' : Number(value);
+                        setOrderDetails(updatedOrders);
+                      }
                     }}
                     className="w-full border px-3 py-2 rounded mt-2"
                     min="1"
