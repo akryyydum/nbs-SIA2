@@ -23,11 +23,10 @@ exports.register = async (req, res) => {
   const userExists = await User.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  // Customers are immediately active, others are pending
-  const status = role === 'customer' ? 'active' : 'pending';
+  // Always set status to 'pending' on registration; activate after OTP (for customers)
+  const status = 'pending';
   const user = await User.create({ name, email, password, role, status });
 
-  // If customer, send OTP (handled on frontend/backend as needed)
   res.status(201).json({
     _id: user._id,
     name: user.name,

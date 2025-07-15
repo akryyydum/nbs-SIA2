@@ -80,6 +80,20 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Activate user after OTP verification
+router.post('/activate', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (user.status !== 'pending') {
+    return res.status(400).json({ message: 'User is not pending activation' });
+  }
+  user.status = 'active';
+  await user.save();
+  res.json({ message: 'Account activated' });
+});
+
 // Verify OTP for registration (customer)
 router.post('/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
@@ -87,7 +101,12 @@ router.post('/verify-otp', async (req, res) => {
   if (!record || record.otp !== otp || Date.now() > record.expiresAt) {
     return res.status(400).json({ message: 'Invalid or expired OTP' });
   }
-  // Optionally, you can mark the user as verified here if you want to track it
+  // Activate customer if status is pending
+  const user = await User.findOne({ email });
+  if (user && user.role === 'customer' && user.status === 'pending') {
+    user.status = 'active';
+    await user.save();
+  }
   delete otpStore[email];
   res.json({ message: 'OTP verified' });
 });
