@@ -300,17 +300,14 @@ const SupplierDashboard = () => {
       alert('Stock is required');
       return;
     }
-    
     if (isNaN(stock)) {
       alert('Please enter a valid stock number');
       return;
     }
-    
-    if (stock < 0) {
-      alert('Stock cannot be negative');
+    if (stock < 1) {
+      alert('Stock must be at least 1');
       return;
     }
-    
     // Check if stock is not an integer
     if (!Number.isInteger(stock)) {
       alert('Stock must be a whole number');
