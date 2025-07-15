@@ -1,9 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
 import { updateUser } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
 const BG_IMAGE = "https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg";
+const DEFAULT_PROFILE_IMAGE = "/profile.jpg";
 
 // Helper to get a unique key for each user (using email as unique id)
 const getUserKey = (user) => user?.email ? `profileData_${user.email}` : 'profileData_guest';
@@ -14,27 +15,33 @@ const Profile = ({ user }) => {
   const getInitialProfile = (userObj) => {
     const key = getUserKey(userObj);
     const saved = localStorage.getItem(key);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsedData = JSON.parse(saved);
+      // If the saved avatar is the old BG_IMAGE, replace it with the new default
+      if (parsedData.avatar === BG_IMAGE) {
+        parsedData.avatar = DEFAULT_PROFILE_IMAGE;
+      }
+      return parsedData;
+    }
     return {
       name: userObj?.name || '',
       email: userObj?.email || '',
       password: '********',
-      avatar: userObj?.avatar || BG_IMAGE,
+      avatar: userObj?.avatar || DEFAULT_PROFILE_IMAGE,
     };
   };
 
   const [profile, setProfile] = useState(getInitialProfile(user));
   const [avatar, setAvatar] = useState(profile.avatar);
   const [editing, setEditing] = useState(false);
-  const [editFields, setEditFields] = useState({ name: profile.name, email: profile.email, password: profile.password });
-  const fileInputRef = useRef();
+  const [editFields, setEditFields] = useState({ name: profile.name, password: profile.password });
 
   // When user changes (login/logout), load their profile from localStorage or fallback
   useEffect(() => {
     const newProfile = getInitialProfile(user);
     setProfile(newProfile);
     setAvatar(newProfile.avatar);
-    setEditFields({ name: newProfile.name, email: newProfile.email, password: newProfile.password });
+    setEditFields({ name: newProfile.name, password: newProfile.password });
     setEditing(false);
   }, [user]);
 
@@ -44,19 +51,6 @@ const Profile = ({ user }) => {
     localStorage.setItem(key, JSON.stringify({ ...profile, avatar }));
   }, [profile, avatar]);
 
-  // Handle image upload
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setAvatar(ev.target.result);
-        setProfile((prev) => ({ ...prev, avatar: ev.target.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   // Handle edit field changes
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
@@ -65,7 +59,7 @@ const Profile = ({ user }) => {
 
   // Start editing
   const handleEdit = () => {
-    setEditFields({ name: profile.name, email: profile.email, password: profile.password });
+    setEditFields({ name: profile.name, password: profile.password });
     setEditing(true);
   };
 
@@ -75,9 +69,7 @@ const Profile = ({ user }) => {
       // Prepare update payload
       const payload = {
         name: editFields.name,
-        email: editFields.email,
         password: editFields.password !== '********' ? editFields.password : undefined,
-        avatar: avatar,
       };
       // Remove undefined fields (e.g., if password not changed)
       Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
@@ -91,7 +83,7 @@ const Profile = ({ user }) => {
         token: user.token, // keep token unless backend returns new one
       };
       setProfile(updatedUser);
-      setEditFields({ name: updatedUser.name, email: updatedUser.email, password: '********' });
+      setEditFields({ name: updatedUser.name, password: '********' });
       setEditing(false);
       // Save to localStorage for persistence
       const key = getUserKey(updatedUser);
@@ -106,7 +98,7 @@ const Profile = ({ user }) => {
 
   // Cancel edits
   const handleCancel = () => {
-    setEditFields({ name: profile.name, email: profile.email, password: profile.password });
+    setEditFields({ name: profile.name, password: profile.password });
     setEditing(false);
   };
 
@@ -140,25 +132,16 @@ const Profile = ({ user }) => {
         >
           {/* Profile Image Section */}
           <div className="md:w-1/3 flex items-center justify-center p-12 bg-white/30 relative">
-            <label htmlFor="profile-upload" className="cursor-pointer group relative z-10 block">
+            <div className="relative z-10 block">
               <img
                 src={avatar}
                 alt="Profile"
-                className="w-56 h-56 rounded-2xl object-cover border-4 border-white shadow-xl group-hover:opacity-80 transition bg-gray-100 ring-2 ring-blue-200"
+                className="w-56 h-56 rounded-2xl object-cover border-4 border-white shadow-xl bg-gray-100 ring-2 ring-blue-200"
                 style={{
                   boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12), 0 1.5px 8px 0 rgba(0,0,0,0.10)'
                 }}
               />
-              <input
-                id="profile-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-              />
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">Upload Photo</span>
-            </label>
+            </div>
             {/* Decorative ring */}
             <div className="absolute top-8 left-8 w-44 h-44 rounded-full border-4 border-blue-100 opacity-40 pointer-events-none"></div>
           </div>
@@ -184,17 +167,7 @@ const Profile = ({ user }) => {
               <div className="flex items-center gap-2">
                 <FaEnvelope className="text-blue-400" />
                 <span className="font-semibold text-gray-700 tracking-wide">EMAIL:</span>
-                {editing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={editFields.email}
-                    onChange={handleFieldChange}
-                    className="ml-2 border border-blue-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300 w-full max-w-xs bg-white/80 shadow-sm"
-                  />
-                ) : (
-                  <span className="ml-2 text-gray-900 font-medium">{profile.email}</span>
-                )}
+                <span className="ml-2 text-gray-900 font-medium">{profile.email}</span>
               </div>
               <div className="flex items-center gap-2">
                 <FaLock className="text-pink-400" />
