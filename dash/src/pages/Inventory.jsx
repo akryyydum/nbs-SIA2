@@ -84,21 +84,39 @@ const Inventory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Data validation
+    if (!form.title.trim()) {
+      alert('Title is required');
+      return;
+    }
+    if (!form.author.trim()) {
+      alert('Author is required');
+      return;
+    }
+    if (!form.category) {
+      alert('Category is required');
+      return;
+    }
+    if (!form.supplier) {
+      alert('Supplier is required');
+      return;
+    }
+
     // Validate price and stock
     const price = parseFloat(form.price);
     const stock = parseInt(form.stock);
-    
+
     if (isNaN(price) || price < 1) {
       alert('Please enter a valid price of 1 or greater');
       return;
     }
-    
+
     if (isNaN(stock) || stock < 1) {
       alert('Please enter a valid stock number of 1 or greater');
       return;
     }
-    
+
     try {
       let imageUrl = form.image;
 
