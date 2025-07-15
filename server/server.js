@@ -32,7 +32,8 @@ app.use(cors({
     'http://localhost:5173',
     'http://192.168.0.113:5173',
     'http://192.168.9.20:5173',
-    'http://192.168.9.17:5173' // <-- Add this line
+    'http://192.168.9.17:5173',
+    'http://192.168.9.16:5173'  // <-- Add this line
   ],
   credentials: true,
 }));

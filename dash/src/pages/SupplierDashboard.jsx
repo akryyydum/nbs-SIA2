@@ -228,24 +228,106 @@ const SupplierDashboard = () => {
 
   const handleBookFormChange = (e) => {
     const { name, value } = e.target;
-    setBookForm(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // Validate numeric inputs to prevent negative values
+    if (name === 'price') {
+      // Allow empty string or only positive numbers (including decimals)
+      if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+        setBookForm(prev => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+      // Reject any negative values or invalid input
+    } else if (name === 'stock') {
+      // Allow empty string or only non-negative integers
+      if (value === '' || (!isNaN(value) && parseInt(value) >= 0 && Number.isInteger(parseFloat(value)))) {
+        setBookForm(prev => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+      // Reject any negative values or decimal numbers for stock
+    } else {
+      setBookForm(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleBookSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!bookForm.title.trim()) {
+      alert('Title is required');
+      return;
+    }
+    
+    if (!bookForm.author.trim()) {
+      alert('Author is required');
+      return;
+    }
+    
+    // Validate price and stock
+    const price = parseFloat(bookForm.price);
+    const stock = parseInt(bookForm.stock, 10);
+    
+    // Price validation
+    if (!bookForm.price || bookForm.price === '') {
+      alert('Price is required');
+      return;
+    }
+    
+    if (isNaN(price)) {
+      alert('Please enter a valid price');
+      return;
+    }
+    
+    if (price < 0) {
+      alert('Price cannot be negative');
+      return;
+    }
+    
+    if (price === 0) {
+      alert('Price must be greater than 0');
+      return;
+    }
+    
+    // Stock validation
+    if (bookForm.stock === '' || bookForm.stock === null || bookForm.stock === undefined) {
+      alert('Stock is required');
+      return;
+    }
+    
+    if (isNaN(stock)) {
+      alert('Please enter a valid stock number');
+      return;
+    }
+    
+    if (stock < 0) {
+      alert('Stock cannot be negative');
+      return;
+    }
+    
+    // Check if stock is not an integer
+    if (!Number.isInteger(stock)) {
+      alert('Stock must be a whole number');
+      return;
+    }
+    
     const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
     const bookData = {
-      title: bookForm.title,
-      author: bookForm.author,
-      price: parseFloat(bookForm.price),
-      stock: parseInt(bookForm.stock, 10),
-      category: bookForm.category,
-      description: bookForm.description,
-      image: bookForm.image,
+      title: bookForm.title.trim(),
+      author: bookForm.author.trim(),
+      price: price,
+      stock: stock,
+      category: bookForm.category.trim(),
+      description: bookForm.description.trim(),
+      image: bookForm.image.trim(),
     };
+    
     try {
       await createSupplier(bookData, config);
       setShowBookModal(false);
@@ -264,6 +346,7 @@ const SupplierDashboard = () => {
         const logsRes = await getSupplierLogs(selectedSupplier._id, config);
         setLogs(logsRes.data);
       }
+      alert('Book added successfully!');
     } catch (err) {
       alert('Failed to add book: ' + (err.response?.data?.message || err.message));
     }
@@ -544,6 +627,19 @@ const SupplierDashboard = () => {
                 placeholder="Price"
                 value={bookForm.price}
                 onChange={handleBookFormChange}
+                onKeyDown={(e) => {
+                  // Prevent entering minus sign, 'e', 'E', '+', and other invalid characters
+                  if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  // Prevent pasting negative values
+                  const paste = e.clipboardData.getData('text');
+                  if (paste.includes('-') || isNaN(paste) || parseFloat(paste) < 0) {
+                    e.preventDefault();
+                  }
+                }}
                 required
                 min="0"
                 step="0.01"
@@ -555,6 +651,19 @@ const SupplierDashboard = () => {
                 placeholder="Stock"
                 value={bookForm.stock}
                 onChange={handleBookFormChange}
+                onKeyDown={(e) => {
+                  // Prevent entering minus sign, decimal point, 'e', 'E', '+', and other invalid characters
+                  if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  // Prevent pasting negative values or decimals
+                  const paste = e.clipboardData.getData('text');
+                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 0) {
+                    e.preventDefault();
+                  }
+                }}
                 required
                 min="0"
                 className="w-full border px-3 py-2 rounded"

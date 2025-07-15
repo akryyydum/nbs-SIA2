@@ -19,7 +19,6 @@ import Order from './pages/Order';
 import AdminDashboard from './pages/AdminDashboard'; // <-- import AdminDashboard
 import SupplierBooks from './pages/Supplier'; // <-- import SupplierBooks
 import About from './pages/About'; // <-- import About
-import Contact from './pages/Contact'; // <-- import Contact
 import Profile from './components/Profile'; // <-- import Profile
 import OtherBusinesses from './pages/OtherBusinesses'; // <-- add this import
 
@@ -115,7 +114,6 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/about" element={<About />} /> {/* Add About route */}
-        <Route path="/contact" element={<Contact />} /> {/* Add Contact route */}
         <Route path="/profile" element={
           <>
             <Navbar />

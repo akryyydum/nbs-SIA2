@@ -142,13 +142,6 @@ const Navbar = () => {
                       Books
                     </Link>
                     <Link
-                      to="/contact"
-                      className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
-                      onClick={handleLinkClick}
-                    >
-                      Contact
-                    </Link>
-                    <Link
                       to="/about"
                       className="text-black hover:text-red-900 transition-colors duration-200 font-semibold"
                       onClick={handleLinkClick}
@@ -370,13 +363,6 @@ const Navbar = () => {
               onClick={e => { setOpen(false); handleLinkClick(e); }}
             >
               Home
-            </Link>
-            <Link
-              to="/contact"
-              className="block px-6 py-2 text-black hover:bg-red-50 hover:text-red-900 font-semibold transition-colors duration-200"
-              onClick={e => { setOpen(false); handleLinkClick(e); }}
-            >
-              Contact
             </Link>
           </>
         )}

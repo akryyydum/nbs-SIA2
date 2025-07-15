@@ -80,6 +80,65 @@ const SupplierBooks = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!form.title.trim()) {
+      alert('Title is required');
+      return;
+    }
+    
+    if (!form.author.trim()) {
+      alert('Author is required');
+      return;
+    }
+    
+    // Validate price and stock
+    const price = parseFloat(form.price);
+    const stock = parseInt(form.stock, 10);
+    
+    // Price validation
+    if (!form.price || form.price === '') {
+      alert('Price is required');
+      return;
+    }
+    
+    if (isNaN(price)) {
+      alert('Please enter a valid price');
+      return;
+    }
+    
+    if (price < 0) {
+      alert('Price cannot be negative');
+      return;
+    }
+    
+    if (price === 0) {
+      alert('Price must be greater than 0');
+      return;
+    }
+    
+    // Stock validation
+    if (form.stock === '' || form.stock === null || form.stock === undefined) {
+      alert('Stock is required');
+      return;
+    }
+    
+    if (isNaN(stock)) {
+      alert('Please enter a valid stock number');
+      return;
+    }
+    
+    if (stock < 0) {
+      alert('Stock cannot be negative');
+      return;
+    }
+    
+    // Check if stock is not an integer
+    if (!Number.isInteger(stock)) {
+      alert('Stock must be a whole number');
+      return;
+    }
+    
     try {
       let imageUrl = form.image;
 
@@ -89,6 +148,8 @@ const SupplierBooks = () => {
 
       const payload = {
         ...form,
+        price: price,
+        stock: stock,
         image: imageUrl,
       };
 
@@ -111,6 +172,7 @@ const SupplierBooks = () => {
       setImageFile(null);
       setModalOpen(false);
       fetchBooks();
+      alert('Book saved successfully!');
     } catch (err) {
       alert(err.response?.data?.message || err.message || 'Error');
     }
@@ -255,16 +317,55 @@ const SupplierBooks = () => {
                 type="number"
                 placeholder="Price"
                 value={form.price}
-                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+                    setForm(f => ({ ...f, price: value }));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Prevent entering minus sign, 'e', 'E', '+', and other invalid characters
+                  if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  // Prevent pasting negative values
+                  const paste = e.clipboardData.getData('text');
+                  if (paste.includes('-') || isNaN(paste) || parseFloat(paste) < 0) {
+                    e.preventDefault();
+                  }
+                }}
                 required
+                min="0"
+                step="0.01"
                 className="w-full border px-3 py-2 rounded"
               />
               <input
                 type="number"
                 placeholder="Stock"
                 value={form.stock}
-                onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || (!isNaN(value) && parseInt(value) >= 0 && Number.isInteger(parseFloat(value)))) {
+                    setForm(f => ({ ...f, stock: value }));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Prevent entering minus sign, decimal point, 'e', 'E', '+', and other invalid characters
+                  if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  // Prevent pasting negative values or decimals
+                  const paste = e.clipboardData.getData('text');
+                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 0) {
+                    e.preventDefault();
+                  }
+                }}
                 required
+                min="0"
                 className="w-full border px-3 py-2 rounded"
               />
 

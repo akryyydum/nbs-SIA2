@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import MapPicker from '../components/MapPicker'; // You need to create this component
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
@@ -17,7 +18,8 @@ const Checkout = () => {
     name: '',
     address: '',
     phone: '',
-    email: ''
+    email: '',
+    location: null // { lat, lng, address }
   });
   const [paymentMethod, setPaymentMethod] = useState('bank');
   const [submitting, setSubmitting] = useState(false);
@@ -66,13 +68,21 @@ const Checkout = () => {
     setBankInfo(b => ({ ...b, [e.target.name]: e.target.value }));
   };
 
+  const handleMapSelect = loc => {
+    setBilling(b => ({
+      ...b,
+      location: loc,
+      address: loc.address || ''
+    }));
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
     setSuccess('');
-    if (!billing.name || !billing.address || !billing.phone || !billing.email) {
-      setError('Please fill in all billing fields.');
+    if (!billing.name || !billing.phone || !billing.email || !billing.location) {
+      setError('Please fill in all billing fields and select a shipping location.');
       setSubmitting(false);
       return;
     }
@@ -145,7 +155,8 @@ const Checkout = () => {
         `${API_BASE}/orders`,
         {
           items,
-          modeofPayment
+          modeofPayment,
+          shippingLocation: billing.location // send location to backend
         },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
@@ -202,15 +213,16 @@ const Checkout = () => {
                 className="border px-3 py-2 rounded"
                 required
               />
-              <input
-                name="address"
-                type="text"
-                placeholder="Address"
-                value={billing.address}
-                onChange={handleInput}
-                className="border px-3 py-2 rounded"
-                required
-              />
+              {/* Replace address input with map picker */}
+              <div className="col-span-2">
+                <label className="block mb-1 text-sm text-gray-700">Shipping Location (pick on map)</label>
+                <MapPicker onSelect={handleMapSelect} />
+                {billing.location && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    Selected: {billing.location.address || `Lat: ${billing.location.lat}, Lng: ${billing.location.lng}`}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           {/* Cart Summary
