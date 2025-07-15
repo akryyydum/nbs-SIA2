@@ -264,7 +264,15 @@ const Order = () => {
               {/* Order Details */}
               <div className="text-sm text-gray-700 mb-1">
                 <span className="font-semibold">{new Date(order.createdAt).toLocaleString()}</span>
-              </div>  
+              </div>
+              {/* Ordered Books List */}
+              <ul className="mb-2 ml-2">
+                {order.items && order.items.map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-xs text-gray-700">
+                    {item.book?.title || 'Book'} x {item.quantity}
+                  </li>
+                ))}
+              </ul>
               {/* Order Actions */}
               <div className="flex justify-end gap-2 mt-4">
                 <button
@@ -342,60 +350,6 @@ const Order = () => {
                 </ul>
               </div>
               <div><span className="font-semibold">Placed:</span> {new Date(modalOrder.createdAt).toLocaleString()}</div>
-            </div>
-            {/* Example: Bank system selection UI */}
-            <div>
-              <span className="font-semibold">Bank System:</span>
-              <select
-                className="ml-2 border px-2 py-1 rounded"
-                value={bankSystem}
-                onChange={e => setBankSystem(e.target.value)}
-              >
-                <option value="default">Default Bank</option>
-                <option value="other">Other Bank</option>
-              </select>
-            </div>
-            {/* Example: Bank info fields */}
-            <div className="mt-2">
-              <input
-                name="bankName"
-                type="text"
-                placeholder="Bank Name"
-                value={bankInfo.bankName}
-                onChange={e => setBankInfo(b => ({ ...b, bankName: e.target.value }))}
-                className="border px-3 py-2 rounded mb-2 w-full"
-              />
-              <input
-                name="accountName"
-                type="text"
-                placeholder="Account Name"
-                value={bankInfo.accountName}
-                onChange={e => setBankInfo(b => ({ ...b, accountName: e.target.value }))}
-                className="border px-3 py-2 rounded mb-2 w-full"
-              />
-              <input
-                name="accountNumber"
-                type="text"
-                placeholder="Account Number"
-                value={bankInfo.accountNumber}
-                onChange={e => setBankInfo(b => ({ ...b, accountNumber: e.target.value }))}
-                className="border px-3 py-2 rounded mb-2 w-full"
-              />
-              <button
-                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition w-full"
-                onClick={verifyBank}
-                type="button"
-              >
-                Verify Bank
-              </button>
-              {bankVerified && (
-                <div className="text-green-700 text-sm mt-2">
-                  Bank verified. Balance: ₱{Number(bankInfo.balance).toFixed(2)}
-                </div>
-              )}
-              {bankError && (
-                <div className="text-red-600 text-sm mt-2">{bankError}</div>
-              )}
             </div>
           </div>
         </div>
