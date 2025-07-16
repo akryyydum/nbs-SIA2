@@ -36,6 +36,8 @@ const SupplierDashboard = () => {
     image: '',
     stock: 0,
   });
+  const [booksPage, setBooksPage] = useState(1);
+  const booksPerPage = 5;
 
   const { user } = useAuth();
 
@@ -228,26 +230,22 @@ const SupplierDashboard = () => {
 
   const handleBookFormChange = (e) => {
     const { name, value } = e.target;
-    
-    // Validate numeric inputs to prevent negative values
     if (name === 'price') {
-      // Allow empty string or only positive numbers (including decimals)
-      if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+      // Only allow empty string or numbers >= 1
+      if (value === '' || (!isNaN(value) && parseFloat(value) >= 1)) {
         setBookForm(prev => ({
           ...prev,
           [name]: value,
         }));
       }
-      // Reject any negative values or invalid input
     } else if (name === 'stock') {
-      // Allow empty string or only non-negative integers
-      if (value === '' || (!isNaN(value) && parseInt(value) >= 0 && Number.isInteger(parseFloat(value)))) {
+      // Only allow empty string or integers >= 1
+      if (value === '' || (!isNaN(value) && parseInt(value) >= 1 && Number.isInteger(parseFloat(value)))) {
         setBookForm(prev => ({
           ...prev,
           [name]: value,
         }));
       }
-      // Reject any negative values or decimal numbers for stock
     } else {
       setBookForm(prev => ({
         ...prev,
@@ -258,43 +256,31 @@ const SupplierDashboard = () => {
 
   const handleBookSubmit = async (e) => {
     e.preventDefault();
-    
     // Validate required fields
     if (!bookForm.title.trim()) {
       alert('Title is required');
       return;
     }
-    
     if (!bookForm.author.trim()) {
       alert('Author is required');
       return;
     }
-    
     // Validate price and stock
     const price = parseFloat(bookForm.price);
     const stock = parseInt(bookForm.stock, 10);
-    
     // Price validation
     if (!bookForm.price || bookForm.price === '') {
       alert('Price is required');
       return;
     }
-    
     if (isNaN(price)) {
       alert('Please enter a valid price');
       return;
     }
-    
-    if (price < 0) {
-      alert('Price cannot be negative');
+    if (price < 1) {
+      alert('Price must be at least 1');
       return;
     }
-    
-    if (price === 0) {
-      alert('Price must be greater than 0');
-      return;
-    }
-    
     // Stock validation
     if (bookForm.stock === '' || bookForm.stock === null || bookForm.stock === undefined) {
       alert('Stock is required');
@@ -308,12 +294,10 @@ const SupplierDashboard = () => {
       alert('Stock must be at least 1');
       return;
     }
-    // Check if stock is not an integer
     if (!Number.isInteger(stock)) {
       alert('Stock must be a whole number');
       return;
     }
-    
     const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
     const bookData = {
       title: bookForm.title.trim(),
@@ -324,9 +308,12 @@ const SupplierDashboard = () => {
       description: bookForm.description.trim(),
       image: bookForm.image.trim(),
     };
-    
     try {
-      await createSupplier(bookData, config);
+      await axios.post(
+        `/api/suppliers/${selectedSupplier._id}/books`,
+        bookData,
+        config
+      );
       setShowBookModal(false);
       setBookForm({
         title: '',
@@ -338,16 +325,21 @@ const SupplierDashboard = () => {
         stock: 0,
       });
       fetchSuppliersAndKpis(config);
-      // Fetch logs after book order
-      if (selectedSupplier) {
-        const logsRes = await getSupplierLogs(selectedSupplier._id, config);
-        setLogs(logsRes.data);
-      }
+      // Remove logs fetch to prevent Not Found error
+      // if (selectedSupplier) {
+      //   const logsRes = await getSupplierLogs(selectedSupplier._id, config);
+      //   setLogs(logsRes.data);
+      // }
       alert('Book added successfully!');
     } catch (err) {
       alert('Failed to add book: ' + (err.response?.data?.message || err.message));
     }
   };
+
+  // Pagination logic for books
+  const totalBooks = booksModal.books.length;
+  const totalPages = Math.ceil(totalBooks / booksPerPage);
+  const paginatedBooks = booksModal.books.slice((booksPage - 1) * booksPerPage, booksPage * booksPerPage);
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
@@ -547,10 +539,10 @@ const SupplierDashboard = () => {
       {/* Books Modal */}
       {booksModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative">
+          <div className="bg-white rounded-2xl shadow-2xl p-10 w-[750px] h-[600px] max-w-2xl relative">
             <button
               className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold"
-              onClick={() => setBooksModal({ open: false, books: [], supplier: null })}
+              onClick={() => { setBooksModal({ open: false, books: [], supplier: null }); setBooksPage(1); }}
               aria-label="Close"
             >
               &times;
@@ -561,26 +553,43 @@ const SupplierDashboard = () => {
             {booksModal.books.length === 0 ? (
               <div className="text-gray-500">No books found for this supplier.</div>
             ) : (
-              <table className="min-w-full table-auto">
-                <thead>
-                  <tr className="bg-red-100">
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {booksModal.books.map(book => (
-                    <tr key={book._id}>
-                      <td>{book.title}</td>
-                      <td>{book.author}</td>
-                      <td>₱{Number(book.price).toFixed(2)}</td>
-                      <td>{book.stock}</td>
+              <div className="overflow-x-auto pb-16">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr className="bg-red-100">
+                      <th className="text-center px-4 py-2 w-1/4">Title</th>
+                      <th className="text-center px-4 py-2 w-1/5">Author</th>
+                      <th className="text-center px-4 py-2 w-1/6">Price</th>
+                      <th className="text-center px-4 py-2 w-1/6">Stock</th>
+                      <th className="text-center px-4 py-2 w-1/6">Total Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedBooks.map(book => (
+                      <tr key={book._id} className="border-b">
+                        <td className="text-center px-4 py-2 max-w-[200px] break-words">{book.title}</td>
+                        <td className="text-center px-4 py-2 max-w-[150px] break-words">{book.author}</td>
+                        <td className="text-center px-4 py-2">₱{Number(book.price).toFixed(2)}</td>
+                        <td className="text-center px-4 py-2">{book.stock}</td>
+                        <td className="text-center px-4 py-2">₱{(Number(book.price) * Number(book.stock)).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="absolute left-0 right-0 bottom-0 flex justify-center items-center gap-4 pb-6 bg-white">
+                  <button
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                    onClick={() => setBooksPage(p => Math.max(1, p - 1))}
+                    disabled={booksPage === 1}
+                  >Prev</button>
+                  <span className="font-semibold">Page {booksPage} of {totalPages}</span>
+                  <button
+                    className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                    onClick={() => setBooksPage(p => Math.min(totalPages, p + 1))}
+                    disabled={booksPage === totalPages}
+                  >Next</button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -631,14 +640,14 @@ const SupplierDashboard = () => {
                   }
                 }}
                 onPaste={(e) => {
-                  // Prevent pasting negative values
+                  // Prevent pasting negative values or less than 1
                   const paste = e.clipboardData.getData('text');
-                  if (paste.includes('-') || isNaN(paste) || parseFloat(paste) < 0) {
+                  if (paste.includes('-') || isNaN(paste) || parseFloat(paste) < 1) {
                     e.preventDefault();
                   }
                 }}
                 required
-                min="0"
+                min="1"
                 step="0.01"
                 className="w-full border px-3 py-2 rounded"
               />
@@ -655,14 +664,14 @@ const SupplierDashboard = () => {
                   }
                 }}
                 onPaste={(e) => {
-                  // Prevent pasting negative values or decimals
+                  // Prevent pasting negative values, decimals, or less than 1
                   const paste = e.clipboardData.getData('text');
-                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 0) {
+                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 1) {
                     e.preventDefault();
                   }
                 }}
                 required
-                min="0"
+                min="1"
                 className="w-full border px-3 py-2 rounded"
               />
               <input
