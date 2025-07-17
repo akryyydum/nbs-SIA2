@@ -202,18 +202,48 @@ exports.acceptOrder = async (req, res) => {
 };
 
 
-// @desc    Decline order (admin only): set status to 'declined'
+// @desc    Decline order (admin only): set status to 'declined' and restore stock
 // @route   PUT /api/orders/:id/decline
 exports.declineOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
-    if (order.status !== 'pending') {
-      return res.status(400).json({ message: 'Order is not pending' });
+
+    // Allow admin, sales department, or the owner (customer) to cancel
+    const isAdminOrSales = req.user.role === 'admin' || req.user.role === 'sales department';
+    const isOwner = order.user.toString() === req.user._id.toString();
+
+    if (!isAdminOrSales && !isOwner) {
+      return res.status(403).json({ message: 'Forbidden: Only admin, sales department, or the order owner can cancel.' });
     }
+
+    if (order.status === 'declined') {
+      return res.status(400).json({ message: 'Order is already declined' });
+    }
+    if (order.status !== 'pending' && order.status !== 'accepted' && order.status !== 'out for delivery') {
+      return res.status(400).json({ message: 'Order cannot be declined at this stage' });
+    }
+
+    // Restore stock for each book in the order
+    for (const item of order.items) {
+      let book = await Book.findById(item.book);
+      if (book) {
+        book.stock += item.quantity;
+        await book.save();
+      }
+      // Restore SupplierBook stock if applicable
+      if (book && book.supplier) {
+        let supplierBook = await SupplierBook.findOne({ _id: item.book, supplier: book.supplier });
+        if (supplierBook) {
+          supplierBook.stock += item.quantity;
+          await supplierBook.save();
+        }
+      }
+    }
+
     order.status = 'declined';
     await order.save();
-    res.json({ message: 'Order declined' });
+    res.json({ message: 'Order declined and stock restored' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
