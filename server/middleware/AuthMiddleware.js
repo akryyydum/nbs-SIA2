@@ -39,13 +39,13 @@ exports.inventory = (req, res, next) => {
 };
 
 exports.supplier = (req, res, next) => {
-  const allowedRoles = ['supplier department', 'admin']; 
+  const allowedRoles = ['supplier department', 'admin', 'inventory department']; 
   const userRole = req.user?.role;
 
   if (userRole && allowedRoles.includes(userRole)) {
     return next();
     }
-    return res.status(403).json({ message: 'Access denied: Supplier or Admin role required' });
+    return res.status(403).json({ message: 'Access denied: Supplier, Inventory, or Admin role required' });
 };
 
 exports.sales = (req, res, next) => {

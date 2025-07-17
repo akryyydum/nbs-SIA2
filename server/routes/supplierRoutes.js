@@ -54,8 +54,8 @@ router.get('/kpis', async (req, res) => {
 
     // Count suppliers in Supplier collection
     const supplierCount = await SupplierModel.countDocuments();
-    // Count users with role 'supplier department' or 'supplier' (if you use that role)
-    const userSupplierCount = await UserModel.countDocuments({ role: { $in: ['supplier department', 'supplier'] } });
+    // Count users with role 'supplier department', 'supplier', or 'inventory department'
+    const userSupplierCount = await UserModel.countDocuments({ role: { $in: ['supplier department', 'supplier', 'inventory department'] } });
     const totalSuppliers = supplierCount + userSupplierCount;
 
     // Active/inactive from Supplier collection only (for now)
@@ -278,6 +278,17 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Supplier deleted' });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Get all users with supplier department role
+router.get('/users-suppliers', async (req, res) => {
+  try {
+    const User = require('../models/user.model');
+    const supplierUsers = await User.find({ role: 'supplier department' }).select('_id name email role');
+    res.json(supplierUsers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
