@@ -42,7 +42,7 @@ const Sidebar = () => {
           to="/dashboard"
           className="block px-4 py-2 rounded-lg font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition-colors duration-200"
         >
-          ← Back to Dashboard
+          ← Back to Home
         </Link>
         <button
           onClick={() => {

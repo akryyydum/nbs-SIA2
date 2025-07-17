@@ -1,5 +1,7 @@
 const mongoose = require('mongoose'); // ✅ FIXED: Add this import
 const Book = require('../models/books.model');
+const Supplier = require('../models/supplier.model');
+const SupplierBook = require('../models/supplierBook.model');
 
 // @desc    Create a new book (Admin & Inventory department)
 // @route   POST /api/books
@@ -57,6 +59,35 @@ exports.updateBook = async (req, res) => {
     book.image = image || book.image;
 
     const updatedBook = await book.save();
+
+    // --- NEW LOGIC: If supplier is from suppliers DB, add to SupplierBook if not matched ---
+    if (book.supplier) {
+      // Check if supplier exists in Supplier collection
+      const supplierObj = await Supplier.findById(book.supplier);
+      if (supplierObj) {
+        // Check if a SupplierBook with same title and supplier exists
+        const existingSupplierBook = await SupplierBook.findOne({
+          supplier: book.supplier,
+          title: book.title
+        });
+        if (!existingSupplierBook) {
+          // Add to SupplierBook
+          const newSupplierBook = new SupplierBook({
+            supplier: book.supplier,
+            title: book.title,
+            author: book.author,
+            price: book.price,
+            category: book.category,
+            description: book.description,
+            image: book.image,
+            stock: book.stock
+          });
+          await newSupplierBook.save();
+        }
+      }
+    }
+    // --- END NEW LOGIC ---
+
     res.json(updatedBook);
   } catch (err) {
     res.status(400).json({ message: err.message });

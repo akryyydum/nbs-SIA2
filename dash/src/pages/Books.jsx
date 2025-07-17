@@ -324,10 +324,32 @@ const Books = () => {
     }
   };
 
+  // --- Filtered Books ---
+  // Group duplicate books by title and author, sum stocks, join supplier IDs
+  const groupedBooksMap = {};
+  books.forEach(book => {
+    const key = `${book.title?.toLowerCase()}|${book.author?.toLowerCase()}`;
+    if (!groupedBooksMap[key]) {
+      groupedBooksMap[key] = { ...book, stock: Number(book.stock) || 0, suppliers: new Set([book.supplier]) };
+    } else {
+      groupedBooksMap[key].stock += Number(book.stock) || 0;
+      groupedBooksMap[key].suppliers.add(book.supplier);
+    }
+  });
+  const groupedBooks = Object.values(groupedBooksMap).map(b => ({
+    ...b,
+    suppliers: Array.from(b.suppliers)
+  }));
+
+  const filteredBooks = supplierFilter
+    ? groupedBooks.filter(b => b.suppliers.includes(supplierFilter))
+    : groupedBooks;
+
   // --- Statistics ---
-  const supplierCounts = books.reduce((acc, b) => {
-    const key = b.supplier || 'Unknown';
-    acc[key] = (acc[key] || 0) + 1;
+  const supplierCounts = groupedBooks.reduce((acc, b) => {
+    b.suppliers.forEach(sid => {
+      acc[sid] = (acc[sid] || 0) + 1;
+    });
     return acc;
   }, {});
   const supplierLabels = Object.keys(supplierCounts).map(sid =>
@@ -335,18 +357,13 @@ const Books = () => {
   );
   const supplierData = Object.values(supplierCounts);
 
-  const categoryCounts = books.reduce((acc, b) => {
+  const categoryCounts = groupedBooks.reduce((acc, b) => {
     const key = b.category || 'Uncategorized';
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
   const categoryLabels = Object.keys(categoryCounts);
   const categoryData = Object.values(categoryCounts);
-
-  // --- Filtered Books ---
-  const filteredBooks = supplierFilter
-    ? books.filter(b => b.supplier === supplierFilter)
-    : books;
 
   // Pagination logic
   const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE);
@@ -870,7 +887,9 @@ const Books = () => {
                 </td>
                 <td className="border-b px-6 py-3 max-w-xs truncate">{b.description}</td>
                 <td className="border-b px-6 py-3">{b.category}</td>
-                <td className="border-b px-6 py-3">{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
+                <td className="border-b px-6 py-3">
+                  {b.suppliers.map(sid => suppliers.find(s => s._id === sid)?.companyName || 'Unknown').join(', ')}
+                </td>
                 <td className="border-b px-6 py-3">
                   <button
                     className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"

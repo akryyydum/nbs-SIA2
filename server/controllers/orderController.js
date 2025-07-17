@@ -29,6 +29,14 @@ exports.createOrder = async (req, res) => {
         category: book.category,
         supplier: book.supplier
       });
+
+      // Deduct stock immediately when order is placed
+      if (book.stock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for "${book.title}"` });
+      }
+      book.stock -= item.quantity;
+      await book.save();
+
       // Reduce supplier book stock if this is a supplier book
       if (book.supplier) {
         const SupplierBook = require('../models/supplierBook.model');
@@ -163,22 +171,7 @@ exports.acceptOrder = async (req, res) => {
       return res.status(400).json({ message: 'Only pending orders can be accepted' });
     }
 
-    // Decrease stock for each book
-    for (const item of order.items) {
-      // Try to update in Book model
-      let book = await Book.findById(item.book);
-      if (book) {
-        book.stock = Math.max(0, book.stock - item.quantity);
-        await book.save();
-      } else if (item.supplier) {
-        // If not found in Book, try SupplierBook
-        let supplierBook = await SupplierBook.findOne({ _id: item.book, supplier: item.supplier });
-        if (supplierBook) {
-          supplierBook.stock = Math.max(0, supplierBook.stock - item.quantity);
-          await supplierBook.save();
-        }
-      }
-    }
+    // Remove stock deduction logic here (already handled in createOrder)
 
     // If cash, set to delivered, else accepted
     if (order.modeofPayment === "Cash") {

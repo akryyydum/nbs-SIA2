@@ -293,11 +293,20 @@ const Checkout = () => {
     }));
   };
 
+  const outOfStockItems = cart.filter(item => item.book?.stock === 0);
+
   const handleSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
     setSuccess('');
+    // Prevent checkout if any item has stock 0
+    if (outOfStockItems.length > 0) {
+      alert(`Cannot checkout: "${outOfStockItems[0].book?.title || 'Book'}" is out of stock.`);
+      setError('Cannot checkout: One or more items are out of stock.');
+      setSubmitting(false);
+      return;
+    }
     if (!billing.name || !billing.phone || !billing.email || !billing.location) {
       setError('Please fill in all billing fields and select a shipping location.');
       setSubmitting(false);
@@ -515,8 +524,17 @@ const Checkout = () => {
                   <span>
                     {item.book?.title || 'Book'} x {item.quantity}
                   </span>
-                  <span>
+                  <span
+                    className={
+                      item.book?.stock === 0
+                        ? 'text-red-600 font-bold'
+                        : item.book?.stock <= 3
+                          ? 'text-yellow-600 font-bold'
+                          : ''
+                    }
+                  >
                     ₱{Number(item.book?.price * item.quantity).toFixed(2)}
+                    {item.book?.stock === 0 && ' (Out of Stock)'}
                   </span>
                 </li>
               ))}
@@ -592,11 +610,18 @@ const Checkout = () => {
           {/* Error/Success */}
           {error && <div className="text-red-600 text-sm">{error}</div>}
           {success && <div className="text-green-600 text-sm">{success}</div>}
+          {/* Out of Stock Message */}
+          {outOfStockItems.length > 0 && (
+            <div className="text-red-600 text-sm font-bold mb-2">
+              {`"${outOfStockItems[0].book?.title || 'Book'}" is out of stock. Please remove it from your cart to proceed.`}
+            </div>
+          )}
           {/* Submit */}
           <button
             type="submit"
             className="w-full py-2 bg-red-600 text-white rounded font-semibold hover:bg-red-700 transition"
-            disabled={submitting}
+            disabled={submitting || outOfStockItems.length > 0}
+            style={outOfStockItems.length > 0 ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
           >
             {submitting ? 'Placing Order...' : 'Place Order'}
           </button>

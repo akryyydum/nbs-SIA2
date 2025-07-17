@@ -346,6 +346,22 @@ const Inventory = () => {
     maxWidth: '100px',
   };
 
+  // Group duplicate books by title and author, sum stocks, join supplier IDs
+  const groupedBooksMap = {};
+  books.forEach(book => {
+    const key = `${book.title?.toLowerCase()}|${book.author?.toLowerCase()}`;
+    if (!groupedBooksMap[key]) {
+      groupedBooksMap[key] = { ...book, stock: Number(book.stock) || 0, suppliers: new Set([book.supplier]) };
+    } else {
+      groupedBooksMap[key].stock += Number(book.stock) || 0;
+      groupedBooksMap[key].suppliers.add(book.supplier);
+    }
+  });
+  const groupedBooks = Object.values(groupedBooksMap).map(b => ({
+    ...b,
+    suppliers: Array.from(b.suppliers)
+  }));
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h2 className="text-2xl font-bold mb-4 text-red-700">Inventory Management</h2>
@@ -680,7 +696,7 @@ const Inventory = () => {
             </tr>
           </thead>
           <tbody>
-            {books.map((b) => (
+            {groupedBooks.map((b) => (
               <tr key={b._id}>
                 <td style={cellStyles}>{b.title}</td>
                 <td style={cellStyles}>{b.author}</td>
@@ -700,10 +716,12 @@ const Inventory = () => {
                 <td style={cellStyles}>{b.description}</td>
                 <td style={cellStyles}>{b.category}</td>
                 <td style={cellStyles}>
-                  {allSuppliers.find(s => s._id === b.supplier)?.companyName ||
-                   allSuppliers.find(s => s._id === b.supplier)?.name ||
-                   allSuppliers.find(s => s._id === b.supplier)?.email ||
-                   'Unknown'}
+                  {b.suppliers.map(sid =>
+                    allSuppliers.find(s => s._id === sid)?.companyName ||
+                    allSuppliers.find(s => s._id === sid)?.name ||
+                    allSuppliers.find(s => s._id === sid)?.email ||
+                    'Unknown'
+                  ).join(', ')}
                 </td>
                 <td style={cellStyles}>
                   <button onClick={() => handleEdit(b)} style={{ color: 'blue', marginRight: '8px' }}>Edit</button>

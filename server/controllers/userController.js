@@ -12,7 +12,7 @@ exports.getUsers = async (req, res) => {
     } else {
       return res.status(403).json({ message: 'Forbidden' });
     }
-    res.json(users);
+    res.json(users); // createdAt is included by default
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -52,7 +52,14 @@ exports.createUser = async (req, res) => {
       role, 
       status: newStatus 
     });
-    res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, status: user.status });
+    res.status(201).json({ 
+      _id: user._id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role, 
+      status: user.status,
+      createdAt: user.createdAt // <-- add this line
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

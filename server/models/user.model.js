@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema({
     ], 
     default: 'customer' 
   },
-  status: { type: String, enum: ['active', 'pending', 'declined'], default: 'pending' } // <-- default to pending
+  status: { type: String, enum: ['active', 'pending', 'declined'], default: 'pending' }, // <-- default to pending
+  createdAt: { type: Date, default: Date.now } // <-- add this line
 });
 
 // Hash password before save

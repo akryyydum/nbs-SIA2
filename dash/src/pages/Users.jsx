@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getUsers, createUser, updateUser, deleteUser, acceptUser, declineUser } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
+import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material';
 
 const emptyForm = { name: '', email: '', password: '', role: 'customer', status: 'pending' };
 
@@ -71,15 +72,23 @@ const Users = () => {
     }
   };
 
-  // Filter users by role and search
-  const filteredUsers = users.filter(u => {
-    const matchesRole = !roleFilter || u.role === roleFilter;
-    const matchesSearch =
-      !search ||
-      u.name?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase());
-    return matchesRole && matchesSearch;
-  });
+  // Filter users by role and search, and sort by pending first, then latest created
+  const filteredUsers = users
+    .filter(u => {
+      const matchesRole = !roleFilter || u.role === roleFilter;
+      const matchesSearch =
+        !search ||
+        u.name?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email?.toLowerCase().includes(search.toLowerCase());
+      return matchesRole && matchesSearch;
+    })
+    .sort((a, b) => {
+      // Pending status first
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (b.status === 'pending' && a.status !== 'pending') return 1;
+      // Then by latest created
+      return new Date(b.createdAt || b.registrationDate || 0) - new Date(a.createdAt || a.registrationDate || 0);
+    });
 
   // Count users by role
   const roleCounts = {
@@ -294,17 +303,18 @@ const Users = () => {
               <th className="px-6 py-3 border-b text-left">Email</th>
               <th className="px-6 py-3 border-b text-left">Role</th>
               <th className="px-6 py-3 border-b text-left">Status</th>
+              <th className="px-6 py-3 border-b text-left">Registered</th>
               <th className="px-6 py-3 border-b text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-gray-500">Loading...</td>
+                <td colSpan={6} className="text-center py-8 text-gray-500">Loading...</td>
               </tr>
             ) : filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-gray-400">No users found</td>
+                <td colSpan={6} className="text-center py-8 text-gray-400">No users found</td>
               </tr>
             ) : filteredUsers.map(u => (
               <tr key={u._id} className="hover:bg-red-50 transition">
@@ -318,22 +328,29 @@ const Users = () => {
                   </span>
                 </td>
                 <td className="border-b px-6 py-3 text-left">
+                  {u.createdAt && !isNaN(Date.parse(u.createdAt)) && new Date(u.createdAt).getTime() > 0
+    ? new Date(u.createdAt).toLocaleString()
+    : 'N/A'}
+                </td>
+                <td className="border-b px-6 py-3 text-left">
                   <button
-                    className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2"
+                    className="text-blue-600 hover:bg-blue-50 transition rounded px-3 py-1 mr-2 flex items-center gap-1"
                     onClick={() => handleEdit(u)}
+                    title="Edit"
                   >
-                    Edit
+                    <EditIcon fontSize="small" /> Edit
                   </button>
                   <button
-                    className="text-red-600 hover:bg-red-50 transition rounded px-3 py-1"
+                    className="text-red-600 hover:bg-red-50 transition rounded px-3 py-1 flex items-center gap-1"
                     onClick={() => handleDelete(u._id)}
+                    title="Delete"
                   >
-                    Delete
+                    <DeleteIcon fontSize="small" /> Delete
                   </button>
                   {u.status === 'pending' && (
                     <>
                       <button
-                        className="ml-2 text-green-600 hover:bg-green-50 transition rounded px-3 py-1"
+                        className="ml-2 text-green-600 hover:bg-green-50 transition rounded px-3 py-1 flex items-center gap-1"
                         onClick={async () => {
                           try {
                             await acceptUser(u._id, user.token);
@@ -342,11 +359,12 @@ const Users = () => {
                             alert('Failed to accept user');
                           }
                         }}
+                        title="Accept"
                       >
-                        Accept
+                        <CheckIcon fontSize="small" /> Accept
                       </button>
                       <button
-                        className="ml-2 text-yellow-600 hover:bg-yellow-50 transition rounded px-3 py-1"
+                        className="ml-2 text-yellow-600 hover:bg-yellow-50 transition rounded px-3 py-1 flex items-center gap-1"
                         onClick={async () => {
                           try {
                             await declineUser(u._id, user.token);
@@ -355,8 +373,9 @@ const Users = () => {
                             alert('Failed to decline user');
                           }
                         }}
+                        title="Decline"
                       >
-                        Decline
+                        <CloseIcon fontSize="small" /> Decline
                       </button>
                     </>
                   )}

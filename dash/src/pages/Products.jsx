@@ -452,7 +452,17 @@ const Products = () => {
                 {book.category && (
                   <div className="text-xs text-gray-400 mb-2 text-center">Category: {book.category}</div>
                 )}
-                <div className="text-xs text-gray-400 mt-auto mb-2">Stock: {book.stock}</div>
+                <div
+                  className={`text-xs mb-2 text-center ${
+                    book.stock === 0
+                      ? 'text-red-600 font-bold'
+                      : book.stock <= 3
+                        ? 'text-yellow-600 font-bold'
+                        : 'text-gray-400'
+                  }`}
+                >
+                  Stock: {book.stock}
+                </div>
                 {/* Add to Cart Button */}
                 <button
                   className="mt-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
@@ -460,8 +470,10 @@ const Products = () => {
                     e.stopPropagation();
                     handleAddToCart(book);
                   }}
+                  disabled={book.stock === 0}
+                  style={book.stock === 0 ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                 >
-                  Add to Cart
+                  {book.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                 </button>
               </div>
             </div>
@@ -536,7 +548,17 @@ const Products = () => {
                   }
                 </div>
               )}
-              <div className="text-xs text-gray-400 mb-4 text-center">Stock: {modalBook.stock}</div>
+              <div
+                className={`text-xs mb-4 text-center ${
+                  modalBook.stock === 0
+                    ? 'text-red-600 font-bold'
+                    : modalBook.stock <= 3
+                      ? 'text-yellow-600 font-bold'
+                      : 'text-gray-400'
+                }`}
+              >
+                Stock: {modalBook.stock}
+              </div>
               {/* Quantity Selector */}
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="text-sm">Quantity:</span>
@@ -566,6 +588,7 @@ const Products = () => {
                   setModalBook(null);
                 }}
                 disabled={modalBook.stock === 0}
+                style={modalBook.stock === 0 ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
               >
                 {modalBook.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </button>
