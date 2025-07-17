@@ -25,6 +25,7 @@ const Inventory = () => {
   const [imageFile, setImageFile] = useState(null);
   const [categories] = useState(['Fiction', 'Non-Fiction', 'Science', 'History']);
   const [suppliers, setSuppliers] = useState([]);
+  const [supplierUsers, setSupplierUsers] = useState([]);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderDetails, setOrderDetails] = useState([{ book: '', quantity: 1 }]);
   const [selectedSupplier, setSelectedSupplier] = useState('');
@@ -54,6 +55,9 @@ const Inventory = () => {
     try {
       const res = await API.get('/suppliers');
       setSuppliers(res.data || []);
+      // Fetch supplier users (users with supplier department role)
+      const userRes = await API.get('/suppliers/users-suppliers');
+      setSupplierUsers(userRes.data || []);
     } catch (err) {
       alert('Failed to fetch suppliers');
     }
@@ -62,6 +66,12 @@ const Inventory = () => {
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  // Merge suppliers and supplierUsers for dropdowns and display
+  const allSuppliers = [
+    ...suppliers,
+    ...supplierUsers
+  ];
 
   const uploadImage = async (file) => {
     const formData = new FormData();
@@ -447,7 +457,12 @@ const Inventory = () => {
               </select>
               <select value={form.supplier || ''} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} className="w-full border px-3 py-2 rounded">
                 <option value="" disabled>Select Supplier</option>
-                {suppliers.map((s) => <option key={s._id} value={s._id}>{s.companyName}</option>)}
+                {allSuppliers.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.companyName || s.name || s.email}
+                    {s.role === 'supplier department' ? ' (User)' : ''}
+                  </option>
+                ))}
               </select>
               <div className="flex gap-2 mt-4">
                 <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded flex-1">{editing ? 'Update' : 'Create'}</button>
@@ -478,8 +493,11 @@ const Inventory = () => {
                 className="w-full border px-3 py-2 rounded"
               >
                 <option value="" disabled>Select Supplier</option>
-                {suppliers.map(s => (
-                  <option key={s._id} value={s._id}>{s.companyName}</option>
+                {allSuppliers.map(s => (
+                  <option key={s._id} value={s._id}>
+                    {s.companyName || s.name || s.email}
+                    {s.role === 'supplier department' ? ' (User)' : ''}
+                  </option>
                 ))}
               </select>
               {orderDetails.map((order, index) => (
@@ -681,7 +699,12 @@ const Inventory = () => {
                 </td>
                 <td style={cellStyles}>{b.description}</td>
                 <td style={cellStyles}>{b.category}</td>
-                <td style={cellStyles}>{suppliers.find(s => s._id === b.supplier)?.companyName || 'Unknown'}</td>
+                <td style={cellStyles}>
+                  {allSuppliers.find(s => s._id === b.supplier)?.companyName ||
+                   allSuppliers.find(s => s._id === b.supplier)?.name ||
+                   allSuppliers.find(s => s._id === b.supplier)?.email ||
+                   'Unknown'}
+                </td>
                 <td style={cellStyles}>
                   <button onClick={() => handleEdit(b)} style={{ color: 'blue', marginRight: '8px' }}>Edit</button>
                   <button onClick={() => handleDelete(b._id)} style={{ color: 'red' }}>Delete</button>
