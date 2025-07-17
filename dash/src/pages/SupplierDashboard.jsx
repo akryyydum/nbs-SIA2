@@ -341,6 +341,25 @@ const SupplierDashboard = () => {
   const totalPages = Math.ceil(totalBooks / booksPerPage);
   const paginatedBooks = booksModal.books.slice((booksPage - 1) * booksPerPage, booksPage * booksPerPage);
 
+  // New handler for deleting users
+  const handleDeleteUser = async (id) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      const config = user?.token ? { headers: { Authorization: `Bearer ${user.token}` } } : {};
+      try {
+        await axios.delete(`/api/users/${id}`, config);
+        // Refresh users list
+        axios.get('/api/users', config)
+          .then(res => {
+            const users = (res.data || []).filter(u => u.role === 'supplier department');
+            setSupplierUsers(users);
+          })
+          .catch(() => setSupplierUsers([]));
+      } catch (err) {
+        alert('Failed to delete user: ' + (err.response?.data?.message || err.message));
+      }
+    }
+  };
+
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100">
       <h1 className="text-3xl font-bold mb-6 text-red-700">Supplier Dashboard</h1>
@@ -430,7 +449,10 @@ const SupplierDashboard = () => {
                       )}
                     </>
                   ) : (
-                    <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green', fontSize: '1.1em' }}>View Books</button>
+                    <>
+                      <button onClick={() => handleViewBooks(supplier)} style={{ color: 'green', fontSize: '1.1em', marginRight: '8px' }}>View Books</button>
+                      <button onClick={() => handleDeleteUser(supplier._id)} style={{ color: 'red', fontSize: '1.1em' }}>Delete</button>
+                    </>
                   )}
                 </td>
               </tr>
@@ -655,33 +677,25 @@ const SupplierDashboard = () => {
                 type="number"
                 name="stock"
                 placeholder="Stock"
-                value={bookForm.stock}
+                value={bookForm.stock === 0 ? 1 : bookForm.stock}
                 onChange={handleBookFormChange}
-                onKeyDown={(e) => {
-                  // Prevent entering minus sign, decimal point, 'e', 'E', '+', and other invalid characters
-                  if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === 'E' || e.key === '+') {
-                    e.preventDefault();
-                  }
-                }}
-                onPaste={(e) => {
-                  // Prevent pasting negative values, decimals, or less than 1
-                  const paste = e.clipboardData.getData('text');
-                  if (paste.includes('-') || paste.includes('.') || isNaN(paste) || parseInt(paste) < 1) {
-                    e.preventDefault();
-                  }
-                }}
-                required
                 min="1"
+                required
                 className="w-full border px-3 py-2 rounded"
               />
-              <input
-                type="text"
+              <select
                 name="category"
-                placeholder="Category"
                 value={bookForm.category}
                 onChange={handleBookFormChange}
+                required
                 className="w-full border px-3 py-2 rounded"
-              />
+              >
+                <option value="">Select Category</option>
+                <option value="Fiction">Fiction</option>
+                <option value="Non-Fiction">Non-Fiction</option>
+                <option value="Science">Science</option>
+                <option value="History">History</option>
+              </select>
               <input
                 type="text"
                 name="image"
