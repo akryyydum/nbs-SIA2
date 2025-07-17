@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Bar, Pie, Line } from "react-chartjs-2";
@@ -13,7 +13,7 @@ import {
   PointElement,
   LineElement,
 } from "chart.js";
-import { FaBook, FaUsers, FaTruck, FaShoppingCart, FaChartPie, FaChartLine, FaCrown, FaUserClock, FaMoneyBillWave } from "react-icons/fa";
+import { FaBook, FaUsers, FaTruck, FaShoppingCart, FaChartPie, FaChartLine, FaCrown, FaMoneyBillWave } from "react-icons/fa";
 
 ChartJS.register(
   ArcElement,
@@ -50,6 +50,8 @@ const AdminDashboard = () => {
     orders: [],
   });
   const [loading, setLoading] = useState(true);
+  const [suppliers, setSuppliers] = useState([]);
+  const [supplierUsers, setSupplierUsers] = useState([]);
 
   // Export data as CSV
   const handleExportData = () => {
@@ -82,18 +84,38 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const [booksRes, usersRes, supplierKpisRes, ordersRes, logsRes] = await Promise.all([
+        const [booksRes, usersRes, suppliersRes, ordersRes, logsRes] = await Promise.all([
           axios.get(`${API_BASE}/books`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/suppliers/kpis`, { headers: { Authorization: `Bearer ${user?.token}` } }), // <-- use kpis endpoint
+          axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] }))
         ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
+        const suppliers = suppliersRes.data || [];
+        const supplierUsers = users.filter(u => u.role === 'supplier department');
         const orders = ordersRes.data || [];
         const customerLogins = logsRes.data || [];
-        const totalSuppliers = supplierKpisRes.data?.totalSuppliers || 0; // <-- get from kpis
+
+        const allSuppliers = [
+          ...suppliers,
+          ...supplierUsers.map(u => ({
+            _id: u._id,
+            companyName: u.name || u.email || u._id,
+            contactPerson: u.name || '',
+            email: u.email,
+            phone: u.phone || '',
+            address: u.address || '',
+            productCategories: [],
+            status: u.status || 'active',
+            _type: 'User',
+            userObj: u,
+            books: [],
+            createdAt: u.createdAt || u.registrationDate || new Date().toISOString(),
+          }))
+        ];
+        const totalSuppliers = allSuppliers.length;
 
         // Filter out supplier orders
         const customerOrders = orders.filter(
@@ -124,7 +146,6 @@ const AdminDashboard = () => {
           }
           return sum;
         }, 0);
-        const totalOrders = customerOrders.length;
 
         const stockByCategory = {};
         books.forEach((b) => {
@@ -212,6 +233,18 @@ const AdminDashboard = () => {
       setLoading(false);
     };
     fetchStats();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      const [suppliersRes, usersRes] = await Promise.all([
+        axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+        axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
+      ]);
+      setSuppliers(suppliersRes.data || []);
+      setSupplierUsers((usersRes.data || []).filter(u => u.role === 'supplier department'));
+    };
+    fetchSuppliers();
   }, [user]);
 
   // Chart data
@@ -414,27 +447,8 @@ function KpiCard({ label, value, icon }) {
 }
 
 // Chart Card component with icon, animation, and hover effect
-function ChartCard({ title, icon, children, className = "" }) {
-  // Use a smaller scale on hover for Customer Logins and Total Sales charts
-  const isSmallScale =
-    title === "Customer Logins (per day)" || title === "Total Sales";
-  return (
-    <div
-      className={
-        `bg-white rounded-lg shadow p-6 ${className} animate-fade-in transition-all duration-500 cursor-pointer ` +
-        (isSmallScale
-          ? "hover:scale-[1.02] hover:shadow-xl"
-          : "hover:scale-105 hover:shadow-xl")
-      }
-    >
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 font-semibold">
-        {icon} {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
+// Chart Card component with icon, animation, and hover effect
+// (Unused, so removed to fix unused declaration error)
 // Tailwind CSS custom animation classes (add to your global CSS if not present)
 /*
 @layer utilities {
