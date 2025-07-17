@@ -6,8 +6,8 @@ const orderSchema = new mongoose.Schema({
     {
       book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
       quantity: { type: Number, required: true, min: 1 },
-      category: { type: String }, // Added category
-      supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' } // Added supplier
+      category: { type: String },
+      supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' }
     }
   ],
   totalPrice: { type: Number, required: true },
@@ -23,11 +23,10 @@ const orderSchema = new mongoose.Schema({
       'cancelled',
       'accepted',
       'declined',
-      'received' // <-- add this
+      'received'
     ],
     default: 'pending' 
-  },
-  createdAt: { type: Date, default: Date.now }
-});
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);

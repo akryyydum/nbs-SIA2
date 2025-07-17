@@ -52,63 +52,10 @@ const SalesDashboard = () => {
     setLoading(true);
     try {
       const res = await API.get('/orders');
-      setOrders(res.data);
-
-      // Revenue/transactions logic (same as Orders.jsx):
-      // - Bank: status is "paid"
-      // - Cash: always include (regardless of status)
-      // - COD: status is "received"
-      const acceptedOrPaidOrders = res.data.filter(order => {
-        if (order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
-          return order.status === "paid";
-        }
-        if (order.modeofPayment === "Cash") {
-          return true; // Always count cash orders
-        }
-        if (
-          order.modeofPayment === "Cash on Delivery" ||
-          order.modeofPayment === "cod"
-        ) {
-          return order.status === "received";
-        }
-        return false;
-      });
-
-      // Only use acceptedOrPaidOrders for metrics (like Orders.jsx)
-      const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-      const transactions = acceptedOrPaidOrders.length;
-      const avgOrderValue = transactions > 0 ? revenue / transactions : 0;
-      setTotalRevenue(revenue);
-      setTotalTransactions(transactions);
-      setAov(avgOrderValue);
-
-      // Top books and category chart: use acceptedOrPaidOrders for stats
-      const bookSalesMap = {};
-      const categorySalesMap = {};
-      acceptedOrPaidOrders.forEach(order => {
-        order.items.forEach(item => {
-          const bookTitle = item.book?.title || 'Unknown';
-          bookSalesMap[bookTitle] = (bookSalesMap[bookTitle] || 0) + item.quantity;
-
-          const category = item.book?.category || 'Uncategorized';
-          categorySalesMap[category] = (categorySalesMap[category] || 0) + item.quantity;
-        });
-      });
-
-      const topBooks = Object.entries(bookSalesMap)
-        .map(([title, quantity]) => ({ title, quantity }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
-
-      const categoryData = Object.entries(categorySalesMap).map(([category, quantity]) => ({ category, quantity }));
-
-      setTopBooksData(topBooks);
-      setCategoryChartData(categoryData);
+      setOrders(res.data); // Only set orders here
     } catch (err) {
       alert('Failed to fetch orders');
-      setTotalRevenue(0);
-      setTotalTransactions(0);
-      setAov(0);
+      setOrders([]);
     }
     setLoading(false);
   };
@@ -125,7 +72,7 @@ const SalesDashboard = () => {
     setActionLoading(orderId);
     try {
       await API.put(`/orders/${orderId}/accept`, {});
-      fetchOrders();
+      await fetchOrders(); // <-- Make sure to await this
       setModalOrder(null);
     } catch (err) {
       alert("Failed to accept order: " + (err?.response?.data?.message || err.message));
@@ -139,10 +86,24 @@ const SalesDashboard = () => {
     setActionLoading(orderId);
     try {
       await API.put(`/orders/${orderId}/decline`, {});
-      fetchOrders();
+      await fetchOrders(); // <-- Make sure to await this
       setModalOrder(null);
     } catch (err) {
       alert("Failed to decline order");
+    }
+    setActionLoading(false);
+  };
+
+  // Ship order (if you have this)
+  const handleShip = async (orderId) => {
+    if (!window.confirm("Mark this order as shipped?")) return;
+    setActionLoading(orderId);
+    try {
+      await API.put(`/orders/${orderId}/ship`, {});
+      await fetchOrders(); // <-- Make sure to await this
+      setModalOrder(null);
+    } catch (err) {
+      alert("Failed to mark as shipped");
     }
     setActionLoading(false);
   };
@@ -219,7 +180,7 @@ const SalesDashboard = () => {
         return;
       }
       if (!isValidBankNumber(bankNumber.trim())) {
-        setBankError("Bank number can only contain numbers and dashes.");
+        setBankError("Bank number must be in the format 111-1143-432-5898.");
         return;
       }
     }
@@ -275,14 +236,21 @@ const SalesDashboard = () => {
 
     // Only count orders that are actually completed/approved/received/paid
     const acceptedOrPaidOrders = customerOrders.filter(order => {
-      if (order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
-        return order.status === "paid";
+      if (
+        order.modeofPayment === "Bank" ||
+        order.modeofPayment === "Bank Transfer" ||
+        order.modeofPayment === "bank"
+      ) {
+        return true; // Always count bank transactions
+      }
+      if (
+        order.modeofPayment === "Cash on Delivery" ||
+        order.modeofPayment === "cod"
+      ) {
+        return order.status === "received";
       }
       if (order.modeofPayment === "Cash") {
         return order.status === "accepted" || order.status === "received";
-      }
-      if (order.modeofPayment === "Cash on Delivery" || order.modeofPayment === "cod") {
-        return order.status === "received";
       }
       return false;
     });
@@ -294,7 +262,7 @@ const SalesDashboard = () => {
     setTotalTransactions(transactions);
     setAov(avgOrderValue);
 
-    // Top books and category chart logic
+    // Top books and category chart
     const bookSalesMap = {};
     const categorySalesMap = {};
     acceptedOrPaidOrders.forEach(order => {
@@ -320,7 +288,9 @@ const SalesDashboard = () => {
   const isValidName = (name) =>
   /^[A-Za-z\s]+$/.test(name) && /[A-Za-z]/.test(name);
 
-  const isValidBankNumber = (value) => /^[0-9-]+$/.test(value);
+  // Must be 4 groups of digits separated by dashes, e.g. 111-1143-432-5898
+  const isValidBankNumber = (value) =>
+    /^(\d{3,4}-){3}\d{3,4}$/.test(value);
 
   return (
     <div className="p-6 font-lora bg-gradient-to-br from-red-50 via-white to-red-100 min-h-screen">
@@ -561,7 +531,8 @@ const SalesDashboard = () => {
                             setActionLoading(order._id);
                             try {
                               await API.put(`/orders/${order._id}/ship`, {});
-                              fetchOrders();
+                              await fetchOrders(); // <-- Make sure to await this
+                              setModalOrder(null);
                             } catch (err) {
                               alert('Failed to mark as shipped: ' + (err?.response?.data?.message || err.message));
                             }
@@ -649,6 +620,13 @@ const SalesDashboard = () => {
                     </ul>
                   </div>
                   <div><span className="font-semibold">Placed:</span> {new Date(modalOrder.createdAt).toLocaleString()}</div>
+                  {/* Date Received */}
+                  {modalOrder.status === "received" && (
+                    <div>
+                      <span className="font-semibold">Date Received:</span>{" "}
+                      {new Date(modalOrder.updatedAt || modalOrder.createdAt).toLocaleString()}
+                    </div>
+                  )}
                 </div>
                 {/* Accept/Decline buttons for pending orders */}
                 {modalOrder.status === "pending" && (
@@ -698,9 +676,9 @@ const SalesDashboard = () => {
                     placeholder="Enter customer name"
                     value={newOrder.user}
                     onChange={e => {
-                      const value = e.target.value;
-                      if (value === "" || isValidName(value)) {
-                        setNewOrder(o => ({ ...o, user: value }));
+                      setBankError(""); // clear bank error
+                      if (isValidName(e.target.value) || e.target.value === "") {
+                        setNewOrder(o => ({ ...o, user: e.target.value }));
                         setNameError("");
                       } else {
                         setNameError("Only letters and spaces are allowed, and at least one letter is required.");
@@ -731,17 +709,20 @@ const SalesDashboard = () => {
                     <label className="font-semibold">Bank Number:</label>
                     <input
                       type="text"
-                      required
-                      className="ml-2 border px-2 py-1 rounded w-full"
-                      placeholder="Enter bank number"
                       value={bankNumber}
                       onChange={e => {
+                        setNameError(""); // clear name error
                         const value = e.target.value;
-                        if (value === "" || isValidBankNumber(value)) {
+                        // Allow only numbers and dashes, and max length 19 (e.g. 1111-1111-1111-1111)
+                        if (/^[0-9-]{0,19}$/.test(value)) {
                           setBankNumber(value);
                           setBankError("");
+                        }
+                        // Show error only if not empty and not valid
+                        if (value && !isValidBankNumber(value)) {
+                          setBankError("Bank number must be in the format 111-1143-432-5898.");
                         } else {
-                          setBankError("Bank number can only contain numbers and dashes.");
+                          setBankError("");
                         }
                       }}
                     />

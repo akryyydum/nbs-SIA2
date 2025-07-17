@@ -48,7 +48,7 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [modalOpen]);
+  }, []);
 
   const handleView = (order) => {
     setSelectedOrder(order);
@@ -70,6 +70,7 @@ const Orders = () => {
     try {
       await API.put(`/orders/${order._id}/accept`);
       setModalOpen(false);
+      await fetchOrders(); // <-- Add this line
     } catch (err) {
       alert('Failed to accept order: ' + (err?.response?.data?.message || err.message));
     }
@@ -80,6 +81,7 @@ const Orders = () => {
     try {
       await API.put(`/orders/${order._id}/decline`);
       setModalOpen(false);
+      await fetchOrders(); // <-- Add this line
     } catch (err) {
       alert('Failed to decline order');
     }
@@ -91,6 +93,7 @@ const Orders = () => {
     try {
       await API.put(`/orders/${order._id}/ship`);
       setModalOpen(false);
+      await fetchOrders(); // <-- Add this line
     } catch (err) {
       alert('Failed to mark as shipped: ' + (err?.response?.data?.message || err.message));
     }
@@ -121,19 +124,26 @@ const Orders = () => {
       return;
     }
 
-    // Only count orders that are actually completed/approved/received/paid
-    const acceptedOrPaidOrders = customerOrders.filter(order => {
-      if (order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
-        return order.status === "paid";
-      }
-      if (order.modeofPayment === "Cash") {
-        return order.status === "accepted" || order.status === "received";
-      }
-      if (order.modeofPayment === "Cash on Delivery" || order.modeofPayment === "cod") {
-        return order.status === "received";
-      }
-      return false;
-    });
+    // Updated filter logic for metrics
+const acceptedOrPaidOrders = customerOrders.filter(order => {
+  if (
+    order.modeofPayment === "Bank" ||
+    order.modeofPayment === "Bank Transfer" ||
+    order.modeofPayment === "bank"
+  ) {
+    return true; // Always count bank transactions
+  }
+  if (
+    order.modeofPayment === "Cash on Delivery" ||
+    order.modeofPayment === "cod"
+  ) {
+    return order.status === "received";
+  }
+  if (order.modeofPayment === "Cash") {
+    return order.status === "accepted" || order.status === "received";
+  }
+  return false;
+});
 
     const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
     const transactions = acceptedOrPaidOrders.length;
@@ -177,8 +187,9 @@ const Orders = () => {
   const isValidName = (name) =>
     /^[A-Za-z\s]+$/.test(name) && /[A-Za-z]/.test(name);
 
-  // Add this validation function near the top of your component:
-  const isValidBankNumber = (value) => /^[0-9-]+$/.test(value);
+  // Must be 4 groups of digits separated by dashes, e.g. 111-1143-432-5898
+  const isValidBankNumber = (value) =>
+    /^(\d{3,4}-){3}\d{3,4}$/.test(value);
 
   // Add order handler
   const handleAddOrder = async (e) => {
@@ -193,7 +204,7 @@ const Orders = () => {
         return;
       }
       if (!isValidBankNumber(bankNumber.trim())) {
-        setBankError("Bank number can only contain numbers and dashes.");
+        setBankError("Bank number must be in the format 111-1143-432-5898.");
         return;
       }
     }
@@ -303,6 +314,13 @@ const Orders = () => {
                 </ul>
               </div>
               <div><span className="font-semibold">Created:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
+              {/* Date Received */}
+              {selectedOrder.status === "received" && (
+                <div>
+                  <span className="font-semibold">Date Received:</span>{" "}
+                  {new Date(selectedOrder.updatedAt || selectedOrder.createdAt).toLocaleString()}
+                </div>
+              )}
             </div>
 
             {(selectedOrder.status === 'pending' || selectedOrder.status === 'accepted') && (
@@ -362,9 +380,9 @@ const Orders = () => {
                 placeholder="Enter customer name"
                 value={newOrder.user}
                 onChange={e => {
-                  const value = e.target.value;
-                  if (value === "" || isValidName(value)) {
-                    setNewOrder(o => ({ ...o, user: value }));
+                  setBankError(""); // clear bank error
+                  if (isValidName(e.target.value) || e.target.value === "") {
+                    setNewOrder(o => ({ ...o, user: e.target.value }));
                     setNameError("");
                   } else {
                     setNameError("Only letters and spaces are allowed, and at least one letter is required.");
@@ -396,15 +414,21 @@ const Orders = () => {
                   type="text"
                   required
                   className="ml-2 border px-2 py-1 rounded w-full"
-                  placeholder="Enter bank number"
+                  placeholder="e.g. 111-1143-432-5898"
                   value={bankNumber}
                   onChange={e => {
+                    setNameError(""); // clear name error
                     const value = e.target.value;
-                    if (value === "" || isValidBankNumber(value)) {
+                    // Allow only numbers and dashes, and max length 19 (e.g. 1111-1111-1111-1111)
+                    if (/^[0-9-]{0,19}$/.test(value)) {
                       setBankNumber(value);
                       setBankError("");
+                    }
+                    // Show error only if not empty and not valid
+                    if (value && !isValidBankNumber(value)) {
+                      setBankError("Bank number must be in the format 111-1143-432-5898.");
                     } else {
-                      setBankError("Bank number can only contain numbers and dashes.");
+                      setBankError("");
                     }
                   }}
                 />

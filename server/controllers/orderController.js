@@ -40,12 +40,17 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    const status =
+      modeofPayment === "Bank Transfer" || modeofPayment === "bank"
+        ? "paid"
+        : "pending";
+
     const order = new Order({
-      user: req.user._id, // Always use the logged-in user's id for customer orders
+      user: req.user._id,
       items: enrichedItems,
       totalPrice,
       modeofPayment,
-      status: 'pending'
+      status // <-- use the computed status
     });
 
     const savedOrder = await order.save();
