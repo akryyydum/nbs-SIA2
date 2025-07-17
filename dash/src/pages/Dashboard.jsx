@@ -330,7 +330,7 @@ const DashboardPage = () => {
                       >
                         {book.image && (
                           <img
-                            src={book.image}
+                            src={book.image.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || 'http://localhost:5000'}${book.image}` : book.image}
                             alt={book.title}
                             className="h-28 w-20 sm:h-32 sm:w-24 object-cover rounded mb-2 shadow opacity-100"
                           />
@@ -368,7 +368,7 @@ const DashboardPage = () => {
                     >
                       {book.image && (
                         <img
-                          src={book.image}
+                          src={book.image.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || 'http://localhost:5000'}${book.image}` : book.image}
                           alt={book.title}
                           className="h-28 w-20 sm:h-32 sm:w-24 object-cover rounded mb-2 shadow opacity-100"
                         />

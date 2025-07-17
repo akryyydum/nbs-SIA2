@@ -71,7 +71,12 @@ const SupplierBooks = () => {
       const res = await axios.post('/api/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return res.data.url;
+      // After upload, before saving to DB
+      const base = axios.defaults.baseURL.replace('/api', '');
+      const url = res.data.url.startsWith('/')
+        ? `${base}${res.data.url}`
+        : res.data.url;
+      return url;
     } catch (err) {
       alert('Failed to upload image');
       throw err;
@@ -462,7 +467,9 @@ const SupplierBooks = () => {
                   <td style={cellStyles} className="py-2 px-4">
                     {b.image ? (
                       <img
-                        src={b.image}
+                        src={b.image.startsWith('/') 
+                          ? `${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || 'http://localhost:5000'}${b.image}` 
+                          : b.image}
                         alt={b.title}
                         style={imageStyles}
                         className="rounded shadow border border-gray-200"

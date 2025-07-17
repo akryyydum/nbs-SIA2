@@ -28,6 +28,7 @@ const Inventory = () => {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderDetails, setOrderDetails] = useState([{ book: '', quantity: 1 }]);
   const [selectedSupplier, setSelectedSupplier] = useState('');
+  const [supplierBooks, setSupplierBooks] = useState([]);
 
   const API = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
@@ -70,7 +71,7 @@ const Inventory = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Ensure only one baseURL is used
+      // After upload, before saving to DB
       const base = API.defaults.baseURL.replace('/api', '');
       const url = res.data.url.startsWith('/')
         ? `${base}${res.data.url}`
@@ -296,6 +297,26 @@ const Inventory = () => {
     setOrderDetails([{ book: '', quantity: 1 }]);
     setSelectedSupplier('');
   };
+
+  useEffect(() => {
+    const fetchSupplierBooks = async () => {
+      if (!selectedSupplier) {
+        setSupplierBooks([]);
+        return;
+      }
+      try {
+        const res = await API.get(`/suppliers/${selectedSupplier}/supplierBook`);
+        setSupplierBooks(res.data || []);
+      } catch (err) {
+        setSupplierBooks([]);
+        alert('Failed to fetch supplier books');
+      }
+    };
+
+    if (orderModalOpen && selectedSupplier) {
+      fetchSupplierBooks();
+    }
+  }, [selectedSupplier, orderModalOpen]);
 
   const tableStyles = {
     textAlign: 'center',
@@ -574,7 +595,7 @@ const Inventory = () => {
                       className="w-full border px-3 py-2 rounded"
                     >
                       <option value="" disabled>Select Book</option>
-                      {books.map(b => (
+                      {supplierBooks.map(b => (
                         <option key={b._id} value={b._id}>{b.title}</option>
                       ))}
                     </select>
@@ -649,7 +670,11 @@ const Inventory = () => {
                 <td style={cellStyles}>{b.stock}</td>
                 <td style={cellStyles}>
                   {b.image ? (
-                    <img src={b.image} alt={b.title} style={imageStyles} />
+                    <img
+                      src={b.image.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || 'http://localhost:5000'}${b.image}` : b.image}
+                      alt={b.title}
+                      style={imageStyles}
+                    />
                   ) : (
                     <span style={{ color: 'gray' }}>No image</span>
                   )}
