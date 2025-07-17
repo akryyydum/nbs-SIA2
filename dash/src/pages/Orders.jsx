@@ -124,26 +124,26 @@ const Orders = () => {
       return;
     }
 
-    // Updated filter logic for metrics
-const acceptedOrPaidOrders = customerOrders.filter(order => {
-  if (
-    order.modeofPayment === "Bank" ||
-    order.modeofPayment === "Bank Transfer" ||
-    order.modeofPayment === "bank"
-  ) {
-    return true; // Always count bank transactions
-  }
-  if (
-    order.modeofPayment === "Cash on Delivery" ||
-    order.modeofPayment === "cod"
-  ) {
-    return order.status === "received";
-  }
-  if (order.modeofPayment === "Cash") {
-    return order.status === "accepted" || order.status === "received";
-  }
-  return false;
-});
+    // Only count orders that are actually completed/approved/received/paid
+    const acceptedOrPaidOrders = customerOrders.filter(order => {
+      if (
+        order.modeofPayment === "Bank" ||
+        order.modeofPayment === "Bank Transfer" ||
+        order.modeofPayment === "bank"
+      ) {
+        return true; // Always count bank transactions
+      }
+      if (
+        order.modeofPayment === "Cash on Delivery" ||
+        order.modeofPayment === "cod"
+      ) {
+        return order.status === "received";
+      }
+      if (order.modeofPayment === "Cash") {
+        return order.status === "accepted" || order.status === "received";
+      }
+      return false;
+    });
 
     const revenue = acceptedOrPaidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
     const transactions = acceptedOrPaidOrders.length;
