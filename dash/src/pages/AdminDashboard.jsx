@@ -87,7 +87,7 @@ const AdminDashboard = () => {
           axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/suppliers/kpis`, { headers: { Authorization: `Bearer ${user?.token}` } }), // <-- use kpis endpoint
           axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })),
+          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] }))
         ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
@@ -101,6 +101,7 @@ const AdminDashboard = () => {
         );
 
         // Calculate statistics using only customerOrders
+        // --- Use SalesDashboard.jsx logic for total sales ---
         const totalSales = customerOrders.reduce((sum, o) => {
           if (
             (o.modeofPayment === "Cash on Delivery" || o.modeofPayment === "cod") &&
@@ -109,8 +110,9 @@ const AdminDashboard = () => {
             return sum + (o.totalPrice || 0);
           }
           if (
-            (o.modeofPayment === "Bank Transfer" || o.modeofPayment === "bank") &&
-            o.status === "paid"
+            (o.modeofPayment === "Bank" ||
+              o.modeofPayment === "Bank Transfer" ||
+              o.modeofPayment === "bank")
           ) {
             return sum + (o.totalPrice || 0);
           }
@@ -130,43 +132,79 @@ const AdminDashboard = () => {
           stockByCategory[b.category] = (stockByCategory[b.category] || 0) + (Number(b.stock) || 0);
         });
 
-        // Sales trends (by month)
-        const salesTrends = {};
-        orders.forEach((order) => {
-          if (!order.createdAt) return;
-          const date = new Date(order.createdAt);
-          const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-          salesTrends[month] = (salesTrends[month] || 0) + (order.totalPrice || 0);
+        // Top books by sales (copied from SalesDashboard.jsx logic)
+        const bookSalesMap = {};
+        const acceptedOrPaidOrders = customerOrders.filter(order => {
+          if (
+            order.modeofPayment === "Bank" ||
+            order.modeofPayment === "Bank Transfer" ||
+            order.modeofPayment === "bank"
+          ) {
+            return true;
+          }
+          if (
+            order.modeofPayment === "Cash on Delivery" ||
+            order.modeofPayment === "cod"
+          ) {
+            return order.status === "received";
+          }
+          if (order.modeofPayment === "Cash") {
+            return order.status === "accepted" || order.status === "received";
+          }
+          return false;
         });
 
-        // Top books by sales
-        const bookSales = {};
-        orders.forEach((order) => {
-          (order.items || []).forEach((item) => {
-            const bookId = item.book?._id || item.book;
-            if (!bookId) return;
-            bookSales[bookId] = (bookSales[bookId] || 0) + (item.quantity || 0);
+        // Sales per day - use only accepted/paid/received customer orders
+        const salesPerDay = {};
+        const transactionsPerDay = {};
+        const transactionsPerWeek = {};
+        const transactionsPerMonth = {};
+
+        acceptedOrPaidOrders.forEach((order) => {
+          if (!order.createdAt) return;
+          const dateObj = new Date(order.createdAt);
+          const dateStr = dateObj.toISOString().slice(0, 10); // YYYY-MM-DD
+          // Week string: YYYY-WW (ISO week)
+          const weekNumber = Math.ceil(
+            (dateObj.getDate() - dateObj.getDay() + 1) / 7
+          );
+          const weekStr = `${dateObj.getFullYear()}-W${weekNumber
+            .toString()
+            .padStart(2, "0")}`;
+          // Month string: YYYY-MM
+          const monthStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+
+          salesPerDay[dateStr] = (salesPerDay[dateStr] || 0) + (order.totalPrice || 0);
+          transactionsPerDay[dateStr] = (transactionsPerDay[dateStr] || 0) + 1;
+          transactionsPerWeek[weekStr] = (transactionsPerWeek[weekStr] || 0) + 1;
+          transactionsPerMonth[monthStr] = (transactionsPerMonth[monthStr] || 0) + 1;
+        });
+
+        acceptedOrPaidOrders.forEach(order => {
+          order.items.forEach(item => {
+            const bookTitle = item.book?.title || 'Unknown';
+            bookSalesMap[bookTitle] = (bookSalesMap[bookTitle] || 0) + item.quantity;
           });
         });
-        const topBooks = books
-          .map((b) => ({
-            title: b.title,
-            sales: bookSales[b._id] || 0,
-          }))
+        const topBooks = Object.entries(bookSalesMap)
+          .map(([title, quantity]) => ({ title, sales: quantity }))
           .sort((a, b) => b.sales - a.sales)
-          .slice(0, 10);
+          .slice(0, 5);
 
         setStats({
           totalBooks: books.length,
           totalUsers: users.length,
-          totalSuppliers, // <-- use KPI value
-          totalOrders,
+          totalSuppliers: totalSuppliers, // FIX: assign totalSuppliers from KPI
+          totalOrders: customerOrders.length, // FIX: assign totalOrders from filtered customerOrders
           totalSales,
           customerLogins,
           stockByCategory,
-          salesTrends,
+          salesTrends: salesPerDay,
+          transactionsPerDay,
+          transactionsPerWeek,
+          transactionsPerMonth,
           topBooks,
-          orders: customerOrders, // for export and table
+          orders: customerOrders,
         });
       } catch (err) {
         setStats((s) => ({ ...s }));
@@ -196,16 +234,61 @@ const AdminDashboard = () => {
     ],
   };
 
-  const salesTrendsMonths = Object.keys(stats.salesTrends).sort();
-  const salesTrendsData = {
-    labels: salesTrendsMonths,
+  const salesPerDayDates = Object.keys(stats.salesTrends).sort();
+  const salesPerDayData = {
+    labels: salesPerDayDates,
     datasets: [
       {
-        label: "Sales",
-        data: salesTrendsMonths.map((m) => stats.salesTrends[m]),
+        label: "Sales Per Day",
+        data: salesPerDayDates.map((d) => stats.salesTrends[d]),
         fill: false,
         borderColor: "#36A2EB",
         backgroundColor: "#36A2EB",
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const transactionsPerDayDates = Object.keys(stats.transactionsPerDay || {}).sort();
+  const transactionsPerDayData = {
+    labels: transactionsPerDayDates,
+    datasets: [
+      {
+        label: "Transactions Per Day",
+        data: transactionsPerDayDates.map((d) => stats.transactionsPerDay[d]),
+        fill: false,
+        borderColor: "#F59E42",
+        backgroundColor: "#FBBF24",
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const transactionsPerWeekLabels = Object.keys(stats.transactionsPerWeek || {}).sort();
+  const transactionsPerWeekData = {
+    labels: transactionsPerWeekLabels,
+    datasets: [
+      {
+        label: "Transactions Per Week",
+        data: transactionsPerWeekLabels.map((w) => stats.transactionsPerWeek[w]),
+        fill: false,
+        borderColor: "#A78BFA",
+        backgroundColor: "#A78BFA",
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const transactionsPerMonthLabels = Object.keys(stats.transactionsPerMonth || {}).sort();
+  const transactionsPerMonthData = {
+    labels: transactionsPerMonthLabels,
+    datasets: [
+      {
+        label: "Transactions Per Month",
+        data: transactionsPerMonthLabels.map((m) => stats.transactionsPerMonth[m]),
+        fill: false,
+        borderColor: "#34D399",
+        backgroundColor: "#34D399",
         tension: 0.3,
       },
     ],
@@ -233,26 +316,7 @@ const AdminDashboard = () => {
     ],
   };
 
-  // Customer logins per day (if available)
-  const customerLoginCounts = {};
-  (stats.customerLogins || []).forEach((log) => {
-    const date = log.timestamp ? log.timestamp.slice(0, 10) : "Unknown";
-    customerLoginCounts[date] = (customerLoginCounts[date] || 0) + 1;
-  });
-  const customerLoginDates = Object.keys(customerLoginCounts).sort();
-  const customerLoginsData = {
-    labels: customerLoginDates,
-    datasets: [
-      {
-        label: "Customer Logins",
-        data: customerLoginDates.map((d) => customerLoginCounts[d]),
-        backgroundColor: "#FBBF24",
-        borderColor: "#F59E42",
-        fill: true,
-      },
-    ],
-  };
-
+  // Fix: define graphCardStyle before usage in render
   const graphCardStyle =
     "bg-white rounded-2xl shadow-lg p-6 border border-red-100 mb-8 transition-all duration-300 hover:shadow-2xl";
 
@@ -291,9 +355,9 @@ const AdminDashboard = () => {
             </div>
             <div className={graphCardStyle}>
               <div className="flex items-center gap-2 text-lg font-bold text-blue-400 mb-4">
-                <FaChartLine className="text-xl" /> Sales Trends
+                <FaChartLine className="text-xl" /> Sales Per Day
               </div>
-              <Line data={salesTrendsData} />
+              <Line data={salesPerDayData} />
             </div>
             <div className={graphCardStyle}>
               <div className="flex items-center gap-2 text-lg font-bold text-yellow-400 mb-4">
@@ -302,12 +366,26 @@ const AdminDashboard = () => {
               <Bar data={topBooksData} />
             </div>
           </div>
-          {/* Customer Logins */}
-          <div className={graphCardStyle}>
-            <div className="flex items-center gap-2 text-lg font-bold text-green-400 mb-4">
-              <FaUserClock className="text-xl" /> Customer Logins (per day)
+          {/* Transactions Charts Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div className={graphCardStyle}>
+              <div className="flex items-center gap-2 text-lg font-bold text-orange-400 mb-4">
+                <FaChartLine className="text-xl" /> Transactions Per Day
+              </div>
+              <Line data={transactionsPerDayData} />
             </div>
-            <Line data={customerLoginsData} />
+            <div className={graphCardStyle}>
+              <div className="flex items-center gap-2 text-lg font-bold text-purple-400 mb-4">
+                <FaChartLine className="text-xl" /> Transactions Per Week
+              </div>
+              <Line data={transactionsPerWeekData} />
+            </div>
+            <div className={graphCardStyle}>
+              <div className="flex items-center gap-2 text-lg font-bold text-green-400 mb-4">
+                <FaChartLine className="text-xl" /> Transactions Per Month
+              </div>
+              <Line data={transactionsPerMonthData} />
+            </div>
           </div>
           {/* Total Sales */}
           <div className={graphCardStyle}>
