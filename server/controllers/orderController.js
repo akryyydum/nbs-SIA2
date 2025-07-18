@@ -202,18 +202,60 @@ exports.acceptOrder = async (req, res) => {
 };
 
 
-// @desc    Decline order (admin only): set status to 'declined'
+// @desc    Decline order (admin or sales department): set status to 'declined' and restore stock
 // @route   PUT /api/orders/:id/decline
 exports.declineOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
-    if (order.status !== 'pending') {
-      return res.status(400).json({ message: 'Order is not pending' });
+
+    // Only admin or sales department can access
+    if (req.user.role !== 'admin' && req.user.role !== 'sales department') {
+      return res.status(403).json({ message: 'Forbidden: Only admin or sales department can decline orders' });
     }
+
+    if (order.status === 'declined') {
+      return res.status(400).json({ message: 'Order is already declined' });
+    }
+    if (order.status !== 'pending' && order.status !== 'accepted' && order.status !== 'out for delivery') {
+      return res.status(400).json({ message: 'Order cannot be declined at this stage' });
+    }
+
+    // Restore stock for each book in the order
+    for (const item of order.items) {
+      const bookId = typeof item.book === 'object' ? item.book._id : item.book;
+      let book = await Book.findById(bookId);
+      if (book) {
+        book.stock += item.quantity;
+        await book.save();
+      }
+      // Restore SupplierBook stock if applicable
+      if (book && book.supplier) {
+        let supplierBook = await SupplierBook.findOne({ _id: bookId, supplier: book.supplier });
+        if (supplierBook) {
+          supplierBook.stock += item.quantity;
+          await supplierBook.save();
+        }
+      }
+    }
+
     order.status = 'declined';
     await order.save();
-    res.json({ message: 'Order declined' });
+
+    // --- Notification for customer: Declined ---
+    try {
+      await Notification.create({
+        user: order.user,
+        title: 'Order Declined',
+        description: `Your order ${order._id} has been declined.`,
+        order: order._id,
+        read: false,
+      });
+    } catch (notifErr) {
+      console.error('Notification creation error:', notifErr);
+    }
+
+    res.json({ message: 'Order declined and stock restored' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
