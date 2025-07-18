@@ -29,7 +29,7 @@ router.put('/:id/accept', protect, adminOrSales, acceptOrder);
 router.put('/:id/ship', protect, adminOrSales, shipOrder);
 
 // Decline order
-router.put('/:id/decline', protect, sales, declineOrder);
+router.put('/:id/decline', protect, declineOrder);
 
 // Mark as received
 router.put('/:id/received', protect, markOrderReceived);

@@ -221,7 +221,7 @@ const Order = () => {
         ) : filteredOrders.length === 0 ? (
           <div className="col-span-full text-center text-gray-400 py-8">No orders found.</div>
         ) : (
-          filteredOrders.map(order => (
+          filteredOrders.map((order) => (
             <div
               key={order._id}
               className="relative bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col gap-3 transition hover:shadow-2xl"

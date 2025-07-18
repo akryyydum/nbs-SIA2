@@ -86,7 +86,9 @@ const SalesDashboard = () => {
     setActionLoading(orderId);
     try {
       await API.put(`/orders/${orderId}/decline`, {});
-      await fetchOrders(); // <-- Make sure to await this
+      await fetchOrders(); // <-- This already refreshes the orders list
+      // Optionally, trigger a books refresh if you want to update inventory view
+      window.dispatchEvent(new Event('books-updated'));
       setModalOrder(null);
     } catch (err) {
       alert("Failed to decline order");
