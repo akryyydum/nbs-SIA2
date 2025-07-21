@@ -1,12 +1,108 @@
-# React + Vite
+# Nature-based Solutions (NbS) System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite application for managing and visualizing nature-based solutions data.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Before setting up the system, ensure you have the following installed:
 
-## Expanding the ESLint configuration
+- **Node.js** (version 16.0 or higher)
+  - Download from [nodejs.org](https://nodejs.org/)
+  - Verify installation: `node --version` and `npm --version`
+- **Git** (for version control)
+  - Download from [git-scm.com](https://git-scm.com/)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## System Setup Guide
+
+### 1. Clone or Download the Project
+
+If using Git:
+```bash
+git clone <repository-url>
+cd nbs-SIA2/dash
+```
+
+Or download and extract the project files to your desired location.
+
+### 2. Install Dependencies
+
+Navigate to the project directory and install required packages:
+
+```bash
+npm install (for both dash and server folder)
+```
+
+This will install all dependencies listed in `package.json`, including:
+- React and React DOM
+- Vite build tool
+- ESLint for code linting
+- Other project-specific dependencies
+
+### 3. Environment Configuration (if applicable)
+
+If the project uses environment variables:
+1. Copy `.env.example` to `.env` (if exists)
+2. Update the environment variables as needed
+3. Ensure sensitive information is not committed to version control
+
+## Starting the System
+
+### Quick Start Commands
+
+**For Backend Server:**
+```bash
+cd server
+npm install
+npm start
+```
+
+**For Frontend Dashboard:**
+```bash
+cd dash
+npm install
+npm run dev
+```
+
+The backend will typically run on `http://localhost:3000` and the frontend on `http://localhost:5173`.
+
+### Development Mode (Frontend)
+
+To start the frontend development server with hot module replacement (HMR):
+
+```bash
+npm run dev
+```
+
+- The application will be available at `http://localhost:5173` (default Vite port)
+- The server supports hot reloading - changes will be reflected automatically
+- Press `Ctrl + C` to stop the development server
+
+### Starting Both Frontend and Backend
+
+**Option 1: Using separate terminals (Recommended)**
+1. Open first terminal:
+   ```bash
+   cd server
+   npm install
+   npm start
+   ```
+
+2. Open second terminal:
+   ```bash
+   cd dash
+   npm install
+   npm run dev
+   ```
+
+**Option 2: Using one terminal with background processes**
+```bash
+# Start backend in background
+cd server 
+npm start 
+
+# Start frontend
+cd dash 
+npm run dev
+
+
+
