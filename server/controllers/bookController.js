@@ -155,3 +155,72 @@ exports.increaseStock = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// @desc    Get top selling book for public dashboard
+// @route   GET /api/books/analytics/top-selling
+exports.getTopSellingBook = async (req, res) => {
+  try {
+    const Order = require('../models/order.model'); // Import Order model
+    
+    // Get all customer orders (not supplier orders)
+    const orders = await Order.find({ 
+      isSupplierOrder: { $ne: true },
+      modeofPayment: { $ne: 'Supplier Order' }
+    }).populate('items.book');
+
+    // Filter completed/paid orders (same logic as dashboard)
+    const completedOrders = orders.filter(order => {
+      if (order.modeofPayment === "Bank" || order.modeofPayment === "Bank Transfer" || order.modeofPayment === "bank") {
+        return true;
+      }
+      if (order.modeofPayment === "Cash on Delivery" || order.modeofPayment === "cod") {
+        return order.status === "received";
+      }
+      if (order.modeofPayment === "Cash") {
+        return order.status === "accepted" || order.status === "received";
+      }
+      return false;
+    });
+
+    // Calculate book sales
+    const bookSalesMap = {};
+    completedOrders.forEach(order => {
+      order.items.forEach(item => {
+        const book = item.book;
+        if (book && book._id) {
+          const bookTitle = book.title || 'Unknown';
+          if (!bookSalesMap[bookTitle]) {
+            bookSalesMap[bookTitle] = {
+              book: book,
+              quantity: 0
+            };
+          }
+          bookSalesMap[bookTitle].quantity += item.quantity;
+        }
+      });
+    });
+
+    // Find top selling book
+    const topSellingEntry = Object.values(bookSalesMap)
+      .sort((a, b) => b.quantity - a.quantity)[0];
+
+    if (topSellingEntry && topSellingEntry.book) {
+      const topBook = {
+        ...topSellingEntry.book.toObject(),
+        sold: topSellingEntry.quantity
+      };
+      res.json(topBook);
+    } else {
+      // Fallback to first available book if no sales data
+      const fallbackBook = await Book.findOne().sort({ createdAt: -1 });
+      if (fallbackBook) {
+        res.json({ ...fallbackBook.toObject(), sold: 0 });
+      } else {
+        res.status(404).json({ message: 'No books available' });
+      }
+    }
+  } catch (err) {
+    console.error('Error getting top selling book:', err);
+    res.status(500).json({ message: err.message });
+  }
+};

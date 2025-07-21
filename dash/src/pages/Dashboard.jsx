@@ -55,6 +55,13 @@ const DashboardPage = () => {
   const [animating, setAnimating] = useState(false);
   const [prevArrivalsPage, setPrevArrivalsPage] = useState(arrivalsPage);
 
+  // State for orders and top selling book
+  const [orders, setOrders] = useState([]);
+  const [numberOneSelling, setNumberOneSelling] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [dataVersion, setDataVersion] = useState(0);
+
   // Auto-slide every 5s
   useEffect(() => {
     const interval = setInterval(() => {
@@ -67,15 +74,197 @@ const DashboardPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch latest books
+  // Fetch latest books with auto-refresh
   useEffect(() => {
-    axios
-      .get(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/books?sort=-createdAt&limit=20`
-      )
-      .then(res => setNewArrivals(res.data))
-      .catch(() => setNewArrivals([]));
+    const fetchNewArrivals = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/books?sort=-createdAt&limit=20`
+        );
+        setNewArrivals(response.data);
+        console.log('New arrivals updated:', response.data.length, 'books');
+      } catch (error) {
+        console.error('Error fetching new arrivals:', error);
+        setNewArrivals([]);
+      }
+    };
+
+    // Initial fetch
+    fetchNewArrivals();
+    
+    // Set up auto-refresh every 2 minutes (120000ms) for new arrivals - more frequent to catch new books
+    const arrivalsInterval = setInterval(fetchNewArrivals, 120000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(arrivalsInterval);
   }, []);
+
+  // Fetch top selling book with auto-refresh
+  useEffect(() => {
+    const fetchTopSellingBook = async () => {
+      try {
+        setIsRefreshing(true);
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+        console.log('Fetching top selling book from:', `${API_BASE}/books/analytics/top-selling`);
+        
+        // Use the new public endpoint
+        const response = await axios.get(`${API_BASE}/books/analytics/top-selling`);
+        const topBook = response.data;
+        console.log('Top selling book received:', topBook);
+        
+        if (topBook && topBook._id) {
+          console.log('Setting number one selling book:', topBook);
+          setNumberOneSelling(topBook);
+          setDataVersion(prev => prev + 1); // Increment version to trigger other updates
+        } else {
+          console.log('No top selling book found, will use fallback');
+        }
+        
+        setLastRefresh(new Date());
+      } catch (error) {
+        console.error('Error fetching top selling book:', error);
+        console.log('Will use fallback book from new arrivals');
+        // Don't set numberOneSelling here, let the fallback handle it
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+
+    // Initial fetch
+    fetchTopSellingBook();
+    
+    // Set up auto-refresh every 90 seconds (90000ms) - more frequent to catch sales changes quickly
+    const topSellingInterval = setInterval(fetchTopSellingBook, 90000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(topSellingInterval);
+  }, []); // Run once on component mount
+
+  // Page visibility - refresh when user returns to the page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing data...');
+        // Refresh data when page becomes visible (user returns to tab)
+        const refreshData = async () => {
+          setIsRefreshing(true);
+          try {
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+            
+            // Fetch both in parallel
+            const [topBookResponse, arrivalsResponse] = await Promise.all([
+              axios.get(`${API_BASE}/books/analytics/top-selling`).catch(e => ({ data: null })),
+              axios.get(`${API_BASE}/books?sort=-createdAt&limit=20`).catch(e => ({ data: [] }))
+            ]);
+            
+            // Update top selling book
+            if (topBookResponse.data && topBookResponse.data._id) {
+              setNumberOneSelling(topBookResponse.data);
+            }
+            
+            // Update new arrivals
+            setNewArrivals(arrivalsResponse.data || []);
+            
+            setLastRefresh(new Date());
+            console.log('Page visibility refresh completed');
+          } catch (error) {
+            console.error('Error during visibility refresh:', error);
+          } finally {
+            setIsRefreshing(false);
+          }
+        };
+        
+        refreshData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Window focus - refresh when window regains focus
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      console.log('Window focused, refreshing data...');
+      // Refresh data when window regains focus
+      const refreshData = async () => {
+        setIsRefreshing(true);
+        try {
+          const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+          
+          // Fetch both in parallel
+          const [topBookResponse, arrivalsResponse] = await Promise.all([
+            axios.get(`${API_BASE}/books/analytics/top-selling`).catch(e => ({ data: null })),
+            axios.get(`${API_BASE}/books?sort=-createdAt&limit=20`).catch(e => ({ data: [] }))
+          ]);
+          
+          // Update top selling book
+          if (topBookResponse.data && topBookResponse.data._id) {
+            setNumberOneSelling(topBookResponse.data);
+          }
+          
+          // Update new arrivals
+          setNewArrivals(arrivalsResponse.data || []);
+          
+          setLastRefresh(new Date());
+          console.log('Window focus refresh completed');
+        } catch (error) {
+          console.error('Error during focus refresh:', error);
+        } finally {
+          setIsRefreshing(false);
+        }
+      };
+      
+      refreshData();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => window.removeEventListener('focus', handleWindowFocus);
+  }, []);
+
+  // Aggressive refresh during business hours (9 AM - 9 PM) - every 30 seconds
+  useEffect(() => {
+    const aggressiveRefresh = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      
+      // During business hours (9 AM to 9 PM), refresh more frequently
+      if (hour >= 9 && hour <= 21) {
+        const refreshData = async () => {
+          try {
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+            
+            // Quick check for top selling book only (lighter request)
+            const response = await axios.get(`${API_BASE}/books/analytics/top-selling`);
+            const topBook = response.data;
+            
+            if (topBook && topBook._id && JSON.stringify(topBook) !== JSON.stringify(numberOneSelling)) {
+              console.log('Detected sales change, updating top selling book...');
+              setNumberOneSelling(topBook);
+              setLastRefresh(new Date());
+            }
+          } catch (error) {
+            // Silently fail for aggressive refresh
+            console.log('Aggressive refresh failed:', error.message);
+          }
+        };
+
+        const aggressiveInterval = setInterval(refreshData, 30000); // 30 seconds during business hours
+        return () => clearInterval(aggressiveInterval);
+      }
+    };
+
+    const cleanup = aggressiveRefresh();
+    return cleanup;
+  }, [numberOneSelling]); // Re-run when numberOneSelling changes
+
+  // Set fallback if no best seller found but we have new arrivals
+  useEffect(() => {
+    if (!numberOneSelling && newArrivals.length > 0) {
+      console.log('Setting fallback to first new arrival');
+      setNumberOneSelling(newArrivals[0]);
+    }
+  }, [numberOneSelling, newArrivals]);
 
   const ARRIVALS_PER_PAGE = 5;
   const arrivalsTotalPages = Math.ceil(newArrivals.length / ARRIVALS_PER_PAGE);
@@ -110,17 +299,7 @@ const DashboardPage = () => {
   const arrivalsToShow = newArrivals.slice(
     arrivalsPage * ARRIVALS_PER_PAGE,
     arrivalsPage * ARRIVALS_PER_PAGE + ARRIVALS_PER_PAGE
-  );
-
-  // Compute number 1 selling book from newArrivals
-  const numberOneSelling = (() => {
-    if (!newArrivals.length) return null;
-    // Find the book with the highest sales (assuming 'sold' field exists)
-    // If not, just pick the first as a fallback
-    return newArrivals.reduce((top, book) =>
-      (book.sold || 0) > (top.sold || 0) ? book : top, newArrivals[0]
     );
-  })();
 
   const [businessStatus, setBusinessStatus] = useState({});
 
@@ -139,6 +318,23 @@ const DashboardPage = () => {
 
   return (
    <div className="min-h-screen w-full flex flex-col bg-white font-poppins relative overflow-hidden">
+      {/* Auto-refresh indicator - subtle notification */}
+      {isRefreshing && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500/90 text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 animate-fade-in backdrop-blur-sm">
+          <svg className="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span className="text-xs font-medium">Updating...</span>
+        </div>
+      )}
+
+
+
+      {/* Last refresh timestamp - subtle indicator */}
+      <div className="fixed bottom-4 right-4 text-xs text-gray-400 bg-white/70 px-2 py-1 rounded backdrop-blur-sm">
+        Last updated: {lastRefresh.toLocaleTimeString()}
+      </div>
+
       {/* Animated blobs background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-200 opacity-40 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -237,9 +433,9 @@ const DashboardPage = () => {
             <div className="flex-shrink-0 flex items-center justify-center w-full md:w-auto">
               {numberOneSelling.image && (
                 <img
-                  src={numberOneSelling.image}
+                  src={numberOneSelling.image.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || 'http://localhost:5000'}${numberOneSelling.image}` : numberOneSelling.image}
                   alt={numberOneSelling.title}
-                  className="h-100 w-75 object-cover shadow-lg  bg-white"
+                  className="h-100 w-75 object-cover shadow-lg bg-white"
                 />
               )}
             </div>
@@ -263,12 +459,7 @@ const DashboardPage = () => {
                 )}
               </div>
               <div className="flex gap-3 mt-6">
-                <a
-                  href={`/products/${numberOneSelling._id}`}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold shadow hover:bg-red-700 transition"
-                >
-                  DETAILS
-                </a>
+                
                 <a
                   href="/products"
                   className="px-6 py-2 bg-white text-red-700 border border-red-400 rounded-lg font-semibold shadow hover:bg-red-50 transition"

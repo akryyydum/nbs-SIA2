@@ -1,13 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const { protect, inventory } = require('../middleware/AuthMiddleware');
-const { createBook, getBooks, getBookById, updateBook, deleteBook, decreaseStock, increaseStock } = require('../controllers/bookController');
+const { createBook, getBooks, getBookById, updateBook, deleteBook, decreaseStock, increaseStock, getTopSellingBook } = require('../controllers/bookController');
 
 // Public: Get all books
 router.get('/', getBooks);
 
 // Public: Get single book by ID
 router.get('/:id', getBookById);
+
+// Public: Get top selling book for dashboard
+router.get('/analytics/top-selling', getTopSellingBook);
 
 // Admin & Inventory: Create a new book
 router.post('/', protect, inventory, createBook);
