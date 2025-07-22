@@ -30,7 +30,7 @@ app.use('/api/notifications', notificationRoutes);
 
 // Middleware
 app.use(cors({
-  origin: true, // Reflects the request origin automatically
+  origin: 'https://nbs-sia.vercel.app', // or set to true if dynamic origin works for your use case
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' })); // Parse incoming JSON, allow up to 10mb
