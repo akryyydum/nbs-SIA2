@@ -89,8 +89,8 @@ const AdminDashboard = () => {
           axios.get(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] }))
-        );
+          axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] })),
+        ]);
         const books = booksRes.data || [];
         const users = usersRes.data || [];
         const suppliers = suppliersRes.data || [];
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
           salesTrends: salesPerDay,
           transactionsPerDay,
           transactionsPerWeek,
-          transactionsPerMonth,
+          transactionsPerMonth, // <-- add comma here
           topBooks,
           orders: customerOrders,
         });

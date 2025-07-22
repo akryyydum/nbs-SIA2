@@ -106,7 +106,7 @@ export default function Notifications({ user, iconClassName = "h-7 w-7", bellSty
                   </button>
                 </div>
               ))
-            }
+            )}
           </div>
         </div>
       )}
