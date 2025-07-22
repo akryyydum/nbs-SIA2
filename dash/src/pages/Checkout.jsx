@@ -332,7 +332,7 @@ const Checkout = () => {
       console.log('Bank API payload:', bankPayload); 
       try {
         const response = await axios.post(
-          'https://pnb-server.vercel.app/api/Philippine-National-Bank/business-integration/customer/pay-business',
+          'pnb-server.vercel.app/api/Philippine-National-Bank/business-integration/customer/pay-business',
           bankPayload
         );
         // Debug: log full response data
