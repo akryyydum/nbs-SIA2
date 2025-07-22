@@ -79,7 +79,7 @@ const DashboardPage = () => {
     const fetchNewArrivals = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/books?sort=-createdAt&limit=20`
+          `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api'}/books?sort=-createdAt&limit=20`
         );
         setNewArrivals(response.data);
         console.log('New arrivals updated:', response.data.length, 'books');
@@ -104,7 +104,7 @@ const DashboardPage = () => {
     const fetchTopSellingBook = async () => {
       try {
         setIsRefreshing(true);
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api';
         console.log('Fetching top selling book from:', `${API_BASE}/books/analytics/top-selling`);
         
         // Use the new public endpoint
@@ -149,7 +149,7 @@ const DashboardPage = () => {
         const refreshData = async () => {
           setIsRefreshing(true);
           try {
-            const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api';
             
             // Fetch both in parallel
             const [topBookResponse, arrivalsResponse] = await Promise.all([
@@ -190,7 +190,7 @@ const DashboardPage = () => {
       const refreshData = async () => {
         setIsRefreshing(true);
         try {
-          const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+          const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api';
           
           // Fetch both in parallel
           const [topBookResponse, arrivalsResponse] = await Promise.all([
@@ -232,7 +232,7 @@ const DashboardPage = () => {
       if (hour >= 9 && hour <= 21) {
         const refreshData = async () => {
           try {
-            const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api';
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api';
             
             // Quick check for top selling book only (lighter request)
             const response = await axios.get(`${API_BASE}/books/analytics/top-selling`);

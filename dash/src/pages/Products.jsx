@@ -6,7 +6,7 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Use Vite env variable if set, otherwise fallback to current origin for LAN support
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
+  baseURL: import.meta.env.VITE_API_BASE_URL || `${'https://nbs-sia2.onrender.com'}/api`,
 });
 
 const Products = () => {
@@ -261,7 +261,7 @@ const Products = () => {
                     src={
                       newArrivals[(carouselIndex - 1 + newArrivals.length) % newArrivals.length].image.startsWith('http')
                         ? newArrivals[(carouselIndex - 1 + newArrivals.length) % newArrivals.length].image
-                        : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${newArrivals[(carouselIndex - 1 + newArrivals.length) % newArrivals.length].image.startsWith('/') ? '' : '/'}${newArrivals[(carouselIndex - 1 + newArrivals.length) % newArrivals.length].image}`
+                        : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://nbs-sia2.onrender.com'}${newArrivals[(carouselIndex - 1 + newArrivals.length) % newArrivals.length].image.startsWith('/') ? '' : '/'}${newArrivals[(carouselIndex - 1 + newArrivals.length) % newArrivals.length].image}`
                     }
                     alt=""
                     className="h-48 w-full object-cover rounded-t-2xl"
@@ -294,7 +294,7 @@ const Products = () => {
                     src={
                       newArrivals[carouselIndex].image.startsWith('http')
                         ? newArrivals[carouselIndex].image
-                        : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${newArrivals[carouselIndex].image.startsWith('/') ? '' : '/'}${newArrivals[carouselIndex].image}`
+                        : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://nbs-sia2.onrender.com'}${newArrivals[carouselIndex].image.startsWith('/') ? '' : '/'}${newArrivals[carouselIndex].image}`
                     }
                     alt={newArrivals[carouselIndex].title}
                     className="h-56 w-full object-cover rounded-t-2xl"
@@ -340,7 +340,7 @@ const Products = () => {
                     src={
                       newArrivals[(carouselIndex + 1) % newArrivals.length].image.startsWith('http')
                         ? newArrivals[(carouselIndex + 1) % newArrivals.length].image
-                        : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${newArrivals[(carouselIndex + 1) % newArrivals.length].image.startsWith('/') ? '' : '/'}${newArrivals[(carouselIndex + 1) % newArrivals.length].image}`
+                        : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://nbs-sia2.onrender.com'}${newArrivals[(carouselIndex + 1) % newArrivals.length].image.startsWith('/') ? '' : '/'}${newArrivals[(carouselIndex + 1) % newArrivals.length].image}`
                     }
                     alt=""
                     className="h-48 w-full object-cover rounded-t-2xl"
@@ -437,7 +437,7 @@ const Products = () => {
                   src={
                     book.image.startsWith('http')
                       ? book.image
-                      : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${book.image.startsWith('/') ? '' : '/'}${book.image}`
+                      : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://nbs-sia2.onrender.com'}${book.image.startsWith('/') ? '' : '/'}${book.image}`
                   }
                   alt={book.title}
                   className="h-40 w-32 object-cover rounded-lg mb-4 shadow"
@@ -525,7 +525,7 @@ const Products = () => {
                   src={
                     modalBook.image.startsWith('http')
                       ? modalBook.image
-                      : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || window.location.origin}${modalBook.image.startsWith('/') ? '' : '/'}${modalBook.image}`
+                      : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://nbs-sia2.onrender.com'}${modalBook.image.startsWith('/') ? '' : '/'}${modalBook.image}`
                   }
                   alt={modalBook.title}
                   className="h-48 w-36 object-cover rounded-lg mb-4 mx-auto shadow"

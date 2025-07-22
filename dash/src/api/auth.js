@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Use Vite env variable if set, otherwise fallback to window.location.origin
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api` || 'https://nbs-sia.vercel.app/api',
+  baseURL: 'https://nbs-sia2.onrender.com/api',
 });
 
 export const loginUser = (data) => API.post('/auth/login', data);

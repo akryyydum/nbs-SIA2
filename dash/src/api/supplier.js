@@ -1,9 +1,7 @@
 // src/api/supplier.js
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/suppliers`
-  : `${window.location.origin}/api/suppliers` || 'https://nbs-sia-serverr.vercel.app/api/suppliers'; 
+const API_URL = 'https://nbs-sia2.onrender.com/api/suppliers';
 
 // Accepts optional config for headers (e.g., Authorization)
 export const getSuppliers = (config) => axios.get(API_URL, config);

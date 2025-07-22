@@ -31,7 +31,7 @@ const LoginPage = () => {
         // Send OTP
         setOtpLoading(true);
         await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/send-otp`,
+          `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com'}/auth/send-otp`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -88,7 +88,7 @@ const LoginPage = () => {
     try {
       // First, check if email exists in the system
       const checkRes = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/check-email`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api'}/auth/check-email`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -103,7 +103,7 @@ const LoginPage = () => {
       }
       // If exists, send OTP
       await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/send-otp`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api'}/auth/send-otp`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -122,7 +122,7 @@ const LoginPage = () => {
     setOtpLoading(true);
     try {
       // Replace with your API call
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/reset-password`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api'}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, otp, newPassword })
@@ -147,7 +147,7 @@ const LoginPage = () => {
     try {
       // Verify OTP
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/verify-otp`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api'}/auth/verify-otp`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -157,7 +157,7 @@ const LoginPage = () => {
       if (!res.ok) throw new Error();
       // Activate user
       await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/activate`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com' + '/api'}/auth/activate`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -31,7 +31,7 @@ const Orders = () => {
 
   // ✅ FIXED: This ensures axios works on both localhost and LAN
   const API = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin.replace(':5173', ':5000')}/api`,
+    baseURL: 'https://nbs-sia2.onrender.com' || `${window.location.origin.replace(':5173', ':5000')}/api`,
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 

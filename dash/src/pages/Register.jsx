@@ -65,7 +65,7 @@ const RegisterPage = () => {
     setOtpLoading(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/verify-otp`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com'}/auth/verify-otp`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -75,7 +75,7 @@ const RegisterPage = () => {
       if (!res.ok) throw new Error();
       // Activate user after OTP verification
       await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || window.location.origin + '/api'}/auth/activate`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://nbs-sia2.onrender.com'}/auth/activate`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

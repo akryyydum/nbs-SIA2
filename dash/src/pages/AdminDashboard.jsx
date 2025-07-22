@@ -26,7 +26,7 @@ ChartJS.register(
   LineElement
 );
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || `${'https://nbs-sia2.onrender.com'}/api`;
 
 const ICONS = [
   <FaBook className="text-3xl text-red-400" />,
