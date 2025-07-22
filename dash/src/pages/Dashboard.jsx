@@ -17,12 +17,12 @@ const businesses = [
   },
   {
     name: "Tara laba",
-    url: "http://192.168.9.27:5173",
+    url: "https://tara-laba.vercel.app/",
     img: "/tl.jpg"
   },
   {
     name: "Dental Clinic",
-    url: "http://192.168.9.35:5173",
+    url: "https://molar-record.vercel.app/",
     img: "/dentist.png"
   },
   {
@@ -33,13 +33,13 @@ const businesses = [
   },
   {
     name: "PNB",
-    url: "http://192.168.9.23:5173",
+    url: "https://pnb-client.vercel.app",
     img: "https://www.pds.com.ph/wp-content/uploads/2018/12/PNB-Logo-Short-YouFirst-011117-FC-HQ-1024x676.png",
     imgClass: "bg-white"
   },
   {
     name: "ITBYTES",
-    url: "http://192.168.9.4:5173",
+    url: "https://it-bytes-ui.vercel.app",
     img: "/it.jpg"
   }
 ];
