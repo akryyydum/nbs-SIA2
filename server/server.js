@@ -21,6 +21,8 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 // server.js or app.js
+app.get("/", (req, res) => res.send("Express on Vercel"));
+
 const otpRoutes = require('./routes/otpRoutes');
 app.use('/api/auth', otpRoutes);
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -65,3 +67,6 @@ mongoose.connect(process.env.MONGO_URI)
     console.error('❌ MongoDB connection failed:', err.message);
     process.exit(1);
   });
+
+// --- Vercel compatibility: export the app ---
+module.exports = app;
