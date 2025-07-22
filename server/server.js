@@ -30,7 +30,13 @@ app.use('/api/notifications', notificationRoutes);
 
 // Middleware
 app.use(cors({
-  origin: true, // Reflects the request origin automatically
+  origin: ['https://nbs-sia.vercel.app', 'http://localhost:5173'], // allow Vercel and local dev
+  credentials: true,
+}));
+
+// Explicit CORS headers for all API routes (for preflight requests)
+app.options('/api/*', cors({
+  origin: ['https://nbs-sia.vercel.app', 'http://localhost:5173'],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' })); // Parse incoming JSON, allow up to 10mb
