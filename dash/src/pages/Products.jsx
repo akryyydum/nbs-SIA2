@@ -6,7 +6,7 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Use Vite env variable if set, otherwise fallback to current origin for LAN support
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || `${'https://nbs-sia2.onrender.com'}/api`,
+  baseURL: 'https://nbs-sia2.onrender.com/api',
 });
 
 const Products = () => {

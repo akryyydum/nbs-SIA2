@@ -26,7 +26,7 @@ ChartJS.register(
   LineElement
 );
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || `${'https://nbs-sia2.onrender.com'}/api`;
+const API_BASE = 'https://nbs-sia2.onrender.com/api';
 
 const ICONS = [
   <FaBook className="text-3xl text-red-400" />,
@@ -90,7 +90,7 @@ const AdminDashboard = () => {
           axios.get(`${API_BASE}/suppliers`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/orders`, { headers: { Authorization: `Bearer ${user?.token}` } }),
           axios.get(`${API_BASE}/logs/customer-logins`, { headers: { Authorization: `Bearer ${user?.token}` } }).catch(() => ({ data: [] }))
-        ]);
+        );
         const books = booksRes.data || [];
         const users = usersRes.data || [];
         const suppliers = suppliersRes.data || [];

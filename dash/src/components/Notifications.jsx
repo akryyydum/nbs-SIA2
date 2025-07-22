@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaBell } from "react-icons/fa";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`;
+const API_BASE = 'https://nbs-sia2.onrender.com/api';
 
 export default function Notifications({ user, iconClassName = "h-7 w-7", bellStyle = {} }) {
   const [notifications, setNotifications] = useState([]);
@@ -106,7 +106,7 @@ export default function Notifications({ user, iconClassName = "h-7 w-7", bellSty
                   </button>
                 </div>
               ))
-            )}
+            }
           </div>
         </div>
       )}

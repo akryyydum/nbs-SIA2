@@ -3,11 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE =
-  'https://nbs-sia2.onrender.com'||
-  `${window.location.origin.includes('localhost')
-    ? 'http://localhost:5000'
-    : window.location.origin.replace(':5173', ':5000')}/api`;
+const API_BASE = 'https://nbs-sia2.onrender.com/api';
 const provinces = [
   {
     name: 'Nueva Vizcaya',

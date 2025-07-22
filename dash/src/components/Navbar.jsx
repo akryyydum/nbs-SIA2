@@ -12,7 +12,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 
 // Add this API instance for LAN compatibility
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api`,
+  baseURL: 'https://nbs-sia2.onrender.com/api',
 });
 
 const Navbar = () => {

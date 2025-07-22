@@ -32,7 +32,7 @@ const Inventory = () => {
   const [supplierBooks, setSupplierBooks] = useState([]);
 
   const API = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || `${'https://nbs-sia2.onrender.com'}/api`,
+    baseURL: 'https://nbs-sia2.onrender.com/api',
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 

@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
 
 const API = axios.create({
-  baseURL: 'http://192.168.9.16:5000/api',
+  baseURL: 'https://nbs-sia2.onrender.com/api',
 });
 
 const SalesDashboard = () => {
@@ -43,7 +43,7 @@ const SalesDashboard = () => {
 
   // API instance (like Inventory)
   const API = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || "http://192.168.9.16:5000/api",
+    baseURL: 'https://nbs-sia2.onrender.com/api',
     headers: { Authorization: `Bearer ${user?.token}` }
   });
 

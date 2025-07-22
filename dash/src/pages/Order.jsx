@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { FaShoppingCart } from 'react-icons/fa';
 
-const API_BASE = '/api'; // Use relative path for any IP
+const API_BASE = 'https://nbs-sia2.onrender.com/api'; // Use relative path for any IP
 
 const Order = () => {
   const { user } = useAuth();
