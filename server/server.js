@@ -30,8 +30,14 @@ app.use('/api/notifications', notificationRoutes);
 
 // Middleware
 app.use(cors({
-  origin: true, // Reflects the request origin automatically
+  origin: [
+    'https://nbs-sia-2-lanceandres-projects.vercel.app',
+    'http://localhost:5173',
+    'http://192.168.0.100:5173'
+  ],
   credentials: true,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json({ limit: '10mb' })); // Parse incoming JSON, allow up to 10mb
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // For form data, allow up to 10mb
