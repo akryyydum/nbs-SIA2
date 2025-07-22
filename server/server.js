@@ -60,9 +60,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
     // REMOVE app.listen block for Vercel compatibility
-    // app.listen(PORT, '0.0.0.0', () => {
-    //   console.log(`🚀 Server running on http://0.0.0.0:${PORT} (LAN accessible)`);
-    // });
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on http://0.0.0.0:${PORT} (LAN accessible)`);
+    });
   })
   .catch(err => {
     console.error('❌ MongoDB connection failed:', err.message);
